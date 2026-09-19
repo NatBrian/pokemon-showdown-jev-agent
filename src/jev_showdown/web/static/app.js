@@ -22,6 +22,9 @@ const state = {
   inspectExpanded: false,
   historyExpanded: false,
   lastTurn: 0,
+  // Embedded official Showdown client (live feed iframe).
+  sdFrameTarget: null,
+  sdFrameOk: false,
 };
 
 /* ---------------- DOM helpers ---------------- */
@@ -271,6 +274,9 @@ function onStartBattleClick() {
 
 function handleTurnDecision(data) {
   state.battleActive = true;
+
+  // Point the embedded Showdown client at the live battle room.
+  if (data.battle_tag) navigateShowdown(data.battle_tag);
 
   const turn = data.turn != null ? data.turn
     : (data.snapshot && data.snapshot.turn != null ? data.snapshot.turn : state.lastTurn);
@@ -929,6 +935,73 @@ function toggleHistoryExpand() {
   if (list) list.classList.toggle("expanded", state.historyExpanded);
 }
 
+/* ---------------- Embedded Showdown client (live feed) ---------------- */
+
+// The real Showdown client is proxied by the backend (/showdown/) with its
+// iframe guard patched, so the LIVE BATTLE panel shows the actual game.
+const SHOWDOWN_BASE = "/showdown/";
+
+function navigateShowdown(battleTag) {
+  const frame = $("showdown-frame");
+  if (!frame) return;
+  const url = battleTag ? SHOWDOWN_BASE + "#" + String(battleTag) : SHOWDOWN_BASE;
+  if (state.sdFrameTarget === url) return;
+  state.sdFrameTarget = url;
+  // The embedded client runs in hash-routing mode (pushState is disabled by
+  // the boot shim), so changing only the hash makes its router join the
+  // room without a full document reload (which would drop the live battle
+  // view and flicker the connection).
+  if (state.sdFrameOk && frame.contentWindow) {
+    try {
+      const win = frame.contentWindow;
+      if (win.location.origin === window.location.origin) {
+        win.location.hash = battleTag ? "#" + String(battleTag) : "";
+        return;
+      }
+    } catch (e) {
+      /* fall through to a full reload */
+    }
+  }
+  frame.src = url;
+}
+
+function showShowdownFrame() {
+  const arena = $("arena-fallback");
+  if (arena) arena.classList.add("hidden");
+}
+
+function showArenaFallback() {
+  const arena = $("arena-fallback");
+  if (arena) arena.classList.remove("hidden");
+}
+
+async function initShowdownFrame() {
+  const frame = $("showdown-frame");
+  if (!frame) return;
+  // The local arena is the safe display until the real client has loaded.
+  showArenaFallback();
+  frame.addEventListener("load", () => {
+    // Only the proxied client page counts as "loaded" (not about:blank).
+    if ((frame.src || "").indexOf("/showdown/") !== -1) {
+      state.sdFrameOk = true;
+      showShowdownFrame();
+    }
+  });
+  frame.addEventListener("error", () => {
+    state.sdFrameOk = false;
+    showArenaFallback();
+  });
+  // Only embed the client when the backend can reach Showdown; offline
+  // environments keep the local arena.
+  const available = await fetch(SHOWDOWN_BASE, { method: "GET" })
+    .then((r) => r.ok)
+    .catch(() => false);
+  if (available) {
+    // Idle state: the live lobby (also the place to log in via "Choose name").
+    navigateShowdown(null);
+  }
+}
+
 /* ---------------- BATTLE_END ---------------- */
 
 function handleBattleEnd(data) {
@@ -996,5 +1069,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Idle state until the first telemetry arrives
   setLoaderStep(0, null, false);
   renderInitialTeams();
+  initShowdownFrame();
   connectSocket();
 });

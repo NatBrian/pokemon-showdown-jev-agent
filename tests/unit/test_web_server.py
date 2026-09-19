@@ -71,3 +71,66 @@ def test_start_battle_hook_invoked():
             while not calls and time.monotonic() < deadline:
                 time.sleep(0.05)
     assert calls == ["START_BATTLE"]
+
+
+# --- Embedded Showdown client HTML transformations ----------------------
+
+_FRAMEBUST_HTML = (
+    "<html><body>"
+    "<script>\n// framebust\nif (self === top) {\n"
+    "app = new App();\n} else {\nLM.innerHTML += ' IN FRAME';\n"
+    "top.location = self.location;\n}\n</script>"
+    "</body></html>"
+)
+_TRACKING_HTML = (
+    "<script async src=\"https://hb.vntsm.com/index.js\"></script>"
+    "<script>\n(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;"
+    "/* ga bootstrap */})();\n</script>"
+)
+
+
+def test_patch_showdown_framebust_replaces_guard():
+    from jev_showdown.web.server import patch_showdown_framebust
+
+    patched = patch_showdown_framebust(_FRAMEBUST_HTML)
+    assert "if (self === top)" not in patched
+    assert "if (true) { /* embedded in Jev dashboard */" in patched
+
+
+def test_patch_showdown_framebust_fallback_drops_block():
+    from jev_showdown.web.server import patch_showdown_framebust
+
+    # Upstream reformatted the guard so the line no longer matches.
+    html = (
+        "<html><body><script>\n// framebust\nif (self == top) {\n"
+        "top.location = self.location;\n}\n</script></body></html>"
+    )
+    patched = patch_showdown_framebust(html)
+    assert "framebust" not in patched
+    assert "var app = new App();" in patched
+
+
+def test_strip_showdown_tracking_removes_ad_scripts():
+    from jev_showdown.web.server import strip_showdown_tracking
+
+    stripped = strip_showdown_tracking(
+        "<html><body>" + _TRACKING_HTML + "</body></html>"
+    )
+    assert "vntsm" not in stripped
+    assert "GoogleAnalyticsObject" not in stripped
+
+
+def test_inject_showdown_boot_shim():
+    from jev_showdown.web.server import inject_showdown_boot
+
+    injected = inject_showdown_boot(_FRAMEBUST_HTML)
+    assert "function jevBoot()" in injected
+    assert "Config.server = Config.defaultserver" in injected
+    assert "Storage.whenPrefsLoaded.load()" in injected
+    # Hash routing is forced so the client does not rewrite the embed URL.
+    assert "options.pushState = false" in injected
+    # Shim must sit inside the document, right before </body>.
+    body = injected.rindex("</body>")
+    assert injected.index("jevBoot") < body
+    # HTML without a </body> tag still gets the shim.
+    assert "jevBoot" in inject_showdown_boot("<html><body>x")

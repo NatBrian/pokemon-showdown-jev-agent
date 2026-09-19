@@ -55,8 +55,16 @@
         <span>TERRAIN: <b id="terrain-label">NONE</b></span>
       </div>
 
-      <!-- Arena -->
-      <div class="arena-view">
+      <!-- Live feed: the official Pok&eacute;mon Showdown client (real sprites,
+           animations, move effects, avatars and chat — the actual game) -->
+      <div class="sd-frame-wrap">
+        <div class="sd-frame-note">OFFICIAL SHOWDOWN CLIENT &bull; LIVE</div>
+        <iframe id="showdown-frame" class="sd-frame" title="Pokémon Showdown — live battle"
+                src="about:blank" allow="autoplay"></iframe>
+      </div>
+
+      <!-- Local arena (fallback display when the embedded client cannot load) -->
+      <div class="arena-view" id="arena-fallback">
         <div id="prompt-label" class="battle-prompt">AWAITING BATTLE&hellip;</div>
 
         <!-- Opponent active Pokémon -->

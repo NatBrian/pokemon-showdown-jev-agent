@@ -158,6 +158,7 @@ class JevPlayer(Player):
         event_data: dict[str, Any] = {
             "type": "TURN_DECISION",
             "turn": turn,
+            "battle_tag": getattr(battle, "battle_tag", None),
             "battle_format": getattr(battle, "format", "unknown"),
             "chosen_id": validated.chosen_id,
             "label": label,
@@ -305,7 +306,9 @@ class JevPlayer(Player):
         if role == side:
             for existing in reversed(self.history_tracker.events[-6:]):
                 same_turn = existing.get("turn") == event["turn"]
-                same_actor = existing.get("actor") == actor
+                # Species ids are lowercased by poke_env while protocol
+                # idents are capitalized; compare case-insensitively.
+                same_actor = str(existing.get("actor", "")).lower() == actor.lower()
                 is_switch = (
                     event.get("kind") == "switch"
                     and str(existing.get("action", "")).lower().startswith("switch")

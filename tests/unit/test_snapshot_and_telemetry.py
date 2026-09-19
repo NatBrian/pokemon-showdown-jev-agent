@@ -101,9 +101,12 @@ def test_battle_event_scanner_stat_badges_and_switch():
     scanner = BattleEventScanner()
     events = scanner.feed_lines(
         [
-            "|-move| p1a: Garchomp|swords dance|p2a: Heatran",
+            # The battle must be live (a request has been received) for
+            # switches to produce cards; initial send-outs do not.
+            "|request|{}",
+            "|move| p1a: Garchomp|swords dance|p2a: Heatran",
             "|-stat| p1a: Garchomp|atk|2",
-            "|-switch| p2a: Rotom-Wash|Rotom-Wash|123/123",
+            "|switch| p2a: Rotom-Wash|Rotom-Wash|123/123",
             "|-stat| p1a: Garchomp|atk|-1",
             "|turn|2",
         ]

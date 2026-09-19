@@ -111,6 +111,9 @@ class BattleEventScanner:
         self.current_turn: int = 1
         self._pending: list[_PendingAction] = []
         self._hp: dict[str, tuple[float, float | None]] = {}
+        # Set once the battle is live (first request/start line). Initial
+        # send-outs are not "switches" and must not create history cards.
+        self._started: bool = False
 
     # ------------------------------------------------------------------ feed
 
@@ -126,6 +129,10 @@ class BattleEventScanner:
             # Be tolerant of stray whitespace around protocol arguments.
             args = [a.strip() for a in parts[1:]]
             try:
+                # Real Showdown protocol: primary action lines have NO dash
+                # (|move|, |switch|, |drag|, |turn|, |faint|) while effect
+                # lines are dashed (|-damage|, |-status|, |-stat|, ...).
+                # Both spellings are accepted defensively.
                 if mtype in ("turn", "-turn"):
                     events.extend(self._flush_all())
                     try:
@@ -134,18 +141,23 @@ class BattleEventScanner:
                         pass
                 elif mtype == "request" and args:
                     self._seed_from_request(args[0])
-                elif mtype == "-move":
+                    self._started = True
+                elif mtype == "start":
+                    self._started = True
+                elif mtype in ("move", "-move"):
                     events.extend(self._begin_action(args, kind="move"))
-                elif mtype == "-switch":
+                elif mtype in ("switch", "drag", "-switch"):
                     events.extend(self._begin_action(args, kind="switch"))
                 elif mtype in ("-damage", "-heal"):
                     self._handle_hp(args, is_damage=(mtype == "-damage"))
                 elif mtype == "-status":
                     self._handle_status(args)
-                elif mtype == "-stat":
+                elif mtype in ("-stat", "stat"):
                     self._handle_stat(args)
-                elif mtype == "-faint":
+                elif mtype in ("faint", "-faint"):
                     self._handle_faint(args)
+                elif mtype == "-terastallize":
+                    self._handle_terastallize(args)
             except Exception:
                 # Telemetry parsing must never break battle processing.
                 continue
@@ -159,6 +171,18 @@ class BattleEventScanner:
     @staticmethod
     def _side(ident: str) -> str:
         return ident[:2] if ident and len(ident) >= 2 and ident[:2] in ("p1", "p2") else "?"
+
+    @staticmethod
+    def _key(ident: str) -> str:
+        """Normalize an ident so request lines and battle lines agree.
+
+        Request payloads use the bare side id ("p1: Garchomp") while battle
+        lines use the active slot ("p1a: Garchomp"); both map to one key.
+        """
+        ident = (ident or "").strip()
+        if len(ident) >= 4 and ident[2].isalpha() and ident[3] == ":":
+            return ident[:2] + ident[3:]
+        return ident
 
     @staticmethod
     def _name(ident: str) -> str:
@@ -176,7 +200,7 @@ class BattleEventScanner:
         for mon in (req.get("side") or {}).get("pokemon", []):
             ident = mon.get("ident")
             if ident:
-                self._hp[ident] = _parse_hp(str(mon.get("condition", "")))
+                self._hp[self._key(ident)] = _parse_hp(str(mon.get("condition", "")))
 
     def _begin_action(self, args: list[str], kind: str) -> list[dict[str, Any]]:
         if not args:
@@ -184,6 +208,14 @@ class BattleEventScanner:
         src = args[0]
         label = self._name(src) if kind == "switch" else self._label(args[1] if len(args) > 1 else args[0])
         side = self._side(src)
+
+        # Switch lines always carry the incoming mon's HP; seed it even for
+        # the initial send-outs.
+        if kind == "switch" and len(args) >= 3:
+            self._hp[self._key(src)] = _parse_hp(args[2])
+        if kind == "switch" and not self._started:
+            # Initial send-out: no history card.
+            return []
 
         # A new action by the same side completes the previous pending one.
         events = [self._event(p) for p in self._pending if p.side == side]
@@ -197,18 +229,16 @@ class BattleEventScanner:
                 action="Switch" if kind == "switch" else label,
             )
         )
-        # Switch lines carry the switched-in mon's current HP.
-        if kind == "switch" and len(args) >= 3:
-            self._hp[src] = _parse_hp(args[2])
         return events
 
     def _handle_hp(self, args: list[str], is_damage: bool) -> None:
         if len(args) < 2:
             return
         tgt, hp_str = args[0], args[1]
+        key = self._key(tgt)
         cur, max_hp = _parse_hp(hp_str)
-        prev = self._hp.get(tgt)
-        self._hp[tgt] = (cur, max_hp)
+        prev = self._hp.get(key)
+        self._hp[key] = (cur, max_hp)
         if not is_damage or prev is None:
             return
         prev_hp, prev_max = prev
@@ -255,6 +285,16 @@ class BattleEventScanner:
         for pending in reversed(self._pending):
             if pending.side != tgt_side:
                 pending.fainted = True
+                break
+
+    def _handle_terastallize(self, args: list[str]) -> None:
+        if not args:
+            return
+        tgt_side = self._side(args[0])
+        for pending in reversed(self._pending):
+            if pending.side != tgt_side:
+                if "TERA" not in pending.badges:
+                    pending.badges.append("TERA")
                 break
 
     def _event(self, pending: _PendingAction) -> dict[str, Any]:

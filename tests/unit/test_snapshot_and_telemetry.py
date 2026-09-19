@@ -1,7 +1,7 @@
 # tests/unit/test_snapshot_and_telemetry.py
 from unittest.mock import MagicMock
 from jev_showdown.battle.snapshot import BattleSnapshotSerializer
-from jev_showdown.telemetry.events import TurnHistoryTracker
+from jev_showdown.telemetry.events import BattleEventScanner, TurnHistoryTracker
 
 def test_fog_of_war_opponent_team_tracking():
     mock_battle = MagicMock()
@@ -43,3 +43,88 @@ def test_turn_history_tracker():
     assert len(history) == 1
     assert history[0]["turn"] == 1
     assert history[0]["action"] == "Earthquake"
+
+def test_turn_history_tracker_badges_and_faint():
+    tracker = TurnHistoryTracker()
+    tracker.add_event(
+        turn=2,
+        actor="Garchomp",
+        action="Swords Dance",
+        fainted=False,
+        badges=["ATK +2"],
+    )
+    event = tracker.events[0]
+    assert event["badges"] == ["ATK +2"]
+    assert event["fainted"] is False
+
+def test_battle_event_scanner_move_damage_status_faint():
+    scanner = BattleEventScanner()
+    events = []
+    events += scanner.feed_lines(
+        [
+            '|request|{"side": {"pokemon": ['
+            '{"ident": "p1a: Garchomp", "condition": "357/357"}, '
+            '{"ident": "p2a: Heatran", "condition": "344/344"}]}}',
+            "|turn|2",
+            "|-move| p1a: Garchomp|earthquake|p2a: Heatran",
+            "|-damage| p2a: Heatran|261/344",
+            "|-move| p2a: Heatran|magma storm|p1a: Garchomp",
+            "|-status| p1a: Garchomp|brn",
+            "|-damage| p1a: Garchomp|180/357",
+            "|-faint| p2a: Heatran",
+        ]
+    )
+    # The next turn marker flushes the still-open actions.
+    events += scanner.feed_lines(["|turn|3"])
+
+    assert len(events) == 2
+    earthquake, magma_storm = events
+
+    # Our move: damage computed against the opponent's true max HP.
+    assert earthquake["actor"] == "p1a: Garchomp"
+    assert earthquake["side"] == "p1"
+    assert earthquake["kind"] == "move"
+    assert earthquake["action"] == "Earthquake"
+    assert earthquake["turn"] == 2
+    assert earthquake["damage_pct"] == 24  # (344 - 261) / 344
+    assert earthquake["fainted"] is True  # Heatran fainted
+
+    # Opponent's move: burn + damage on our side.
+    assert magma_storm["actor"] == "p2a: Heatran"
+    assert magma_storm["side"] == "p2"
+    assert magma_storm["action"] == "Magma Storm"
+    assert magma_storm["damage_pct"] == 50  # (357 - 180) / 357
+    assert magma_storm["status"] == "BURN"
+    assert magma_storm["fainted"] is False
+
+def test_battle_event_scanner_stat_badges_and_switch():
+    scanner = BattleEventScanner()
+    events = scanner.feed_lines(
+        [
+            "|-move| p1a: Garchomp|swords dance|p2a: Heatran",
+            "|-stat| p1a: Garchomp|atk|2",
+            "|-switch| p2a: Rotom-Wash|Rotom-Wash|123/123",
+            "|-stat| p1a: Garchomp|atk|-1",
+            "|turn|2",
+        ]
+    )
+    assert len(events) == 2
+    swords_dance, switch = events
+    assert swords_dance["badges"] == ["ATK +2"]
+    assert switch["kind"] == "switch"
+    assert switch["action"] == "Switch"
+    assert switch["actor"] == "p2a: Rotom-Wash"
+    assert switch["badges"] == ["ATK -1"]
+
+def test_battle_event_scanner_ignores_garbage():
+    scanner = BattleEventScanner()
+    # Malformed or unknown lines must not raise or emit events.
+    events = scanner.feed_lines(
+        [
+            "||",
+            "|-move| p1a: Garchomp",  # missing move id
+            "|-damage| p1a: Garchomp|not-a-number",
+            "|weather|rain",
+        ]
+    )
+    assert events == []

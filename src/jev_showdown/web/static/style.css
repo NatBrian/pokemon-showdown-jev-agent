@@ -144,6 +144,18 @@ body.arcade-theme {
   0%, 100% { opacity: 0.85; }
   50% { opacity: 1; }
 }
+/* Error state: unmistakable, not styled as normal progression */
+.arcade-btn.btn-error {
+  background: var(--red);
+  border-color: #fff;
+  outline-color: rgba(255, 51, 51, 0.45);
+  box-shadow: 0 0 14px var(--red), inset 0 0 10px rgba(255, 255, 255, 0.25);
+  animation: btn-pulse 1.2s infinite;
+}
+.arcade-btn.btn-error:hover:not(:disabled) {
+  background: #ff5555;
+  box-shadow: 0 0 22px var(--red), inset 0 0 10px rgba(255, 255, 255, 0.35);
+}
 
 .header-right {
   display: flex;
@@ -567,6 +579,7 @@ body.arcade-theme {
 .h-badge.switch { color: var(--cyan); }
 .h-badge.faint { color: var(--purple); }
 .h-badge.note { color: var(--text-dim); }
+.h-badge.stat { color: var(--green); }
 
 /* ---------- Center: Jev Input card boxes ---------- */
 .card-box {
@@ -809,10 +822,11 @@ body.arcade-theme {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
   margin-top: 8px;
-  gap: 8px;
+  gap: 6px 10px;
 }
-.decision-model { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; }
+.decision-model { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .completed-chip {
   font-family: var(--font-pixel);
   font-size: 7px;
@@ -1001,6 +1015,31 @@ body.arcade-theme {
   width: 40px; height: 34px;
   object-fit: contain;
   image-rendering: pixelated;
+}
+/* Estimated remaining-HP range of the action target */
+.result-hp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  min-width: 0;
+}
+.result-hp.hidden { display: none; }
+.result-hp-label {
+  font-family: var(--font-pixel);
+  font-size: 6px;
+  color: var(--yellow);
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+.result-hp-track {
+  flex: 1;
+  height: 8px;
+  max-width: 150px;
+  background: #262c4a;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  overflow: hidden;
 }
 
 /* ---------- Status bar ---------- */

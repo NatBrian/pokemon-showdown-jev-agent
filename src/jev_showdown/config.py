@@ -1,6 +1,12 @@
 import os
 from dataclasses import dataclass
+
 from dotenv import load_dotenv
+from poke_env.ps_client.server_configuration import (
+    LocalhostServerConfiguration,
+    ServerConfiguration,
+    ShowdownServerConfiguration,
+)
 
 @dataclass(frozen=True)
 class Settings:
@@ -13,6 +19,22 @@ class Settings:
     jev_timeout_seconds: float
     battle_format: str
     dashboard_port: int
+
+def server_configuration_for(server_url: str) -> ServerConfiguration:
+    """Map a configured server URL to a poke_env ServerConfiguration.
+
+    poke_env only ships two canned configurations: a local test server at
+    ``ws://localhost:8000/showdown/websocket`` and the public Showdown
+    server at ``wss://sim3.psim.us/showdown/websocket``. We route any
+    localhost/127.0.0.1 host to the local configuration (used by the
+    test/benchmark harness) and everything else to the public server.
+    """
+    host = (server_url or "").split("://")[-1].split("/")[0].lower()
+    host = host.split(":")[0]
+    if host in ("localhost", "127.0.0.1", ""):
+        return LocalhostServerConfiguration
+    return ShowdownServerConfiguration
+
 
 def load_settings() -> Settings:
     load_dotenv()

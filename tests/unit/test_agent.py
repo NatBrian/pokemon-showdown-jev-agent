@@ -160,3 +160,145 @@ async def test_choose_move_orchestrates_jev_turn_loop():
     # Three turns tracked end-to-end
     assert len(player.history_tracker.events) == 3
     assert mock_client.evaluate_decision.await_count == 3
+
+
+@pytest.mark.asyncio
+async def test_battle_finished_emits_battle_end_event():
+    battle_events: list[dict] = []
+    player = JevPlayer(
+        settings=_make_settings(),
+        jev_client=MagicMock(),
+        on_battle_event=battle_events.append,
+        start_listening=False,
+    )
+    battle = _make_battle(turn=9)
+    battle.battle_tag = "battle-gen9randombattle-1"
+    battle.won = True
+    battle.players = ("JevPlayer 1", "Opponent 9")
+    battle.player_username = "JevPlayer 1"
+    player._battles["battle-gen9randombattle-1"] = battle
+
+    player._battle_finished_callback(battle)
+
+    assert len(battle_events) == 1
+    event = battle_events[0]
+    assert event["type"] == "BATTLE_END"
+    assert event["won"] is True
+    assert event["total_turns"] == 9
+    assert event["winner"] == "JevPlayer 1"
+    assert event["battle_format"] == "gen9randombattle"
+
+
+@pytest.mark.asyncio
+async def test_battle_finished_loses_reports_lose():
+    battle_events: list[dict] = []
+    player = JevPlayer(
+        settings=_make_settings(),
+        jev_client=MagicMock(),
+        on_battle_event=battle_events.append,
+        start_listening=False,
+    )
+    battle = _make_battle()
+    battle.battle_tag = "battle-gen9randombattle-2"
+    battle.won = False
+    battle.players = ("JevPlayer 1", "Opponent 9")
+    battle.player_username = "JevPlayer 1"
+
+    player._battle_finished_callback(battle)
+
+    assert battle_events[0]["type"] == "BATTLE_END"
+    assert battle_events[0]["won"] is False
+    assert battle_events[0]["winner"] == "Opponent 9"
+
+
+@pytest.mark.asyncio
+async def test_battle_message_scanning_enriches_history():
+    player = JevPlayer(
+        settings=_make_settings(),
+        jev_client=MagicMock(),
+        start_listening=False,
+    )
+    battle = _make_battle()
+    battle.battle_tag = "battle-gen9randombattle-1"
+    battle.player_role = "p1"
+    player._battles["battle-gen9randombattle-1"] = battle
+
+    request_json = (
+        '{"side": {"pokemon": ['
+        '{"ident": "p1a: Garchomp", "condition": "357/357"}, '
+        '{"ident": "p2a: Heatran", "condition": "344/344"}]}}'
+    )
+    split_messages = [
+        [">battle-gen9randombattle-1", "start"],
+        ["", "request", request_json],
+        ["", "-move", "p2a: Heatran", "scald", "p1a: Garchomp"],
+        ["", "-damage", "p1a: Garchomp", "286/357"],
+        # The next turn marker closes (and flushes) the turn-1 actions.
+        ["", "turn", "2"],
+    ]
+    await player._handle_battle_message(split_messages)
+
+    events = player.history_tracker.events
+    assert len(events) == 1
+    event = events[0]
+    assert event["actor"] == "Opponent"
+    assert event["action"] == "Scald"
+    assert event["damage_pct"] == 20  # (357 - 286) / 357
+
+
+@pytest.mark.asyncio
+async def test_own_side_move_scanner_event_merges_into_decision():
+    player = JevPlayer(
+        settings=_make_settings(),
+        jev_client=MagicMock(),
+        start_listening=False,
+    )
+    battle = _make_battle(turn=4)
+    battle.battle_tag = "battle-gen9randombattle-1"
+    battle.player_role = "p1"
+    player._battles["battle-gen9randombattle-1"] = battle
+
+    request_json = (
+        '{"side": {"pokemon": ['
+        '{"ident": "p1a: Garchomp", "condition": "357/357"}, '
+        '{"ident": "p2a: Heatran", "condition": "344/344"}]}}'
+    )
+
+    # Turn 4 starts; the request arrives and choose_move records the
+    # decision card for this turn.
+    await player._handle_battle_message(
+        [
+            [">battle-gen9randombattle-1", "start"],
+            ["", "turn", "4"],
+            ["", "request", request_json],
+        ]
+    )
+    player.history_tracker.add_event(
+        turn=4, actor="Garchomp", action="Earthquake", note="confidence=0.90"
+    )
+
+    # Turn 4 resolution: opponent (faster) acts first, then our move echoes
+    # back; the next turn marker closes both actions.
+    await player._handle_battle_message(
+        [
+            [">battle-gen9randombattle-1", "x"],
+            ["", "-move", "p2a: Heatran", "scald", "p1a: Garchomp"],
+            ["", "-damage", "p1a: Garchomp", "300/357"],
+            ["", "-move", "p1a: Garchomp", "earthquake", "p2a: Heatran"],
+            ["", "-damage", "p2a: Heatran", "261/344"],
+            ["", "turn", "5"],
+        ]
+    )
+
+    events = player.history_tracker.events
+    # One decision card for us (scanned echo merged in) + one opponent card.
+    assert len(events) == 2
+    ours = events[0]
+    assert ours["actor"] == "Garchomp"
+    assert ours["action"] == "Earthquake"
+    assert ours["damage_pct"] == 24  # merged from the battle echo
+    assert ours["note"] == "confidence=0.90"
+    theirs = events[1]
+    assert theirs["actor"] == "Opponent"
+    assert theirs["action"] == "Scald"
+    assert theirs["damage_pct"] == 16

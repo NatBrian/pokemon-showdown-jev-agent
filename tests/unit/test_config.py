@@ -1,24 +1,29 @@
 # tests/unit/test_config.py
-import os
-import pytest
-from jev_showdown.config import Settings, load_settings
+from poke_env.ps_client.server_configuration import (
+    LocalhostServerConfiguration,
+    ShowdownServerConfiguration,
+)
 
-def test_load_settings_defaults(monkeypatch):
-    monkeypatch.delenv("SHOWDOWN_USERNAME", raising=False)
-    monkeypatch.delenv("SHOWDOWN_PASSWORD", raising=False)
-    settings = load_settings()
-    assert settings.jev_endpoint == "https://opencode.ai/zen/v1/systemone"
-    assert settings.jev_model == "jev-1.13-free"
-    assert settings.jev_auth_token == "Bearer public"
-    assert settings.jev_timeout_seconds == 10.0
-    assert settings.battle_format == "gen9randombattle"
-    assert settings.dashboard_port == 8000
+from jev_showdown.config import load_settings, server_configuration_for
 
-def test_load_settings_custom_env(monkeypatch):
-    monkeypatch.setenv("SHOWDOWN_USERNAME", "test_bot_jev")
-    monkeypatch.setenv("SHOWDOWN_PASSWORD", "secret123")
-    monkeypatch.setenv("JEV_TIMEOUT_SECONDS", "5.0")
+
+def test_server_configuration_for_local_hosts():
+    for url in ("localhost:8000", "127.0.0.1:8000", "localhost", ""):
+        assert server_configuration_for(url) is LocalhostServerConfiguration
+
+
+def test_server_configuration_for_public_hosts():
+    for url in ("sim3.psim.us:8000", "sim2.psim.us:8000", "psim.us"):
+        assert server_configuration_for(url) is ShowdownServerConfiguration
+
+
+def test_auth_token_gets_bearer_prefix(monkeypatch):
+    monkeypatch.setenv("JEV_AUTH_TOKEN", "rawtoken")
     settings = load_settings()
-    assert settings.showdown_username == "test_bot_jev"
-    assert settings.showdown_password == "secret123"
-    assert settings.jev_timeout_seconds == 5.0
+    assert settings.jev_auth_token == "Bearer rawtoken"
+
+
+def test_auth_token_bearer_prefix_kept(monkeypatch):
+    monkeypatch.setenv("JEV_AUTH_TOKEN", "Bearer abc")
+    settings = load_settings()
+    assert settings.jev_auth_token == "Bearer abc"

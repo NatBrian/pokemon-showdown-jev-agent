@@ -9,7 +9,7 @@ evaluation reproducible.
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 
 from jev_showdown.agent import JevPlayer
-from jev_showdown.config import Settings
+from jev_showdown.config import Settings, server_configuration_for
 from jev_showdown.decision.opencode_jev import JevSystemOneClient
 
 
@@ -26,17 +26,25 @@ async def run_benchmark(
     :param n_matches: Number of battles to run.
     :return: Jev win rate percentage, e.g. 60.0 for 3/5 wins.
     """
+    server_configuration = server_configuration_for(settings.showdown_server_url)
     jev_client = JevSystemOneClient(settings)
     jev_player = JevPlayer(
         settings=settings,
         jev_client=jev_client,
         battle_format=settings.battle_format,
+        server_configuration=server_configuration,
     )
 
     if opponent_type == "simple_heuristics":
-        opponent = SimpleHeuristicsPlayer(battle_format=settings.battle_format)
+        opponent = SimpleHeuristicsPlayer(
+            battle_format=settings.battle_format,
+            server_configuration=server_configuration,
+        )
     else:
-        opponent = RandomPlayer(battle_format=settings.battle_format)
+        opponent = RandomPlayer(
+            battle_format=settings.battle_format,
+            server_configuration=server_configuration,
+        )
 
     print(
         f"Starting benchmark: Jev vs {opponent_type} for {n_matches} "

@@ -2,56 +2,57 @@ from typing import Any
 from poke_env.battle import AbstractBattle
 from jev_showdown.battle.candidates import CandidateAction
 
+
+def _mon_view(mon: Any, *, revealed: bool = True) -> dict[str, Any]:
+    """Serialize a poke_env Pokemon into the snapshot schema."""
+    if mon is None or not revealed:
+        return {
+            "revealed": revealed,
+            "species": None,
+            "hp_fraction": 1.0,
+            "hp": None,
+            "max_hp": None,
+            "level": None,
+            "fainted": False,
+            "status": None,
+        }
+    status = getattr(mon, "status", None)
+    types = [getattr(getattr(mon, "type_1", None), "name", "")]
+    if getattr(mon, "type_2", None):
+        types.append(getattr(mon.type_2, "name", ""))
+    return {
+        "revealed": True,
+        "species": getattr(mon, "species", "Unknown"),
+        "hp_fraction": getattr(mon, "current_hp_fraction", 1.0),
+        "hp": getattr(mon, "current_hp", None),
+        "max_hp": getattr(mon, "max_hp", None),
+        "level": getattr(mon, "level", None),
+        "fainted": getattr(mon, "fainted", False),
+        "status": getattr(status, "name", None) if status is not None else None,
+        "types": types,
+    }
+
+
 class BattleSnapshotSerializer:
     def build_snapshot(self, battle: AbstractBattle, candidates: dict[str, CandidateAction]) -> dict[str, Any]:
         # Active Self
-        active_mon = getattr(battle, "active_pokemon", None)
-        self_active = {
-            "species": getattr(active_mon, "species", "Unknown"),
-            "hp_fraction": getattr(active_mon, "current_hp_fraction", 1.0),
-            "status": getattr(active_mon.status, "name", None) if active_mon and getattr(active_mon, "status", None) else None,
-            "types": [getattr(active_mon.type_1, "name", "")] + ([getattr(active_mon.type_2, "name", "")] if getattr(active_mon, "type_2", None) else []) if active_mon else [],
-        }
-        
+        self_active = _mon_view(getattr(battle, "active_pokemon", None))
+
         # Self Team (6 known)
-        self_team = []
-        for mon in getattr(battle, "team", {}).values():
-            self_team.append({
-                "species": getattr(mon, "species", "Unknown"),
-                "hp_fraction": getattr(mon, "current_hp_fraction", 1.0),
-                "fainted": getattr(mon, "fainted", False),
-                "status": getattr(mon.status, "name", None) if getattr(mon, "status", None) else None,
-            })
-            
+        self_team = [_mon_view(mon) for mon in getattr(battle, "team", {}).values()]
+
         # Active Opponent
-        opp_mon = getattr(battle, "opponent_active_pokemon", None)
-        opp_active = {
-            "species": getattr(opp_mon, "species", "Unknown") if opp_mon else "Unknown",
-            "hp_fraction": getattr(opp_mon, "current_hp_fraction", 1.0) if opp_mon else 1.0,
-            "status": getattr(opp_mon.status, "name", None) if opp_mon and getattr(opp_mon, "status", None) else None,
-            "types": [getattr(opp_mon.type_1, "name", "")] + ([getattr(opp_mon.type_2, "name", "")] if getattr(opp_mon, "type_2", None) else []) if opp_mon else [],
-        }
-        
+        opp_active = _mon_view(getattr(battle, "opponent_active_pokemon", None))
+
         # Opponent Team Fog of War: 6 slots total
         # Fill revealed species from battle.opponent_team, rest as unrevealed slots
         opp_team_slots = []
         revealed_mons = list(getattr(battle, "opponent_team", {}).values())
         for mon in revealed_mons[:6]:
-            opp_team_slots.append({
-                "revealed": True,
-                "species": getattr(mon, "species", "Unknown"),
-                "hp_fraction": getattr(mon, "current_hp_fraction", 1.0),
-                "fainted": getattr(mon, "fainted", False),
-                "status": getattr(mon.status, "name", None) if getattr(mon, "status", None) else None,
-            })
+            opp_team_slots.append(_mon_view(mon))
         while len(opp_team_slots) < 6:
-            opp_team_slots.append({
-                "revealed": False,
-                "species": None,
-                "hp_fraction": 1.0,
-                "fainted": False,
-                "status": None
-            })
+            # Unrevealed Poké Ball: capacity slot, nothing is guessed.
+            opp_team_slots.append(_mon_view(None, revealed=False))
 
         return {
             "state_schema": 1,

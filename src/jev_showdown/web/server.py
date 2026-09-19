@@ -30,6 +30,11 @@ class ConnectionManager:
 
     def __init__(self) -> None:
         self.active_connections: list[WebSocket] = []
+        self._loop: asyncio.AbstractEventLoop | None = None
+
+    def set_loop(self, loop: asyncio.AbstractEventLoop) -> None:
+        """Remember the dashboard's event loop (set at app startup)."""
+        self._loop = loop
 
     async def connect(self, websocket: WebSocket) -> None:
         """Accept the connection and register it as active."""
@@ -54,6 +59,22 @@ class ConnectionManager:
             except Exception:
                 self.disconnect(connection)
 
+    def publish(self, message: dict[str, Any]) -> None:
+        """Thread-safe broadcast, callable from any thread or event loop.
+
+        Battle telemetry is produced on poke_env's background POKE_LOOP
+        thread, while WebSocket sends must run on the dashboard loop;
+        ``run_coroutine_threadsafe`` bridges the two. No-op when no loop
+        has been captured yet or the loop is no longer running.
+        """
+        loop = self._loop
+        if loop is None or loop.is_closed():
+            return
+        try:
+            asyncio.run_coroutine_threadsafe(self.broadcast(message), loop)
+        except RuntimeError:
+            pass
+
 
 def create_app(
     settings: Settings,
@@ -73,6 +94,11 @@ def create_app(
 
     app.state.manager = manager
     app.state.settings = settings
+
+    @app.on_event("startup")
+    async def _capture_dashboard_loop() -> None:
+        # Needed for thread-safe telemetry publishing (see ConnectionManager).
+        manager.set_loop(asyncio.get_running_loop())
 
     @app.get("/", response_class=HTMLResponse)
     async def get_index() -> str:

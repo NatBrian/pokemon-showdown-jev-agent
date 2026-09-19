@@ -82,13 +82,6 @@ function frontSpriteUrl(species) {
     : "";
 }
 
-function backSpriteUrl(species) {
-  const slug = speciesSlug(species);
-  return slug
-    ? "https://img.pokemondb.net/sprites/black-white/anim/back/" + slug + ".gif"
-    : "";
-}
-
 function initials(species) {
   const s = String(species || "??").trim();
   return s.length <= 2 ? s.toUpperCase() : s.slice(0, 2).toUpperCase();
@@ -234,14 +227,34 @@ function setStatusLeft(text) {
 /* ---------------- STATUS_UPDATE ---------------- */
 
 function handleStatusUpdate(data) {
-  const status = data.status || data.message || "";
-  if (status) {
-    setStartButton(status.toUpperCase(), true);
+  const status = (data.status || data.message || "").toUpperCase();
+  const btn = $("start-btn");
+  if (data.error) {
+    // Clear, unmistakable error state (connection/auth/search failure).
+    state.battleActive = false;
+    setStartButton("RETRY BATTLE", false);
+    btn.classList.add("btn-error");
+    setStatusLeft(status + " | SAME GAME. DEEPER INSIGHT.");
+    // Back to idle in the Jev Output panel (no inference is in flight).
+    setLoaderStep(0, null, false);
+    return;
   }
-  state.battleActive = true;
-  // The only region that should visibly "wait" is Jev Output.
-  setLoaderStep(1, "JEV PROCESSING...");
-  setStatusLeft(status ? status.toUpperCase() + " | AWAITING SHOWDOWN BATTLE" : "CONNECTING...");
+  btn.classList.remove("btn-error");
+  const busy = data.busy === undefined ? true : !!data.busy;
+  if (busy) {
+    state.battleActive = true;
+    setStartButton(status || "CONNECTING...", true);
+    // The only region that should visibly "wait" is Jev Output.
+    setLoaderStep(1, "JEV PROCESSING...");
+    setStatusLeft(status + " | AWAITING SHOWDOWN BATTLE");
+  } else {
+    state.battleActive = false;
+    // Back in the idle state: one clear button again.
+    setStartButton("START JEV BATTLE", false);
+    setStatusLeft(status === "READY"
+      ? "READY FOR SHOWDOWN BATTLE | SAME GAME. DEEPER INSIGHT."
+      : (status || "READY") + " | SAME GAME. DEEPER INSIGHT.");
+  }
 }
 
 function onStartBattleClick() {
@@ -298,7 +311,7 @@ function handleTurnDecision(data) {
   renderHistory(recentHistory);
 
   // Bottom action strip
-  renderActionStrip(chosenId, snapshot, criteria, latency);
+  renderActionStrip(chosenId, snapshot, criteria, latency, validation);
 
   // Status bar
   renderStatusBar(turn, chosenId, latency, snapshot);
@@ -323,11 +336,11 @@ function handleTurnDecision(data) {
     banner.classList.add("hidden");
   }
 
-  // Reset button for the next battle window
+  // The battle is live: the button shows the observable playing state.
   if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {
     setStartButton("START JEV BATTLE", false);
   } else {
-    setStartButton("BATTLE IN PROGRESS", true);
+    setStartButton("JEV PLAYING", true);
   }
 }
 
@@ -348,30 +361,47 @@ function renderBattleContext(snapshot) {
   setText("terrain-label", fields);
 }
 
+function fmtHpLine(mon) {
+  // Prefer exact values when the protocol provides them ("HP 261 / 344"),
+  // fall back to a percentage otherwise.
+  if (mon && mon.hp != null && mon.max_hp) {
+    return {
+      bar: mon.max_hp > 0 ? mon.hp / mon.max_hp : 1.0,
+      text: Math.round(mon.hp) + " / " + Math.round(mon.max_hp),
+      pct: fmtPct(mon.hp / mon.max_hp),
+    };
+  }
+  const frac = mon && mon.hp_fraction != null ? Number(mon.hp_fraction) : 1.0;
+  return { bar: frac, text: fmtPct(frac), pct: fmtPct(frac) };
+}
+
+function renderHpCard(prefix, mon) {
+  if (!mon) return;
+  const info = fmtHpLine(mon);
+  const bar = $(prefix + "-hp-bar");
+  bar.style.width = Math.max(0, Math.min(100, info.bar * 100)) + "%";
+  bar.className = "hp-fill " + hpClass(info.bar);
+  const textEl = $(prefix + "-hp-text");
+  textEl.textContent = info.text;
+  textEl.title = info.pct;
+}
+
 function renderActiveMons(snapshot) {
   const selfMon = snapshot.self && snapshot.self.active_pokemon;
   const oppMon = snapshot.opponent && snapshot.opponent.active_pokemon;
 
   if (selfMon) {
     setText("self-name", selfMon.species || "---");
-    const frac = selfMon.hp_fraction != null ? Number(selfMon.hp_fraction) : 1.0;
-    const bar = $("self-hp-bar");
-    bar.style.width = Math.max(0, Math.min(100, frac * 100)) + "%";
-    bar.className = "hp-fill " + hpClass(frac);
-    setText("self-hp-text", fmtPct(frac));
+    renderHpCard("self", selfMon);
     fillTypeTags($("self-types"), selfMon.types);
     renderMonStatus("self-status", selfMon.status);
     if (selfMon.level != null) setText("self-level", "Lv. " + selfMon.level);
-    showSprite($("self-sprite"), $("self-avatar"), backSpriteUrl(selfMon.species), selfMon.species);
+    showSprite($("self-sprite"), $("self-avatar"), frontSpriteUrl(selfMon.species), selfMon.species);
   }
 
   if (oppMon) {
     setText("opp-name", oppMon.species || "???");
-    const frac = oppMon.hp_fraction != null ? Number(oppMon.hp_fraction) : 1.0;
-    const bar = $("opp-hp-bar");
-    bar.style.width = Math.max(0, Math.min(100, frac * 100)) + "%";
-    bar.className = "hp-fill " + hpClass(frac);
-    setText("opp-hp-text", fmtPct(frac));
+    renderHpCard("opp", oppMon);
     fillTypeTags($("opp-types"), oppMon.types);
     renderMonStatus("opp-status", oppMon.status);
     if (oppMon.level != null) setText("opp-level", "Lv. " + oppMon.level);
@@ -681,6 +711,13 @@ function renderRightPanel(jev, validation, chosenId, snapshot, latency) {
   if (confBar) confBar.style.width = (confidence != null ? Math.max(0, Math.min(100, confidence * 100)) : 0) + "%";
 
   setText("decision-model", jev && jev.model ? "MODEL: " + String(jev.model).toUpperCase() : "MODEL: --");
+  // Reported token usage and cost (observable model I/O, never invented).
+  if (jev && (jev.input_tokens != null || jev.output_tokens != null || jev.cost != null)) {
+    const tin = jev.input_tokens != null ? jev.input_tokens : "--";
+    const tout = jev.output_tokens != null ? jev.output_tokens : "--";
+    const cost = jev.cost != null ? String(jev.cost) : "0";
+    setText("decision-usage", "IN " + tin + " \u2022 OUT " + tout + " \u2022 COST $" + cost);
+  }
   const chip = $("decision-completed");
   chip.classList.toggle("hidden", !completed);
 
@@ -746,6 +783,11 @@ function renderHistory(events) {
       badges.appendChild(makeEl("span", "h-badge switch", "SWITCH"));
     }
     if (ev.fainted) badges.appendChild(makeEl("span", "h-badge faint", "FAINT"));
+    if (Array.isArray(ev.badges)) {
+      ev.badges.forEach((b) => {
+        badges.appendChild(makeEl("span", "h-badge stat", String(b)));
+      });
+    }
     if (ev.note) {
       const note = makeEl("span", "h-badge note", String(ev.note));
       note.title = String(ev.note);
@@ -758,20 +800,23 @@ function renderHistory(events) {
 
 /* ---------------- Bottom action strip ---------------- */
 
-function renderActionStrip(chosenId, snapshot, criteria, latency) {
+function renderActionStrip(chosenId, snapshot, criteria, latency, validation) {
   const legal = snapshot && Array.isArray(snapshot.legal_actions) ? snapshot.legal_actions : [];
   const chosen = legal.find((a) => a.id === chosenId) || null;
   const label = chosen ? (chosen.label || chosen.id) : (chosenId ? String(chosenId) : "ACTION");
   const facts = (chosen && chosen.facts) || {};
   const crit = criteria && criteria[chosenId] ? criteria[chosenId] : "";
 
-  setText("validate-status", chosenId ? "LEGAL ACTION" : "PENDING");
+  setText("validate-status", chosenId ? (validation && validation.is_fallback ? "FALLBACK VALIDATED" : "LEGAL ACTION") : "PENDING");
   setText(
     "validate-desc",
     chosenId
       ? label.toUpperCase() + " is a valid " + ((chosen && chosen.kind) || "action") + " in the current state."
       : "Validating Jev output against legal candidates...",
   );
+  // Adapter validation is near-instant: show the measured time when known.
+  const valMs = validation && validation.latency_ms != null ? Number(validation.latency_ms) : null;
+  setText("validate-time", valMs != null && Number.isFinite(valMs) ? valMs.toFixed(2) + " MS" : "< 1 MS");
 
   setText("act-status", chosenId ? "SEND " + label.toUpperCase() : "STANDBY");
   setText("act-desc", "Execute action command and await game response");
@@ -788,13 +833,29 @@ function renderActionStrip(chosenId, snapshot, criteria, latency) {
       ? (ko ? "TARGET LIKELY FAINED (next turn state computed)." : "TARGET SURVIVES (next turn state computed).")
       : "Next turn state...",
   );
+  // Estimated remaining HP of the target after the chosen action.
+  const hpWrap = $("result-hp-wrap");
+  const oppMon = snapshot && snapshot.opponent && snapshot.opponent.active_pokemon;
+  if (chosenId && Array.isArray(facts.estimated_damage_range) && facts.estimated_damage_range.length === 2) {
+    const base = oppMon && oppMon.hp_fraction != null ? Number(oppMon.hp_fraction) * 100 : 100;
+    const hi = Math.max(0, Math.round(base - facts.estimated_damage_range[0]));
+    const lo = Math.max(0, Math.round(base - facts.estimated_damage_range[1]));
+    const [low, high] = hi < lo ? [hi, lo] : [lo, hi];
+    hpWrap.classList.remove("hidden");
+    setText("result-hp-label", "HP \u2248 " + low + " \u2013 " + high + "%");
+    const fill = $("result-hp-fill");
+    fill.style.width = Math.max(2, (low + high) / 2) + "%";
+    fill.className = "hp-fill " + hpClass((low + high) / 200);
+  } else {
+    hpWrap.classList.add("hidden");
+  }
   // Small target sprite in the result panel.
   const resultSprite = $("result-sprite");
   clearEl(resultSprite);
-  if (snapshot && snapshot.opponent && snapshot.opponent.active_pokemon && snapshot.opponent.active_pokemon.species) {
+  if (oppMon && oppMon.species) {
     const img = document.createElement("img");
     img.alt = "";
-    img.src = frontSpriteUrl(snapshot.opponent.active_pokemon.species);
+    img.src = frontSpriteUrl(oppMon.species);
     img.onerror = () => img.remove();
     resultSprite.appendChild(img);
   }

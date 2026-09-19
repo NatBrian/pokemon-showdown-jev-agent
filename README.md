@@ -6,7 +6,7 @@ This repository will contain the Generation 9 Random Battles agent, its Showdown
 
 Phase 0 is complete for Jev/OpenCode connectivity. No game-playing code has been implemented yet.
 
-The verified integration finding is recorded in [the Phase 0 research log](docs/research/phase-0-jev-opencode.md).
+The verified integration finding is recorded in [the Phase 0 research log](docs/research/phase-0-jev-opencode.md). The detailed Phase 1 research and proposed architecture are in [the Phase 1 research document](docs/research/phase-1-research-and-architecture.md).
 
 ## Planned phases
 

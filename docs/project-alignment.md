@@ -510,6 +510,16 @@ The arcade-retro reference image is:
 
 - [Arcade dashboard mockup v3](design/dashboard-mockup-v3.png)
 
+The owner also requested that the cleaner visual retain the previously discussed transparency features. The next refinement restores:
+
+- a compact `TURN HISTORY` section inside the live battle area;
+- an `INSPECT DATA` section inside the Jev Output area with `STATE`, `QUESTION`, and `RESPONSE` tabs;
+- the fast bottom `VALIDATE`, `ACT`, and `RESULT` sequence.
+
+The updated reference is:
+
+- [Arcade dashboard mockup v4](design/dashboard-mockup-v4.png)
+
 ## Related documents
 
 - [Phase 0 Jev/OpenCode research](research/phase-0-jev-opencode.md)

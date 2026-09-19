@@ -452,8 +452,48 @@ The following items have not been finalized and must not be silently assumed:
 
 These are discussion items, not implementation decisions.
 
+## 18. Refined understanding of the harness and Jev boundary
+
+The harness is not just the `poke-env` library. It is the complete application boundary around Jev:
+
+~~~
+Showdown -> poke-env -> deterministic evaluator -> Jev -> validator -> Showdown
+~~~
+
+`poke-env` supplies the real battle state and legal-order interface. The project adds a thin deterministic evaluator that calculates legal candidate actions, type effectiveness, damage ranges, KO estimates, priority/speed facts when knowable, field consequences, switch safety, and Terastallization legality.
+
+Jev is responsible for the qualitative tactical choice among those legal, annotated candidates. Jev should not be asked to calculate the type chart, reproduce the damage formula, parse raw protocol, or invent a Showdown command.
+
+The `poke-env` Gen 9 calculator returns possible damage ranges, but its documentation notes that some edge cases are ignored. The dashboard must therefore label damage as a calculated range or estimate with assumptions, especially when opponent items, abilities, EVs, IVs, or exact stats are unknown.
+
+The information shown to Jev is a compact information-set snapshot containing current public state, field conditions, legal actions, deterministic annotations, and uncertainty markers. The raw protocol transcript and hidden server state are not sent to Jev.
+
+For the MVP, Jev returns a typed action choice, confidence, and probabilities. The adapter validates the answer, maps it to a legal BattleOrder, sends it to Showdown, and uses a legal fallback on provider or validation failure.
+
+## 19. Refined dashboard pipeline
+
+The dashboard should show more than Pokémon input and Jev output. It should visualize the observable project pipeline:
+
+~~~
+OBSERVE -> CALCULATE -> PRESENT OPTIONS -> JEV DECIDES -> VALIDATE -> ACT -> RESULT
+~~~
+
+The dashboard can show the exact state, question criteria, deterministic facts, Jev response, validation status, submitted action, latency, cost, and resulting battle event. It must not invent or display hidden chain-of-thought that Jev does not return.
+
+The visual should label the origin of information:
+
+- `Showdown state`
+- `Calculated by harness`
+- `Jev output`
+- `Adapter action`
+
+The dashboard concept should use `Typed decision evaluation` rather than `Model inference` as a label, because the former is transparent about what is actually observable.
+
+The refined dashboard mockup is a visual reference only and is not final application code:
+
+- [Refined dashboard mockup](design/dashboard-mockup-v2.png)
+
 ## Related documents
 
 - [Phase 0 Jev/OpenCode research](research/phase-0-jev-opencode.md)
 - [Phase 1 research and architecture](research/phase-1-research-and-architecture.md)
-

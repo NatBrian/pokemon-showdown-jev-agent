@@ -612,6 +612,70 @@ The `poke-env` package exports these players and provides battle/cross-evaluatio
 
 A single human match cannot establish that Jev is as strong as a human. Human comparability requires a sustained public-ladder run or a future controlled match set against established agents, with game count, rating uncertainty, dates, and replay evidence reported.
 
+## 16. Refined harness, deterministic evaluator, and Jev contract
+
+The word harness refers to more than the `poke-env` dependency. The project boundary is:
+
+~~~
+Showdown server
+    -> poke-env battle adapter
+    -> deterministic evaluator
+    -> Jev decision adapter
+    -> legal-order validator
+    -> Showdown order
+~~~
+
+`poke-env` supplies the battle-facing state and order interface. Its battle object exposes the active Pokémon, available moves, available switches, field/weather state, side conditions, team state, current request, turn, Terastallization availability, and battle result. Its Pokémon and Move objects expose known types, HP, status, stat boosts, known moves, items/abilities when revealed, move type, category, power, accuracy, priority, PP, and related move effects.
+
+The deterministic evaluator is a thin project layer around that state. It computes legal candidate records and derived facts such as type effectiveness, immunity, STAB, damage ranges, estimated KO status, priority, speed facts when known, hazard/status consequences, switch safety, and Tera legality. It does not make the strategic decision.
+
+The Gen 9 calculator in `poke-env` can return minimum and maximum possible damage rolls. Its documentation also notes that some edge cases are ignored and behavior may deviate from the official calculator. Therefore, the project must display damage as a calculated range or estimate with assumptions, not as universally exact truth. Unknown opponent items, abilities, EVs, IVs, or exact stats must remain unknown or conditional.
+
+Jev receives a compact information-set snapshot, not raw protocol text. The snapshot contains the current turn/request, public self and opponent state, field conditions, legal candidate action IDs, deterministic annotations, uncertainty markers, and a typed Choice question. Jev does not receive hidden server state, raw in-memory order objects, or permission to invent illegal actions.
+
+For the MVP, Jev returns one typed action choice with confidence and probabilities. The application then validates the candidate ID, maps it to the current legal order, and sends it to Showdown. Provider errors, malformed answers, stale requests, and timeouts use a legal fallback.
+
+## 17. Observable pipeline and dashboard truth
+
+The dashboard should expose this complete application pipeline:
+
+~~~
+OBSERVE
+  Showdown state and public information
+      ->
+CALCULATE
+  deterministic facts and action annotations
+      ->
+PRESENT OPTIONS
+  legal moves, switches, and Tera variants
+      ->
+JEV DECIDES
+  typed choice, confidence, probability distribution
+      ->
+VALIDATE
+  candidate and current-request legality checks
+      ->
+ACT
+  exact BattleOrder submitted to Showdown
+      ->
+RESULT
+  damage, status, switch, faint, or win/loss update
+~~~
+
+This is the truthful observable pipeline. We can show the complete Jev input, question criteria, deterministic facts, Jev output, validation result, action, timing, usage, cost, and result. We cannot show internal latent computation or hidden chain-of-thought that Jev does not return, and the dashboard must not fabricate it.
+
+## 18. Dashboard design consequence
+
+The visual should be organized around the pipeline rather than a generic analytics screen:
+
+- left: live battle and teams;
+- center: Observe -> Calculate -> Options -> Jev Decides -> Validate -> Act -> Result;
+- right: typed choice, confidence, probabilities, and action facts;
+- bottom: turn timeline and current result;
+- optional inspector: structured state, question, response, and validation details.
+
+Labels should distinguish data origins: `Showdown state`, `Calculated by harness`, `Jev output`, and `Adapter action`. The decision card should use wording such as `Typed decision evaluation`, not `Model inference`, to avoid implying access to hidden reasoning.
+
 ## 15. Reproducible difficulty progression
 
 Pokémon Showdown has a public rated ladder, but it does not provide a fixed sequence of opponents labeled easy, medium, and hard. Public matchmaking selects opponents from the active player pool, and the difficulty changes with the population, rating, time, and account history. Elo, GXE, and Glicko-1 summarize performance; they are not a scripted difficulty ladder.
@@ -650,3 +714,6 @@ The resulting evaluation has three separate claims:
 - [poke-env battle API](https://poke-env.readthedocs.io/en/stable/modules/battle.html)
 - [poke-env player API](https://poke-env.readthedocs.io/en/stable/modules/player.html)
 - [poke-env damage calculator API](https://poke-env.readthedocs.io/en/stable/modules/damage_calculator.html)
+- [poke-env damage calculator module](https://poke-env.readthedocs.io/en/stable/modules/calc.html)
+- [poke-env Pokémon API](https://poke-env.readthedocs.io/en/stable/modules/pokemon.html)
+- [poke-env Move API](https://poke-env.readthedocs.io/en/stable/modules/move.html)

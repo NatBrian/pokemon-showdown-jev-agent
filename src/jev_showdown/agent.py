@@ -72,6 +72,7 @@ class JevPlayer(Player):
         fallback ladder takes over, so the battle never stalls.
         """
         candidates: dict[str, CandidateAction] = {}
+        snapshot: dict[str, Any] | None = None
         try:
             candidates = build_candidate_actions(battle)
             criteria = annotate_candidates_with_facts(battle, candidates)
@@ -94,7 +95,7 @@ class JevPlayer(Player):
                 candidates, battle, f"Order resolution error: {exc}"
             )
 
-        self._record_turn(battle, candidates, jev_res, validated)
+        self._record_turn(battle, candidates, jev_res, validated, snapshot)
         return validated.order
 
     def _record_turn(
@@ -103,6 +104,7 @@ class JevPlayer(Player):
         candidates: dict[str, CandidateAction],
         jev_res: JevDecisionResponse,
         validated: ValidatedOrder,
+        snapshot: dict[str, Any] | None = None,
     ) -> None:
         """Track the resolved turn and dispatch telemetry if a hook is set."""
         turn = self._safe_turn(battle)
@@ -135,6 +137,7 @@ class JevPlayer(Player):
         )
 
         event_data: dict[str, Any] = {
+            "type": "TURN_DECISION",
             "turn": turn,
             "battle_format": getattr(battle, "format", "unknown"),
             "chosen_id": validated.chosen_id,
@@ -142,6 +145,13 @@ class JevPlayer(Player):
             "kind": kind,
             "is_fallback": validated.is_fallback,
             "fallback_reason": validated.fallback_reason,
+            "snapshot": snapshot,
+            "validation": {
+                "chosen_id": validated.chosen_id,
+                "is_fallback": validated.is_fallback,
+                "fallback_reason": validated.fallback_reason,
+                "legal_candidates": len(candidates),
+            },
             "jev": {
                 "model": jev_res.model,
                 "choice": jev_res.choice,

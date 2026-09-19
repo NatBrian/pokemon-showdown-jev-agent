@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUTONOMOUS "POKÉMON BATTLE" AGENT • POWERED BY JEV</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body class="arcade-theme">
+  <!-- CRT overlays -->
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="crt-vignette" aria-hidden="true"></div>
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="pokeball-logo" aria-hidden="true">
+        <span class="pokeball-core"></span>
+      </div>
+      <div class="header-titles">
+        <h1 class="pixel-title">AUTONOMOUS POKÉMON BATTLE AGENT</h1>
+        <p class="pixel-subtitle">GEN 9 RANDOM BATTLES &bull; POWERED BY JEV</p>
+      </div>
+    </div>
+    <div class="header-center">
+      <button id="start-btn" class="arcade-btn" type="button">START JEV BATTLE</button>
+    </div>
+    <div class="header-right">
+      <span class="badge badge-cyan">&#9654; OBSERVABLE DATA</span>
+      <span id="latency-badge" class="badge badge-purple">&#9889; LATENCY -- MS</span>
+      <span id="cost-badge" class="badge badge-green">&#9673; COST $0</span>
+      <span class="header-tagline">SAME GAME.<br>DEEPER INSIGHT.</span>
+    </div>
+  </header>
+
+  <!-- ===================== 3-COLUMN MAIN VIEWPORT ===================== -->
+  <main class="dashboard-grid">
+
+    <!-- ============ LEFT: LIVE BATTLE ============ -->
+    <section class="panel panel-battle" aria-label="Live Battle">
+      <div class="panel-header">
+        <span class="panel-title panel-title-cyan">&#9679; LIVE BATTLE</span>
+        <span id="turn-badge" class="badge-mini">TURN --</span>
+      </div>
+
+      <div class="battle-context">
+        <span id="format-label">GEN 9 RANDOM BATTLE</span>
+        <span class="ctx-sep">|</span>
+        <span>WEATHER: <b id="weather-label">NONE</b></span>
+        <span class="ctx-sep">|</span>
+        <span>TERRAIN: <b id="terrain-label">NONE</b></span>
+      </div>
+
+      <!-- Arena -->
+      <div class="arena-view">
+        <div id="prompt-label" class="battle-prompt">AWAITING BATTLE&hellip;</div>
+
+        <!-- Opponent active Pokémon -->
+        <div id="opp-card" class="pokemon-card opponent">
+          <div class="mon-sprite">
+            <div id="opp-avatar" class="mon-avatar">??</div>
+            <img id="opp-sprite" class="mon-img" alt="" src="" onerror="this.style.display='none'">
+          </div>
+          <div class="mon-info">
+            <div class="mon-header">
+              <span id="opp-name" class="mon-name">???</span>
+              <span id="opp-level" class="mon-level"></span>
+              <span id="opp-status" class="mon-status hidden"></span>
+            </div>
+            <div id="opp-types" class="type-tags"></div>
+            <div class="hp-bar-container">
+              <div id="opp-hp-bar" class="hp-fill hp-full"></div>
+            </div>
+            <div class="hp-line">
+              <span class="hp-caption">HP</span>
+              <span id="opp-hp-text" class="hp-text">--%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Player active Pokémon -->
+        <div id="self-card" class="pokemon-card player">
+          <div class="mon-info">
+            <div class="mon-header">
+              <span id="self-name" class="mon-name">---</span>
+              <span id="self-level" class="mon-level"></span>
+              <span id="self-status" class="mon-status hidden"></span>
+            </div>
+            <div id="self-types" class="type-tags"></div>
+            <div class="hp-bar-container">
+              <div id="self-hp-bar" class="hp-fill hp-full"></div>
+            </div>
+            <div class="hp-line">
+              <span class="hp-caption">HP</span>
+              <span id="self-hp-text" class="hp-text">--%</span>
+            </div>
+          </div>
+          <div class="mon-sprite">
+            <div id="self-avatar" class="mon-avatar">??</div>
+            <img id="self-sprite" class="mon-img" alt="" src="" onerror="this.style.display='none'">
+          </div>
+        </div>
+      </div>
+
+      <!-- Team rows: fog-of-war opponent slots vs known player team -->
+      <div class="teams-container">
+        <div class="team-row">
+          <span class="team-label team-label-opp">OPPONENT TEAM</span>
+          <div id="opp-team-slots" class="team-slots" aria-label="Opponent team (fog of war)"></div>
+        </div>
+        <div class="team-row">
+          <span class="team-label team-label-self">YOUR TEAM</span>
+          <div id="self-team-slots" class="team-slots" aria-label="Your team"></div>
+        </div>
+      </div>
+
+      <!-- Turn History -->
+      <div class="turn-history-section">
+        <div class="section-head">
+          <span class="sub-header">TURN HISTORY</span>
+          <button id="history-expand" class="mini-btn" type="button">EXPAND &#9662;</button>
+        </div>
+        <div id="history-cards" class="history-list">
+          <span class="empty-note">NO EVENTS YET</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CENTER: JEV INPUT ============ -->
+    <section class="panel panel-input" aria-label="Jev Input">
+      <div class="panel-header">
+        <span class="panel-title panel-title-blue">&#9635; JEV INPUT</span>
+        <span class="source-tag">CALCULATED BY HARNESS</span>
+      </div>
+
+      <div class="card-box">
+        <span class="box-title">BATTLE STATE (SHOWDOWN)</span>
+        <div id="state-summary" class="box-content">AWAITING BATTLE STATE FROM SHOWDOWN&hellip;</div>
+      </div>
+
+      <div class="card-box">
+        <span class="box-title">FIELD CONDITIONS</span>
+        <div id="field-summary" class="box-content">WEATHER: NONE | TERRAIN: NONE | TERA: --</div>
+      </div>
+
+      <div class="card-box">
+        <span class="box-title">CALCULATED FACTS</span>
+        <div id="facts-summary" class="box-content facts-grid">
+          <span class="empty-note">NO FACTS CALCULATED YET</span>
+        </div>
+      </div>
+
+      <div class="card-box">
+        <span class="box-title" id="legal-actions-title">LEGAL ACTIONS</span>
+        <div id="legal-actions-list" class="action-list">
+          <span class="empty-note">NO LEGAL ACTIONS YET</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RIGHT: JEV OUTPUT ============ -->
+    <section class="panel panel-output" aria-label="Jev Output">
+      <div class="panel-header">
+        <span class="panel-title panel-title-magenta">&#9679; JEV OUTPUT</span>
+        <span class="source-tag">API INFERENCE (MODEL)</span>
+      </div>
+
+      <!-- Fallback alert (adapter attribution, never Jev output) -->
+      <div id="fallback-banner" class="alert-banner hidden" role="alert">
+        <span id="fallback-banner-text">JEV FAILED — FALLBACK USED</span>
+        <span id="fallback-action-line" class="fallback-action"></span>
+      </div>
+
+      <!-- Processing / inference loader -->
+      <div id="processing-loader" class="loader-box">
+        <div class="loader-main">
+          <div class="arcade-spinner" aria-hidden="true"></div>
+          <div class="loader-text">
+            <div id="loader-title" class="loader-title">JEV IDLE</div>
+            <div id="loader-latency" class="loader-latency">API INFERENCE -- MS</div>
+          </div>
+        </div>
+        <ul id="loader-checklist" class="checklist">
+          <li class="todo" data-step="0">Input received</li>
+          <li class="todo" data-step="1">Calling model API...</li>
+          <li class="todo" data-step="2">Waiting for response...</li>
+          <li class="todo" data-step="3">Response received</li>
+          <li class="todo" data-step="4">Parsing decision</li>
+        </ul>
+      </div>
+
+      <!-- Decision card -->
+      <div class="card-box decision-card">
+        <span class="box-title">DECISION (JEV OUTPUT)</span>
+        <div class="decision-grid">
+          <div class="decision-choice">
+            <span class="field-label">CHOICE</span>
+            <span id="chosen-action" class="chosen-badge">AWAITING DECISION</span>
+            <span id="chosen-kind" class="kind-badge hidden"></span>
+          </div>
+          <div class="decision-confidence">
+            <span class="field-label">CONFIDENCE</span>
+            <span id="confidence-val" class="conf-badge">--%</span>
+            <div class="conf-track"><div id="confidence-bar" class="conf-fill"></div></div>
+          </div>
+        </div>
+        <div class="decision-foot">
+          <span id="decision-model" class="decision-model">MODEL: --</span>
+          <span id="decision-completed" class="completed-chip hidden">COMPLETED</span>
+        </div>
+      </div>
+
+      <!-- Probability distribution -->
+      <div class="card-box">
+        <span class="box-title">PROBABILITIES (JEV OUTPUT)</span>
+        <div id="prob-bars" class="prob-container">
+          <span class="empty-note">NO INFERENCE YET</span>
+        </div>
+      </div>
+
+      <!-- Inspect Data: raw observable data for technical viewers -->
+      <div class="inspect-section">
+        <div class="section-head">
+          <span class="sub-header">INSPECT DATA</span>
+          <button id="inspect-expand" class="mini-btn" type="button">EXPAND &#9662;</button>
+        </div>
+        <div class="tab-header">
+          <button class="tab-btn active" type="button" onclick="switchTab('state', this)">STATE</button>
+          <button class="tab-btn" type="button" onclick="switchTab('question', this)">QUESTION</button>
+          <button class="tab-btn" type="button" onclick="switchTab('response', this)">RESPONSE</button>
+        </div>
+        <div id="inspect-preview" class="inspect-preview">TURN -- | ACTIVE: --- | LEGAL ACTIONS --</div>
+        <pre id="inspect-content" class="inspect-box hidden"></pre>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== BOTTOM FAST ACTION STRIP ===================== -->
+  <footer class="action-strip">
+    <div id="validate-panel" class="strip-panel strip-validate">
+      <div class="strip-head">
+        <span class="strip-icon icon-check">&#10003;</span>
+        <span class="strip-title">VALIDATE</span>
+        <span class="strip-source">(ADAPTER)</span>
+        <span id="validate-time" class="strip-time">&lt; 1 MS</span>
+      </div>
+      <div class="strip-body">
+        <span class="strip-big-icon" aria-hidden="true">&#10003;</span>
+        <div class="strip-copy">
+          <div id="validate-status" class="strip-status">READY</div>
+          <div id="validate-desc" class="strip-desc">Awaiting Jev decision&hellip;</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip-arrow" aria-hidden="true">&#10142;</div>
+
+    <div id="act-panel" class="strip-panel strip-act">
+      <div class="strip-head">
+        <span class="strip-icon">&#9656;</span>
+        <span class="strip-title">ACT</span>
+        <span class="strip-source">(ENVIRONMENT)</span>
+        <span id="act-time" class="strip-time">&lt; 1 MS</span>
+      </div>
+      <div class="strip-body">
+        <span class="strip-big-icon" aria-hidden="true">&#10142;</span>
+        <div class="strip-copy">
+          <div id="act-status" class="strip-status">STANDBY</div>
+          <div id="act-desc" class="strip-desc">Execute action command and await game response</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip-arrow" aria-hidden="true">&#10142;</div>
+
+    <div id="result-panel" class="strip-panel strip-result">
+      <div class="strip-head">
+        <span class="strip-icon">&#10036;</span>
+        <span class="strip-title">RESULT</span>
+        <span class="strip-source">(SHOWDOWN)</span>
+        <span id="result-time" class="strip-time">&lt; 1 MS</span>
+      </div>
+      <div class="strip-body">
+        <span id="result-sprite" class="result-sprite" aria-hidden="true"></span>
+        <div class="strip-copy">
+          <div id="result-status" class="strip-status">PENDING</div>
+          <div id="result-desc" class="strip-desc">Next turn state&hellip;</div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===================== STATUS BAR ===================== -->
+  <div class="status-bar">
+    <span id="status-left">TURN -- | READY FOR SHOWDOWN BATTLE | SAME GAME. DEEPER INSIGHT.</span>
+    <span id="status-right">GEN 9 RANDOM BATTLES // JEV FREE &nbsp;<span class="obs-ind">&#9654; OBSERVABLE DATA &#10003;</span></span>
+  </div>
+
+  <!-- ===================== VICTORY / DEFEAT OVERLAY ===================== -->
+  <div id="end-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div id="overlay-box" class="overlay-box">
+      <h2 id="end-title" class="pixel-giant victory-text">VICTORY</h2>
+      <p id="end-stats" class="end-text">BATTLE COMPLETED</p>
+      <button id="end-dismiss" class="arcade-btn" type="button">DISMISS</button>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

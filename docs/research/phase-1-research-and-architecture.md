@@ -583,6 +583,35 @@ For automated batches, a private/local server remains safer and more reproducibl
 
 This clarification replaces the earlier assumption that a simple local scripted opponent must be part of the MVP.
 
+## 14. Current opponent and evaluation decision
+
+The project will use two distinct modes:
+
+### Public showcase mode
+
+The dashboard's main **Start Jev Battle** flow searches the public Showdown Gen 9 Random Battle ladder. This demonstrates Jev in the real game environment against a matchmaking opponent. The battle result can be accompanied by a replay link and, over a larger run, the Jev account's Elo/GXE/Glicko-1 information.
+
+### Controlled development mode
+
+For repeatable correctness and strength checks, Jev will play against the existing `poke-env` reference players on a local Showdown server. We are not writing these bots:
+
+- `RandomPlayer` is a connectivity and legality smoke-test opponent.
+- `SimpleHeuristicsPlayer` is the first meaningful provided baseline for Jev.
+- `MaxBasePowerPlayer` can be considered later as an additional simple reference.
+
+The `poke-env` package exports these players and provides battle/cross-evaluation utilities. This gives us a controlled opponent without adding a second strategic system to this repository.
+
+### What each mode proves
+
+| Mode | Opponent | What it proves |
+| --- | --- | --- |
+| Local smoke test | `RandomPlayer` | Connection, state tracking, legal orders, battle completion |
+| Local benchmark | `SimpleHeuristicsPlayer` | Jev's decisions against a known reproducible heuristic baseline |
+| Public showcase | Matchmaking opponent | Jev operates in the real public Gen 9 Random Battle environment |
+| Human challenge | Human player | Qualitative real-world demonstration, not a controlled benchmark |
+
+A single human match cannot establish that Jev is as strong as a human. Human comparability requires a sustained public-ladder run or a future controlled match set against established agents, with game count, rating uncertainty, dates, and replay evidence reported.
+
 ## Sources
 
 - [TypeSafe/Jev API guide](https://jevtypesafeai.com/how-to-use)

@@ -612,6 +612,27 @@ The `poke-env` package exports these players and provides battle/cross-evaluatio
 
 A single human match cannot establish that Jev is as strong as a human. Human comparability requires a sustained public-ladder run or a future controlled match set against established agents, with game count, rating uncertainty, dates, and replay evidence reported.
 
+## 15. Reproducible difficulty progression
+
+Pokémon Showdown has a public rated ladder, but it does not provide a fixed sequence of opponents labeled easy, medium, and hard. Public matchmaking selects opponents from the active player pool, and the difficulty changes with the population, rating, time, and account history. Elo, GXE, and Glicko-1 summarize performance; they are not a scripted difficulty ladder.
+
+The project can provide the desired progression locally without building new opponent logic. The evaluation harness can run the Jev agent against existing `poke-env` players in a fixed order:
+
+1. **Easy / smoke:** `RandomPlayer`.
+2. **Tactical:** `MaxBasePowerPlayer`.
+3. **Heuristic:** `SimpleHeuristicsPlayer`.
+4. **Future advanced:** an existing external Gen 9 Random Battles agent, added only when we explicitly choose one.
+
+This is a staged benchmark harness, not a new Pokémon bot project. The first two players are useful for connection, legality, and simple tactical checks; `SimpleHeuristicsPlayer` is the first meaningful baseline for Jev's strategic decision quality.
+
+For a video, the interface can show a game-like promotion path: a win unlocks the next opponent tier. For an accurate evaluation report, do not promote after only one win. Pokémon battles contain random teams, critical hits, misses, and matchup variance. Instead, run a fixed number of battles per tier and report win rate, confidence interval, latency, timeout/fallback rate, and illegal-action rate.
+
+The resulting evaluation has three separate claims:
+
+- **Reproducible:** Jev completes staged local matches against pinned reference players.
+- **Real-world:** Jev can enter public Gen 9 Random Battles and play real opponents.
+- **Human comparability:** Jev's public rating and GXE can be compared with the public ladder after enough games; this is not established by a single staged win or single human match.
+
 ## Sources
 
 - [TypeSafe/Jev API guide](https://jevtypesafeai.com/how-to-use)

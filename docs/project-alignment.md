@@ -39,7 +39,7 @@ The intended conceptual message is:
 
 The project must demonstrate this through visible evidence rather than a long written explanation.
 
-The project must not claim that Jev is universally better than every LLM or every deterministic system. Any performance claim should be limited to the specific task and supported by observable measurements such as legality, latency, cost, confidence, and game performance.
+The dashboard and recorded video will not display explicit comparative marketing claims. Viewers should infer the difference from the observable behavior and measured results. Internal documentation may describe the intended comparison so the project direction is not forgotten.
 
 ## 3. Audience
 
@@ -115,7 +115,9 @@ watch Jev play
 
 The showcase should not require the viewers to pay for hosting or API calls. The free Jev route through OpenCode is the intended decision service.
 
-The exact account/authentication setup for public Showdown matchmaking remains an open discussion item. A dedicated Showdown account may be needed for named public ladder play and rating collection.
+Public matchmaking will use a dedicated Showdown account. Credentials will be stored locally in `.env` and must never appear in the dashboard or logs. Account creation has not happened yet; the assistant may attempt it during setup, and the project owner will create the account if signup requires a human step such as CAPTCHA or email verification.
+
+The primary supported environment is the project owner's Windows PC. Cross-platform support is not an MVP requirement.
 
 ## 7. Pokémon Showdown format
 
@@ -442,13 +444,12 @@ No implementation plan has been approved or written yet.
 
 The following items have not been finalized and must not be silently assumed:
 
-- whether public matchmaking uses a dedicated Showdown account or guest/unrated mode;
-- exact local installation experience for Python, Node.js, and the local Showdown server;
+- exact local installation details and dependency versions;
 - exact number of battles per controlled difficulty tier;
-- whether the first recorded video uses public matchmaking or the local staged ladder;
+- the minimum numerical threshold that will count as good winning performance;
 - the final colors, typography, Pokémon art assets, and dashboard branding;
 - which external strong bot, if any, will be used in a future improvement;
-- whether public ladder automation is acceptable for the desired volume under current Showdown policy.
+- whether public ladder automation is acceptable for a larger future evaluation volume under current Showdown policy.
 
 These are discussion items, not implementation decisions.
 
@@ -518,7 +519,75 @@ The owner also requested that the cleaner visual retain the previously discussed
 
 The updated reference is:
 
-- [Arcade dashboard mockup v4](design/dashboard-mockup-v4.png)
+- [Arcade dashboard mockup final](design/dashboard-mockup-final.png)
+- [Dashboard UI elements](design/dashboard-ui-elements.md)
+
+The live battle panel must also show both team rows explicitly. `YOUR TEAM` can display the player's known six Pokémon from the start. `OPPONENT TEAM` must begin with unknown Poké Ball slots in the standard Gen 9 Random Battle flow, because the protocol provides the opponent's team size without revealing the identities of unrevealed Pokémon when Team Preview is not used. Each enemy slot becomes a revealed species only after Showdown exposes it; the dashboard must not guess hidden species, moves, items, abilities, or Tera types. If a future format emits Team Preview, the row should adapt to the information actually provided by the protocol.
+
+## 21. What “START JEV BATTLE” actually means
+
+The `START JEV BATTLE` button is an application-level orchestration control, not a claim that Pokémon Showdown has a single native “start game” API with no setup work.
+
+Pokémon Showdown has a normal browser client with a home screen, format selection, settings, matchmaking, battle rooms, and other user-facing controls. A human can use that interface to select a format and start a search. Our agent does not need to automate clicks in that browser interface. It can use the Showdown WebSocket protocol through `poke-env` and perform the equivalent actions programmatically.
+
+For the first public showcase, clicking the button means:
+
+1. Validate local configuration, including the Jev/OpenCode route and Showdown account settings.
+2. Connect the agent to the Showdown server through the asynchronous `poke-env` connection.
+3. Authenticate or rename the configured Showdown account as required by the public server.
+4. Select the fixed target format: Gen 9 Random Battle (`gen9randombattle`). Random Battle does not require the user to build or upload a team.
+5. Start ladder matchmaking and wait for Showdown to return a battle room.
+6. Detect the battle-start event and initialize the local battle state/dashboard.
+7. Enter the turn loop: receive a legal choice request, prepare the Jev input, wait for Jev, validate the typed choice, submit the legal order, and render the result.
+8. Stop the search and close or reset the battle session when the battle ends.
+
+The button should therefore show visible startup states rather than jumping immediately from idle to a Pokémon battlefield:
+
+~~~
+READY
+  -> CONNECTING TO SHOWDOWN
+  -> AUTHENTICATING
+  -> SELECTING GEN 9 RANDOM BATTLE
+  -> SEARCHING FOR OPPONENT
+  -> MATCH FOUND
+  -> INITIALIZING BATTLE
+  -> JEV PLAYING
+~~~
+
+This startup sequence is part of the real showcase. The audience should understand that Jev is being connected to a live game environment, not playing a preloaded animation. The dashboard should show a clear error state for connection failure, authentication failure, unavailable format, cancelled search, provider configuration failure, or a battle that ends before the first decision.
+
+The initial dashboard can keep one clear button and one fixed format because the project scope is specifically public Gen 9 Random Battle. A future refinement may expose separate controls for public ladder, human challenge, and controlled local evaluation, but adding a general settings screen is not required for the first showcase.
+
+The important boundary is:
+
+~~~
+Dashboard button
+    -> application orchestration
+    -> Showdown WebSocket / poke-env
+    -> real battle room
+    -> Jev turn decisions
+~~~
+
+The Showdown GUI is not part of the agent's decision loop. The browser dashboard is our visualization and control surface; Showdown remains the game server and protocol endpoint.
+
+Relevant references:
+
+- [Pokémon Showdown protocol: authentication, ladder search, and battle rooms](https://github.com/smogon/pokemon-showdown/blob/master/PROTOCOL.md)
+- [poke-env Player documentation, including ladder play](https://poke-env.readthedocs.io/en/latest/modules/player.html)
+- [poke-env connection and public-server examples](https://poke-env.readthedocs.io/en/stable/examples/index.html)
+
+## 22. Additional decisions from discussion
+
+The project owner confirmed the following product decisions:
+
+- **Showdown account:** use a dedicated account configured through `.env`. The assistant may attempt account creation during setup; the owner will handle any human-only signup step.
+- **Jev failure:** use a legal fallback action when necessary, but make it unmistakable in the dashboard with wording such as `JEV FAILED — FALLBACK USED`. A fallback must never be presented as Jev's decision.
+- **Viewer controls:** keep the showcase simple. Viewers should not manually choose moves, switches, or settings. The dashboard exists to observe Jev, not to provide a second human controller.
+- **MVP success:** Jev must complete real battles legally and show good winning performance over a meaningful set of battles. A single lucky win is not sufficient; the exact numerical target can be set after baseline measurements.
+- **Recording:** keep recording simple. The owner will record the local browser dashboard; no built-in video recording, elaborate replay workflow, or special production system is required for the MVP.
+- **Showcase wording:** do not put comparative claim language on the dashboard or in the recorded presentation. Show the behavior and metrics instead.
+- **Platform:** prioritize reliable execution on the owner's Windows PC rather than adding cross-platform packaging work.
+- **Pokémon assets:** use appropriate Showdown/open-source assets and preserve attribution or licensing notes where required.
 
 ## Related documents
 

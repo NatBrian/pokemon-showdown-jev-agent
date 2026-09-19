@@ -491,7 +491,24 @@ The dashboard concept should use `Typed decision evaluation` rather than `Model 
 
 The refined dashboard mockup is a visual reference only and is not final application code:
 
-- [Refined dashboard mockup](design/dashboard-mockup-v2.png)
+- [Refined dashboard mockup](design/dashboard-mockup-v3.png)
+
+## 20. Dashboard refinement feedback
+
+The project owner requested an arcade-retro Pokémon visual style and rejected a large static vertical pipeline as the primary interaction model. Most harness stages should execute in split seconds; the visible waiting state should belong primarily to Jev's API inference.
+
+The refined visual direction is therefore:
+
+- **Left:** a game-like live battle view with arcade-retro Pokémon styling.
+- **Center:** `JEV INPUT`, showing the structured battle state, field conditions, calculated facts, and legal action candidates being sent to Jev.
+- **Right:** `JEV OUTPUT`, showing the Jev processing/loading state, typed choice, confidence, and probabilities.
+- **Bottom:** compact, fast `VALIDATE`, `ACT`, and `RESULT` cards showing what the adapter does after Jev returns.
+
+The visual should feel dynamic rather than like a static process diagram. The only visibly waiting/loading section should be the Jev output/API inference panel. Validation and action should show very small latency badges, while the result should show the actual damage/state update.
+
+The arcade-retro reference image is:
+
+- [Arcade dashboard mockup v3](design/dashboard-mockup-v3.png)
 
 ## Related documents
 

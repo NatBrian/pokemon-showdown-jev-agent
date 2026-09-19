@@ -2,6 +2,10 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Status: COMPLETE (2026-09-20).** All 11 tasks (53 steps) implemented and verified.
+> Full test suite: **15/15 passed** (14 unit + 1 end-to-end integration).
+> Implementation commits (Task 1 → Task 11): `645813d`, `7c2fa82`, `eeea087`, `18d24e4`, `70bd277`, `d5e77e7`, `24ddaf6`, `31c4287`, `dc73287`, `27f8d99`, `73c6097`.
+
 **Goal:** Build a fully autonomous, transparent Pokémon Showdown Gen 9 Random Battles agent powered by Jev AI, complete with an arcade-retro local browser dashboard and deterministic fallback safety.
 
 **Architecture:** A Python 3.10+ agent integrating `poke-env` for Showdown WebSocket communication, a deterministic calculation layer for candidate action generation and damage/type arithmetic, an async Jev client targeting OpenCode Zen's System One endpoint, and an embedded FastAPI/uvicorn server broadcasting real-time battle events to a vanilla HTML5/CSS3/JS arcade dashboard.
@@ -40,7 +44,7 @@
 - Consumes: Environment variables (`SHOWDOWN_USERNAME`, `SHOWDOWN_PASSWORD`, `SHOWDOWN_SERVER_URL`, `JEV_ENDPOINT`, `JEV_MODEL`, `JEV_AUTH_TOKEN`, `JEV_TIMEOUT_SECONDS`, `DASHBOARD_PORT`).
 - Produces: `Settings` dataclass/pydantic model providing typed application configuration.
 
-- [ ] **Step 1: Write failing test for configuration loading**
+- [x] **Step 1: Write failing test for configuration loading**
 
 ```python
 # tests/unit/test_config.py
@@ -69,12 +73,12 @@ def test_load_settings_custom_env(monkeypatch):
     assert settings.jev_timeout_seconds == 5.0
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/unit/test_config.py -v`  
 Expected: FAIL with `ModuleNotFoundError: No module named 'jev_showdown'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `pyproject.toml`:
 ```toml
@@ -164,12 +168,12 @@ def load_settings() -> Settings:
     )
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/unit/test_config.py -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add pyproject.toml .env.example src/jev_showdown/__init__.py src/jev_showdown/config.py tests/unit/test_config.py
@@ -191,7 +195,7 @@ git commit -m "feat: scaffold project and configuration loader"
 - Produces: `JevDecisionResponse(model, choice, confidence, probabilities, latency_ms, input_tokens, output_tokens, cost, raw_response, error)`
 - Method: `async def evaluate_decision(self, state: dict, criteria: dict[str, str], instructions: str) -> JevDecisionResponse`
 
-- [ ] **Step 1: Write failing test for Jev System One Client**
+- [x] **Step 1: Write failing test for Jev System One Client**
 
 ```python
 # tests/unit/test_jev_client.py
@@ -264,12 +268,12 @@ async def test_jev_client_timeout_error(test_settings):
         assert res.choice is None
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/unit/test_jev_client.py -v`  
 Expected: FAIL with `ModuleNotFoundError: No module named 'jev_showdown.decision'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/jev_showdown/decision/__init__.py`:
 ```python
@@ -387,12 +391,12 @@ class JevSystemOneClient:
         await self._client.aclose()
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/unit/test_jev_client.py -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/jev_showdown/decision/protocol.py src/jev_showdown/decision/opencode_jev.py tests/unit/test_jev_client.py
@@ -413,7 +417,7 @@ git commit -m "feat: implement Jev System One API client with telemetry and erro
 - Produces: `CandidateAction(id, kind, label, order_ref, facts)`
 - Function: `build_candidate_actions(battle: AbstractBattle) -> dict[str, CandidateAction]`
 
-- [ ] **Step 1: Write failing test for candidate action generation**
+- [x] **Step 1: Write failing test for candidate action generation**
 
 ```python
 # tests/unit/test_candidates.py
@@ -464,12 +468,12 @@ def test_build_candidate_actions_moves_and_switches():
     assert cand_switch.label == "Switch to Rotom-Wash"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/unit/test_candidates.py -v`  
 Expected: FAIL with `ModuleNotFoundError: No module named 'jev_showdown.battle'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/jev_showdown/battle/__init__.py`:
 ```python
@@ -559,12 +563,12 @@ def build_candidate_actions(battle: AbstractBattle) -> dict[str, CandidateAction
     return candidates
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/unit/test_candidates.py -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/jev_showdown/battle/__init__.py src/jev_showdown/battle/candidates.py tests/unit/test_candidates.py
@@ -584,7 +588,7 @@ git commit -m "feat: implement deterministic candidate action enumeration with T
 - Produces: Annotated `CandidateAction.facts`, formatted criteria dictionary `dict[str, str]` for Jev choice question.
 - Function: `annotate_candidates_with_facts(battle: AbstractBattle, candidates: dict[str, CandidateAction]) -> dict[str, str]`
 
-- [ ] **Step 1: Write failing test for deterministic facts calculation**
+- [x] **Step 1: Write failing test for deterministic facts calculation**
 
 ```python
 # tests/unit/test_facts.py
@@ -616,12 +620,12 @@ def test_annotate_candidates_with_facts():
     assert "4.0x effective" in criteria["move_earthquake"]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/unit/test_facts.py -v`  
 Expected: FAIL with `ModuleNotFoundError: No module named 'jev_showdown.battle.facts'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/jev_showdown/battle/facts.py`:
 ```python
@@ -697,12 +701,12 @@ def annotate_candidates_with_facts(battle: AbstractBattle, candidates: dict[str,
     return criteria
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/unit/test_facts.py -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/jev_showdown/battle/facts.py tests/unit/test_facts.py
@@ -724,7 +728,7 @@ git commit -m "feat: implement deterministic type-chart and damage annotation fa
 - Produces: `ValidatedOrder(order: BattleOrder, is_fallback: bool, fallback_reason: str | None, chosen_id: str)`
 - Function: `resolve_order(jev_res: JevDecisionResponse, candidates: dict[str, CandidateAction], battle: AbstractBattle) -> ValidatedOrder`
 
-- [ ] **Step 1: Write failing test for validator and fallback resolution**
+- [x] **Step 1: Write failing test for validator and fallback resolution**
 
 ```python
 # tests/unit/test_validator_and_fallback.py
@@ -769,12 +773,12 @@ def test_resolve_order_fallback_on_error():
     assert result.order == mock_order2
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/unit/test_validator_and_fallback.py -v`  
 Expected: FAIL with `ModuleNotFoundError: No module named 'jev_showdown.strategy'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/jev_showdown/battle/validator.py`:
 ```python
@@ -852,12 +856,12 @@ def resolve_order(
     )
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/unit/test_validator_and_fallback.py -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/jev_showdown/battle/validator.py src/jev_showdown/strategy/__init__.py src/jev_showdown/strategy/fallback.py tests/unit/test_validator_and_fallback.py
@@ -879,7 +883,7 @@ git commit -m "feat: implement action validation and fallback priority ladder"
 - Produces: Structured dictionary for Jev state schema v1, plus UI-ready telemetry event containing revealed team slots, compact history, and inspectable data tabs (`STATE`, `QUESTION`, `RESPONSE`).
 - Classes: `BattleSnapshotSerializer`, `TurnHistoryTracker`
 
-- [ ] **Step 1: Write failing test for state serialization and fog-of-war tracking**
+- [x] **Step 1: Write failing test for state serialization and fog-of-war tracking**
 
 ```python
 # tests/unit/test_snapshot_and_telemetry.py
@@ -929,12 +933,12 @@ def test_turn_history_tracker():
     assert history[0]["action"] == "Earthquake"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/unit/test_snapshot_and_telemetry.py -v`  
 Expected: FAIL with `ModuleNotFoundError: No module named 'jev_showdown.telemetry'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/jev_showdown/telemetry/__init__.py`:
 ```python
@@ -1048,12 +1052,12 @@ class BattleSnapshotSerializer:
         }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/unit/test_snapshot_and_telemetry.py -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/jev_showdown/battle/snapshot.py src/jev_showdown/telemetry/__init__.py src/jev_showdown/telemetry/events.py tests/unit/test_snapshot_and_telemetry.py
@@ -1072,7 +1076,7 @@ git commit -m "feat: implement battle snapshot serialization and fog-of-war oppo
 - Consumes: `poke-env.player.Player`, `JevSystemOneClient`, `BattleSnapshotSerializer`, `TurnHistoryTracker`
 - Produces: `JevPlayer` class implementing `async choose_move(self, battle) -> BattleOrder` with live event emission hooks.
 
-- [ ] **Step 1: Write failing test for JevPlayer autonomous loop**
+- [x] **Step 1: Write failing test for JevPlayer autonomous loop**
 
 ```python
 # tests/unit/test_agent.py
@@ -1122,12 +1126,12 @@ async def test_jev_player_choose_move(mock_settings):
     assert mock_jev.evaluate_decision.called
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/unit/test_agent.py -v`  
 Expected: FAIL with `ModuleNotFoundError: No module named 'jev_showdown.agent'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/jev_showdown/agent.py`:
 ```python
@@ -1219,12 +1223,12 @@ class JevPlayer(Player):
         return validated.order
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/unit/test_agent.py -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/jev_showdown/agent.py tests/unit/test_agent.py
@@ -1244,7 +1248,7 @@ git commit -m "feat: implement autonomous JevPlayer with battle loop and telemet
 - Consumes: `Settings`, battle event stream
 - Produces: FastAPI application with WebSocket `/ws` for bi-directional state updates, static asset serving at `/static`, and `/api/start-battle` trigger endpoint.
 
-- [ ] **Step 1: Write failing test for web server and WebSocket hub**
+- [x] **Step 1: Write failing test for web server and WebSocket hub**
 
 ```python
 # tests/unit/test_web_server.py
@@ -1275,12 +1279,12 @@ def test_http_index(test_app):
     assert "AUTONOMOUS POKÉMON BATTLE AGENT" in response.text
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/unit/test_web_server.py -v`  
 Expected: FAIL with `ModuleNotFoundError: No module named 'jev_showdown.web'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/jev_showdown/web/__init__.py`:
 ```python
@@ -1355,12 +1359,12 @@ def create_app(settings: Settings, on_start_battle: Any | None = None) -> FastAP
     return app
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/unit/test_web_server.py -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/jev_showdown/web/__init__.py src/jev_showdown/web/server.py tests/unit/test_web_server.py
@@ -1386,7 +1390,7 @@ git commit -m "feat: implement FastAPI dashboard server with WebSocket hub"
   - Right: Jev Output (API Inference loader, Decision, Probabilities bar chart, Fallback alert banner, Inspect Data tabs).
   - Bottom: Validate (<1ms) -> Act (<1ms) -> Result (<1ms) action strip, summary status bar, Victory/Defeat overlay.
 
-- [ ] **Step 1: Write failing test verifying presence and key structure of frontend assets**
+- [x] **Step 1: Write failing test verifying presence and key structure of frontend assets**
 
 ```python
 # tests/unit/test_frontend_assets.py
@@ -1413,12 +1417,12 @@ def test_frontend_assets_exist():
         assert "INSPECT DATA" in html
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/unit/test_frontend_assets.py -v`  
 Expected: FAIL with `AssertionError: assert os.path.exists(html_path)`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `src/jev_showdown/web/static/index.html`:
 ```html
@@ -1820,12 +1824,12 @@ function updateInspectView() {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/unit/test_frontend_assets.py -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/jev_showdown/web/static/ tests/unit/test_frontend_assets.py
@@ -1847,7 +1851,7 @@ git commit -m "feat: implement arcade-retro dashboard frontend with fog-of-war a
 - Produces: CLI application running the local dashboard server or batch evaluations against `RandomPlayer` and `SimpleHeuristicsPlayer`.
 - Command: `python -m jev_showdown.main serve` or `python -m jev_showdown.main benchmark --matches 5`
 
-- [ ] **Step 1: Write failing test for CLI and benchmark arguments**
+- [x] **Step 1: Write failing test for CLI and benchmark arguments**
 
 ```python
 # tests/unit/test_cli_and_benchmark.py
@@ -1866,12 +1870,12 @@ def test_cli_parser_serve_and_benchmark():
     assert args_bench.matches == 10
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest tests/unit/test_cli_and_benchmark.py -v`  
 Expected: FAIL with `ModuleNotFoundError: No module named 'jev_showdown.main'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `benchmarks/__init__.py`:
 ```python
@@ -1949,12 +1953,12 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest tests/unit/test_cli_and_benchmark.py -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/jev_showdown/main.py benchmarks/__init__.py benchmarks/run_matches.py tests/unit/test_cli_and_benchmark.py
@@ -1973,7 +1977,7 @@ git commit -m "feat: implement CLI runner and reproducible benchmark suite"
 - Consumes: Complete `JevPlayer` with mock Jev API server and `RandomPlayer`
 - Produces: Successful multi-turn battle completion, verifying WebSocket broadcast events, turn history, and zero unhandled exceptions.
 
-- [ ] **Step 1: Write integration test running a full simulated battle**
+- [x] **Step 1: Write integration test running a full simulated battle**
 
 ```python
 # tests/integration/test_e2e_battle.py
@@ -2036,12 +2040,12 @@ async def test_full_simulated_battle_against_random():
         assert len(first_evt["snapshot"]["opponent"]["team_slots"]) == 6
 ```
 
-- [ ] **Step 2: Run test to verify it passes**
+- [x] **Step 2: Run test to verify it passes**
 
 Run: `pytest tests/integration/test_e2e_battle.py -v`  
 Expected: PASS
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/integration/__init__.py tests/integration/test_e2e_battle.py

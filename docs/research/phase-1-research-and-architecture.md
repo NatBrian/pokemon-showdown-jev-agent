@@ -562,10 +562,26 @@ The architecture is ready for review. The project should proceed only after conf
 - poke-env is the initial Showdown harness;
 - Jev chooses among validated candidate IDs;
 - deterministic battle math remains outside Jev;
-- local Showdown is the primary benchmark environment;
+- local Showdown is the primary correctness and future controlled-evaluation environment, while public Showdown is used for real-opponent showcase evidence;
 - every provider or model failure has a legal fallback.
 
 After approval, the next document should be an implementation plan with milestones and tests. Only after that plan is approved should source code be added.
+
+## 13. Clarification: opponent and benchmark scope
+
+The project does not need to build a second bot in order to demonstrate Jev. The Jev agent can play Gen 9 Random Battles through Showdown's normal matchmaking or through a human challenge. Showdown's protocol supports `/search gen9randombattle`, and Random Battle does not require a user-supplied team. The public ladder records Elo, GXE, and Glicko-1, while Showdown also exposes JSON endpoints for user ratings, ladders, and replays.
+
+The benchmark plan is therefore split into three levels:
+
+1. **MVP correctness:** prove that Jev can connect, receive the real information set, choose legal actions, and complete battles without timing out. This can use a local Showdown server for protocol smoke tests and the public server for a real-opponent smoke test.
+2. **Showcase evidence:** record a live Gen 9 Random Battle against a public matchmaking opponent or human challenger. The local browser dashboard makes the Jev input, typed output, action, and result visible.
+3. **Future controlled evaluation:** run Jev against existing open-source agents or `poke-env` reference players, copied or configured as external test opponents. We do not build those comparison agents in the current project phase.
+
+Public ladder ratings are useful external evidence, but they are not a controlled scientific comparison. Showdown itself explains that Elo/GXE depend on the opponent pool and that raw win/loss is not a good skill estimate. Therefore, the project should report a Jev account's format, rating system, number of games, date, and replay links rather than presenting one short ladder run as proof of universal superiority.
+
+For automated batches, a private/local server remains safer and more reproducible. Public-ladder automation must respect the current Showdown rules and server policy; do not intentionally manipulate ratings, farm games, or run uncontrolled high-volume traffic. The official rules prohibit cheating and gaming the system, and this project should treat public play as a limited smoke/showcase path until bot use is explicitly confirmed as acceptable.
+
+This clarification replaces the earlier assumption that a simple local scripted opponent must be part of the MVP.
 
 ## Sources
 
@@ -576,9 +592,11 @@ After approval, the next document should be an implementation plan with mileston
 - [Pokémon Showdown protocol](https://github.com/smogon/pokemon-showdown/blob/master/PROTOCOL.md)
 - [Pokémon Showdown simulator protocol](https://github.com/smogon/pokemon-showdown/blob/master/sim/SIM-PROTOCOL.md)
 - [Pokémon Showdown repository](https://github.com/smogon/pokemon-showdown)
+- [Pokémon Showdown ladder help](https://pokemonshowdown.com/pages/ladderhelp)
+- [Pokémon Showdown Gen 9 Random Battle ladder](https://pokemonshowdown.com/ladder/gen9randombattle)
+- [Pokémon Showdown client web APIs](https://github.com/smogon/pokemon-showdown-client/blob/master/WEB-API.md)
 - [poke-env repository](https://github.com/hsahovic/poke-env)
 - [poke-env documentation](https://poke-env.readthedocs.io/en/stable/)
 - [poke-env battle API](https://poke-env.readthedocs.io/en/stable/modules/battle.html)
 - [poke-env player API](https://poke-env.readthedocs.io/en/stable/modules/player.html)
 - [poke-env damage calculator API](https://poke-env.readthedocs.io/en/stable/modules/damage_calculator.html)
-

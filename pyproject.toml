@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jev-showdown"
+version = "0.1.0"
+description = "Autonomous Pokémon Showdown Agent Powered by Jev AI"
+authors = [{ name = "Jev Showdown Team" }]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "poke-env>=0.5.0",
+    "httpx>=0.25.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.22.0",
+    "websockets>=11.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# Make the src-layout package importable when running pytest from the repo root
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+asyncio_mode = "auto"

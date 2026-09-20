@@ -45,6 +45,33 @@ def test_websocket_receives_threadsafe_publish(test_app):
             assert message["busy"] is False
 
 
+def test_websocket_replays_battle_frames_to_new_client(test_app):
+    with TestClient(test_app) as client:
+        manager = test_app.state.manager
+        manager.publish(
+            {
+                "type": "BATTLE_START",
+                "battle_tag": "battle-gen9randombattle-1",
+            }
+        )
+        manager.publish(
+            {
+                "type": "BATTLE_FRAME",
+                "battle_tag": "battle-gen9randombattle-1",
+                "lines": ["|turn|1"],
+            }
+        )
+
+        with client.websocket_connect("/ws") as ws:
+            replay = ws.receive_json()
+
+    assert replay == {
+        "type": "BATTLE_REPLAY",
+        "battle_tag": "battle-gen9randombattle-1",
+        "frames": [["|turn|1"]],
+    }
+
+
 def test_start_battle_hook_invoked():
     settings = Settings(
         showdown_username=None,

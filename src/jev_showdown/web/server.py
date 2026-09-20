@@ -23,6 +23,7 @@ from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from jev_showdown.config import Settings
+from jev_showdown.telemetry.frames import BattleFrameBuffer
 
 # Served at "/" when the full dashboard frontend is not yet deployed.
 FALLBACK_INDEX_HTML = (
@@ -198,6 +199,7 @@ class ConnectionManager:
     def __init__(self) -> None:
         self.active_connections: list[WebSocket] = []
         self._loop: asyncio.AbstractEventLoop | None = None
+        self._battle_frames = BattleFrameBuffer()
 
     def set_loop(self, loop: asyncio.AbstractEventLoop) -> None:
         """Remember the dashboard's event loop (set at app startup)."""
@@ -207,6 +209,12 @@ class ConnectionManager:
         """Accept the connection and register it as active."""
         await websocket.accept()
         self.active_connections.append(websocket)
+        replay = self._battle_frames.replay()
+        if replay is not None:
+            try:
+                await websocket.send_json(replay)
+            except Exception:
+                self.disconnect(websocket)
 
     def disconnect(self, websocket: WebSocket) -> None:
         """Remove a client from the active set (idempotent)."""
@@ -234,6 +242,7 @@ class ConnectionManager:
         ``run_coroutine_threadsafe`` bridges the two. No-op when no loop
         has been captured yet or the loop is no longer running.
         """
+        self._remember_battle_message(message)
         loop = self._loop
         if loop is None or loop.is_closed():
             return
@@ -241,6 +250,18 @@ class ConnectionManager:
             asyncio.run_coroutine_threadsafe(self.broadcast(message), loop)
         except RuntimeError:
             pass
+
+    def _remember_battle_message(self, message: dict[str, Any]) -> None:
+        message_type = message.get("type")
+        battle_tag = message.get("battle_tag")
+        if not isinstance(battle_tag, str):
+            return
+        if message_type == "BATTLE_START":
+            self._battle_frames.start(battle_tag)
+        elif message_type == "BATTLE_FRAME":
+            lines = message.get("lines")
+            if isinstance(lines, list) and all(isinstance(line, str) for line in lines):
+                self._battle_frames.append(battle_tag, lines)
 
 
 def create_app(

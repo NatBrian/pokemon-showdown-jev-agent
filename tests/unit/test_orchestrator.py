@@ -97,6 +97,13 @@ async def test_orchestrator_publishes_full_lifecycle(monkeypatch):
 
         async def ladder(self, n_games: int) -> None:
             orchestrator._on_battle_event({"type": "BATTLE_START"})
+            orchestrator._on_battle_frame(
+                {
+                    "type": "BATTLE_FRAME",
+                    "battle_tag": "battle-gen9randombattle-1",
+                    "lines": ["|turn|1"],
+                }
+            )
             orchestrator._on_battle_event(
                 {
                     "type": "BATTLE_END",
@@ -123,6 +130,14 @@ async def test_orchestrator_publishes_full_lifecycle(monkeypatch):
     end_events = [m for m in published if m.get("type") == "BATTLE_END"]
     assert len(end_events) == 1
     assert end_events[0]["won"] is True
+    frame_events = [m for m in published if m.get("type") == "BATTLE_FRAME"]
+    assert frame_events == [
+        {
+            "type": "BATTLE_FRAME",
+            "battle_tag": "battle-gen9randombattle-1",
+            "lines": ["|turn|1"],
+        }
+    ]
 
 
 @pytest.mark.asyncio

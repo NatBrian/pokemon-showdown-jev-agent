@@ -255,6 +255,37 @@ async def test_battle_message_scanning_enriches_history():
 
 
 @pytest.mark.asyncio
+async def test_battle_message_emits_raw_battle_frame():
+    frames: list[dict] = []
+    player = JevPlayer(
+        settings=_make_settings(),
+        jev_client=MagicMock(),
+        on_battle_frame=frames.append,
+        start_listening=False,
+    )
+    battle = _make_battle()
+    battle.battle_tag = "battle-gen9randombattle-1"
+    battle.player_role = "p1"
+    player._battles[battle.battle_tag] = battle
+
+    await player._handle_battle_message(
+        [
+            [">battle-gen9randombattle-1"],
+            ["", "turn", "2"],
+            ["", "-damage", "p1a: Garchomp", "250/357"],
+        ]
+    )
+
+    assert frames == [
+        {
+            "type": "BATTLE_FRAME",
+            "battle_tag": "battle-gen9randombattle-1",
+            "lines": ["|turn|2", "|-damage|p1a: Garchomp|250/357"],
+        }
+    ]
+
+
+@pytest.mark.asyncio
 async def test_own_side_move_scanner_event_merges_into_decision():
     player = JevPlayer(
         settings=_make_settings(),

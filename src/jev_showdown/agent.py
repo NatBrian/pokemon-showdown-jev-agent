@@ -75,6 +75,7 @@ class JevPlayer(Player):
         history_tracker: TurnHistoryTracker | None = None,
         on_turn_event: Callable[[dict[str, Any]], Any] | None = None,
         on_battle_event: Callable[[dict[str, Any]], Any] | None = None,
+        on_battle_frame: Callable[[dict[str, Any]], Any] | None = None,
         **player_kwargs: Any,
     ) -> None:
         """Initialize the Jev player.
@@ -90,6 +91,8 @@ class JevPlayer(Player):
             dict after every resolved turn.
         :param on_battle_event: Optional callback invoked with lifecycle
             telemetry (``BATTLE_START`` / ``BATTLE_END``) dicts.
+        :param on_battle_frame: Optional callback invoked with one raw
+            protocol frame after it has been filtered to a battle room.
         :param player_kwargs: Forwarded to poke_env's Player constructor
             (e.g. account_configuration, battle_format, start_listening).
         """
@@ -106,6 +109,7 @@ class JevPlayer(Player):
         )
         self.on_turn_event = on_turn_event
         self.on_battle_event = on_battle_event
+        self.on_battle_frame = on_battle_frame
         self._scanners: dict[str, BattleEventScanner] = {}
 
     # ------------------------------------------------------------ choose_move
@@ -319,8 +323,18 @@ class JevPlayer(Player):
                 pass
 
     async def _handle_battle_message(self, split_messages: list[list[str]]) -> None:
-        # Feed raw battle lines to the event scanner (telemetry only; must
-        # never break battle processing), then hand off to poke_env.
+        # Feed raw battle lines to the dashboard and event scanner (telemetry
+        # only; neither must break battle processing), then hand off to
+        # poke_env.
+        frame = self._protocol_frame(split_messages)
+        if frame is not None and self.on_battle_frame is not None:
+            tag, lines = frame
+            try:
+                self.on_battle_frame(
+                    {"type": "BATTLE_FRAME", "battle_tag": tag, "lines": lines}
+                )
+            except Exception:
+                pass
         try:
             self._feed_scanner(split_messages)
         except Exception:
@@ -329,12 +343,15 @@ class JevPlayer(Player):
 
     # ------------------------------------------------------- event scanning
 
-    def _feed_scanner(self, split_messages: list[list[str]]) -> None:
+    @staticmethod
+    def _protocol_frame(
+        split_messages: list[list[str]],
+    ) -> tuple[str, list[str]] | None:
         if not split_messages or not split_messages[0]:
-            return
+            return None
         tag = split_messages[0][0].lstrip(">")
         if not tag.startswith("battle-"):
-            return
+            return None
 
         lines: list[str] = []
         for index, parts in enumerate(split_messages):
@@ -346,10 +363,17 @@ class JevPlayer(Player):
                 body = "|".join(parts)
             if body and not body.startswith("|"):
                 body = "|" + body
-            if body:
+            if body and body != "|ping":
                 lines.append(body)
         if not lines:
+            return None
+        return tag, lines
+
+    def _feed_scanner(self, split_messages: list[list[str]]) -> None:
+        frame = self._protocol_frame(split_messages)
+        if frame is None:
             return
+        tag, lines = frame
 
         scanner = self._scanners.get(tag)
         if scanner is None:

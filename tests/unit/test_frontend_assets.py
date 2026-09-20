@@ -135,6 +135,8 @@ def test_dashboard_has_single_click_technical_inspector():
         assert required in html
     for required in ("inspect", "question", "response", "BATTLE_FRAME", "JSON.stringify"):
         assert required.lower() in js.lower()
+    assert "keydown" in js
+    assert 'event.key === "Escape"' in js
 
 
 def test_dashboard_uses_a_single_desktop_grid_and_stacks_on_small_screens():

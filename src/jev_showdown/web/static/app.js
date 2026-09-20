@@ -576,3 +576,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderInspector();
   connectSocket();
 });
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.inspectOpen) toggleInspector(false);
+});

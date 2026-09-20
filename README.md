@@ -1,16 +1,14 @@
 # Autonomous Pokémon Showdown Agent Powered by Jev AI
 
-**Same game. Deeper insight.**
-
 A fully autonomous Gen 9 Random Battles agent for [Pokémon Showdown](https://pokemonshowdown.com/).
 Every turn, a typed decision model (**Jev 1.13 Free**) receives a structured snapshot of the battle
 state plus deterministic, harness-computed criteria, and returns a candidate action. The harness
 validates the choice against the legal candidates before executing it — and if Jev fails in any
 way, a deterministic fallback takes over, clearly labeled `JEV FAILED — FALLBACK USED`.
 
-A live arcade-style dashboard (the "Jev Lens") streams every decision: model confidence,
-probability distribution, token usage, validation results, turn history, and observable battle
-state.
+A local dashboard streams the observable path from Showdown state through harness calculations,
+Jev's actual typed response, adapter validation, submitted order, and observed result. It does not
+invent model reasoning or display values that the application/provider did not return.
 
 ## Quick start
 
@@ -130,7 +128,7 @@ src/jev_showdown/
 ├── telemetry/events.py # Turn history tracker + raw battle-line event scanner
 └── web/
     ├── server.py       # FastAPI app + WebSocket hub (thread-safe publish)
-    └── static/         # Dashboard (index.html / app.js / style.css)
+    └── static/         # Official renderer assets; dashboard shell is intentionally absent
 benchmarks/             # Local reproducible benchmark harness
 tests/                  # Unit + end-to-end integration tests
 docs/                   # Alignment record, design docs, research logs, plan
@@ -139,10 +137,8 @@ docs/                   # Alignment record, design docs, research logs, plan
 ## Design docs
 
 - [Project alignment record](docs/project-alignment.md) — product direction and constraints.
-- [Dashboard UI elements](docs/design/dashboard-ui-elements.md) — dashboard spec.
-- [Dashboard mockup](docs/design/dashboard-mockup-final.png) — visual target.
-- [Historical implementation plan](docs/superpowers/plans/2026-09-19-autonomous-pokemon-showdown-jev-agent.md) — original implementation provenance.
-- [Codex takeover plan](docs/superpowers/plans/2026-09-20-codex-takeover-plan.md) — current repair and verification record.
+- [Dashboard product contract](docs/design/dashboard-product-contract.md) — authoritative dashboard behavior and creative boundary.
+- [Dashboard Codex handoff](docs/design/dashboard-codex-handoff.md) — implementation handoff.
 - [Phase 0 research](docs/research/phase-0-jev-opencode.md) · [Phase 1 research](docs/research/phase-1-research-and-architecture.md)
 
 ## Attribution
@@ -155,9 +151,6 @@ docs/                   # Alignment record, design docs, research logs, plan
   renderer without embedding the full Showdown client UI.
   Pokémon and Pokémon character names are trademarks of Nintendo / The Pokémon Company; this
   project is a fan-made research tool and is not affiliated with or endorsed by them.
-- **Fonts**: [Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) and
-  [Share Tech Mono](https://fonts.google.com/specimen/Share+Tech+Mono) (Google Fonts, SIL OFL).
-
 ## Important constraint
 
 Jev is a typed decision model: the agent calls its decision endpoint directly (structured

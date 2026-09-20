@@ -168,96 +168,11 @@ The recommended visual approach is a lightweight local browser interface with pl
 
 ## 9. Dashboard visual structure
 
-The generated visual concept uses a three-column layout:
-
-~~~
-┌──────────────────────┬─────────────────────────┐
-│ Pokémon battle view  │ Jev decision panel      │
-│ HP, status, bench    │ input state             │
-│ field effects        │ legal actions           │
-│ turn progression     │ selected action         │
-│                      │ confidence/probability  │
-└──────────────────────┴─────────────────────────┘
-~~~
-
-The intended screen areas are:
-
-### Battle view
-
-Show:
-
-- active Pokémon on both sides;
-- Pokémon names and types;
-- HP bars;
-- status effects;
-- levels where appropriate;
-- team/bench slots;
-- fainted and remaining Pokémon;
-- weather, terrain, and field effects;
-- turn number;
-- current battle status.
-
-### Jev decision pipeline
-
-Show the observable process as a visual flow:
-
-~~~
-BATTLE STATE
-    ↓
-LEGAL ACTIONS
-    ↓
-JEV DECISION
-    ↓
-ACTION SENT
-    ↓
-RESULT
-~~~
-
-This pipeline is important because it lets a general viewer understand what Jev is doing without reading technical documentation.
-
-### Jev decision panel
-
-Show:
-
-- the typed selected action;
-- the selected action highlighted clearly;
-- confidence;
-- probability distribution over legal actions;
-- latency;
-- reported token usage where available;
-- reported cost;
-- provider/model status;
-- validation status;
-- fallback status if a fallback was used.
-
-### Deterministic analysis panel
-
-Show calculations as visual cards rather than prose or raw code:
-
-- type effectiveness;
-- estimated damage range;
-- KO likelihood;
-- speed and priority facts;
-- status or hazard effects;
-- switch safety;
-- Terastallization availability;
-- legal-action status.
-
-### Turn timeline
-
-Show recent turns as compact cards:
-
-- turn number;
-- action taken;
-- notable damage;
-- status changes;
-- switches;
-- Jev decision;
-- action result.
-
-### Technical inspector
-
-Provide an optional expandable technical section. It can display structured state and request/response details for technical viewers, but the main visual should remain clean.
+The visual structure is intentionally undecided. Preserve the product behavior
+and transparency requirements in
+[dashboard-product-contract.md](design/dashboard-product-contract.md), but do
+not treat this discussion record as prescribing a palette, typography,
+component arrangement, or screen geometry.
 
 ## 10. Transparency requirements
 
@@ -298,23 +213,10 @@ Logs are for project debugging and do not need a user-facing download feature. D
 
 ## 11. Image/mockup direction
 
-A high-fidelity dashboard mockup was generated to establish visual alignment.
-
-The mockup uses:
-
-- dark navy background;
-- cyan and violet accents;
-- clean glass-like panels;
-- a live battle view on the left;
-- a Jev decision pipeline in the center;
-- Jev output and probabilities on the right;
-- a turn timeline along the bottom;
-- a data inspector in the lower-right;
-- visual badges for confidence, latency, cost, damage, and type effectiveness.
-
-The mockup is a visual direction, not final implementation.
-
-One terminology correction was identified for implementation: replace "Model inference" with "Typed decision evaluation" or equivalent. This avoids implying that Jev exposes hidden chain-of-thought.
+Previous mockups and generated visual references are retired. They are not
+implementation requirements. The remaining terminology rule is behavioral:
+wording must not imply that Jev exposes hidden chain-of-thought when the
+application only has a typed response.
 
 ## 12. Opponents and evaluation
 
@@ -406,7 +308,9 @@ The public ladder provides ratings and matchmaking, but not fixed easy/medium/ha
 
 ### Correction 6: Raw JSON is not the primary presentation
 
-Technical information should be rendered as visual state cards, action tables, probability bars, badges, and a timeline. Raw structured data can remain available in an expandable inspector and local logs.
+Technical information should be understandable in the primary experience, with
+raw structured data available through an inspection path and local logs. The
+specific visual representation is intentionally undecided.
 
 ### Correction 7: Transparency does not mean fabricated reasoning
 
@@ -473,12 +377,10 @@ For the MVP, Jev returns a typed action choice, confidence, and probabilities. T
 
 ## 19. Refined dashboard pipeline
 
-> Current correction: the binding dashboard specification is
-> [dashboard-canonical-spec.md](design/dashboard-canonical-spec.md). The
+> The authoritative dashboard contract is
+> [dashboard-product-contract.md](design/dashboard-product-contract.md). The
 > official Showdown renderer owns the complete game UI. Custom history means
-> Jev decision history only. The later canonical specification supersedes any
-> older custom team-row, battle-log, battle-message, or battle-history ideas in
-> this document.
+> Jev decision history only. Historical visual plans and mockups are retired.
 
 The dashboard should show more than Pokémon input and Jev output. It should visualize the observable project pipeline:
 
@@ -495,39 +397,16 @@ The visual should label the origin of information:
 - `Jev output`
 - `Adapter action`
 
-The dashboard concept should use `Typed decision evaluation` rather than `Model inference` as a label, because the former is transparent about what is actually observable.
-
-The refined dashboard raster mockup was a visual reference only and has been
-removed. The current binding reference is
-[dashboard-redesign-guardrails.md](design/dashboard-redesign-guardrails.md).
+The dashboard should use wording that is transparent about what is actually
+observable and must not imply access to hidden reasoning.
 
 ## 20. Dashboard refinement feedback
 
-The project owner requested an arcade-retro Pokémon visual style and rejected a large static vertical pipeline as the primary interaction model. Most harness stages should execute in split seconds; the visible waiting state should belong primarily to Jev's API inference.
-
-The refined visual direction is therefore:
-
-- **Left:** a game-like live battle view with arcade-retro Pokémon styling.
-- **Center:** `JEV INPUT`, showing the structured battle state, field conditions, calculated facts, and legal action candidates being sent to Jev.
-- **Right:** `JEV OUTPUT`, showing the Jev processing/loading state, typed choice, confidence, and probabilities.
-- **Bottom:** compact, fast `VALIDATE`, `ACT`, and `RESULT` cards showing what the adapter does after Jev returns.
-
-The visual should feel dynamic rather than like a static process diagram. The only visibly waiting/loading section should be the Jev output/API inference panel. Validation and action should show very small latency badges, while the result should show the actual damage/state update.
-
-The earlier arcade-retro raster reference has been removed; use the textual
-dashboard design documents instead.
-
-The owner also requested that the cleaner visual retain the previously discussed transparency features. The next refinement restores:
-
-- a compact `TURN HISTORY` section inside the live battle area;
-- an `INSPECT DATA` section inside the Jev Output area with `STATE`, `QUESTION`, and `RESPONSE` tabs;
-- the fast bottom `VALIDATE`, `ACT`, and `RESULT` sequence.
-
-The current reference is the canonical dashboard specification:
-
-- [Dashboard canonical specification](design/dashboard-canonical-spec.md)
-
-The live battle panel must also show both team rows explicitly. `YOUR TEAM` can display the player's known six Pokémon from the start. `OPPONENT TEAM` must begin with unknown Poké Ball slots in the standard Gen 9 Random Battle flow, because the protocol provides the opponent's team size without revealing the identities of unrevealed Pokémon when Team Preview is not used. Each enemy slot becomes a revealed species only after Showdown exposes it; the dashboard must not guess hidden species, moves, items, abilities, or Tera types. If a future format emits Team Preview, the row should adapt to the information actually provided by the protocol.
+Earlier visual refinement notes are retired. Preserve only the behavioral
+decisions: expose real-time decision evidence, distinguish data origins, avoid
+fabricated reasoning, respect the official renderer, and keep unrevealed
+opponent information unknown. See
+[dashboard-product-contract.md](design/dashboard-product-contract.md).
 
 ## 21. What “START JEV BATTLE” actually means
 

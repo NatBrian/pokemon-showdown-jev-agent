@@ -666,15 +666,20 @@ This is the truthful observable pipeline. We can show the complete Jev input, qu
 
 ## 18. Dashboard design consequence
 
-The visual should be organized around the pipeline rather than a generic analytics screen:
+The interface should make the observable pipeline understandable without
+turning it into a generic analytics product. The exact composition is
+intentionally open. Preserve the following behavior regardless of visual
+solution:
 
-- left: live battle and teams;
-- center: Observe -> Calculate -> Options -> Jev Decides -> Validate -> Act -> Result;
-- right: typed choice, confidence, probabilities, and action facts;
-- bottom: turn timeline and current result;
-- optional inspector: structured state, question, response, and validation details.
+- distinguish `Showdown state`, `Calculated by harness`, `Jev output`, and
+  `Adapter action`;
+- expose the typed choice, returned metadata, validation, submitted order, and
+  observed result;
+- provide structured inspection for technical viewers; and
+- never imply access to hidden reasoning that Jev does not return.
 
-Labels should distinguish data origins: `Showdown state`, `Calculated by harness`, `Jev output`, and `Adapter action`. The decision card should use wording such as `Typed decision evaluation`, not `Model inference`, to avoid implying access to hidden reasoning.
+See [the dashboard product contract](../design/dashboard-product-contract.md)
+for the current authority.
 
 ## 15. Reproducible difficulty progression
 

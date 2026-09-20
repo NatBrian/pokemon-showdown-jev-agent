@@ -17,12 +17,12 @@ state.
 Requires Python 3.10+.
 
 ```powershell
-# 1. Create and activate a virtual environment
-python -m venv .venv
+# 1. Create and activate a project-local virtual environment with uv
+uv venv .venv --python 3.11
 .\.venv\Scripts\Activate.ps1
 
 # 2. Install the agent (src layout) with dev dependencies
-pip install -e .[dev]
+uv pip install --python .venv\Scripts\python.exe -e ".[dev]"
 
 # 3. Configure
 Copy-Item .env.example .env
@@ -38,15 +38,17 @@ Open <http://localhost:8000> and press **START JEV BATTLE**. The agent connects 
 authenticates, queues for a Gen 9 Random Battle opponent, and plays autonomously while the
 dashboard narrates every turn.
 
-### Benchmark mode (no network, no Jev calls needed)
+### Benchmark mode (controlled Showdown server + Jev API)
 
 ```powershell
 python -m jev_showdown.main benchmark --opponent random --matches 5
 python -m jev_showdown.main benchmark --opponent simple_heuristics --matches 10
 ```
 
-Runs the Jev player against a `RandomPlayer` or `SimpleHeuristicsPlayer` on a local
-Showdown-compatible server and prints win/loss and turn statistics.
+Runs the Jev player against a `RandomPlayer` or `SimpleHeuristicsPlayer` on the
+configured Showdown-compatible server and calls the configured Jev endpoint for
+each decision. It prints win/loss and turn statistics; it is not an offline or
+Jev-free benchmark.
 
 ### Tests
 
@@ -61,8 +63,9 @@ orchestrator lifecycle, web server/WebSocket hub, and a full end-to-end simulate
 
 1. **Legal candidates** — poke_env delivers a battle request; the harness enumerates every legal
    action (usable moves + switches) as typed candidates.
-2. **Deterministic criteria** — the harness computes observable facts per candidate (estimated
-   damage range, type effectiveness, KO checks, HP fractions). The model never invents numbers.
+2. **Deterministic criteria** — the harness computes observable facts per candidate (type
+   effectiveness, legal switches, KO checks, HP fractions, and either a poke-env Gen 9 damage
+   range or a clearly labeled incomplete-information estimate). The model never invents numbers.
 3. **State snapshot** — the battle state is serialized for the model, with opponent-team fog of
    war (six closed slots until revealed).
 4. **Jev decision** — the model returns a typed choice with confidence and a probability
@@ -70,8 +73,9 @@ orchestrator lifecycle, web server/WebSocket hub, and a full end-to-end simulate
 5. **Validation** — the harness resolves the order against the legal candidate set. Any error
    (timeout, malformed choice, illegal candidate, transport failure) resolves to a deterministic
    fallback strategy, attributed to the adapter — never presented as a Jev decision.
-6. **Telemetry** — a `TURN_DECISION` event (choice, confidence, tokens/cost, validation,
-   snapshot, recent history) is broadcast to the dashboard over WebSocket.
+6. **Telemetry** — a `TURN_DECISION` event (exact structured request, typed response, choice,
+   confidence, probabilities, tokens/cost, validation, submitted order, snapshot, and recent
+   history) is broadcast to the dashboard over WebSocket.
 
 ### Battle lifecycle
 
@@ -137,7 +141,8 @@ docs/                   # Alignment record, design docs, research logs, plan
 - [Project alignment record](docs/project-alignment.md) — product direction and constraints.
 - [Dashboard UI elements](docs/design/dashboard-ui-elements.md) — dashboard spec.
 - [Dashboard mockup](docs/design/dashboard-mockup-final.png) — visual target.
-- [Implementation plan](docs/superpowers/plans/2026-09-19-autonomous-pokemon-showdown-jev-agent.md) — task breakdown (complete).
+- [Historical implementation plan](docs/superpowers/plans/2026-09-19-autonomous-pokemon-showdown-jev-agent.md) — original implementation provenance.
+- [Codex takeover plan](docs/superpowers/plans/2026-09-20-codex-takeover-plan.md) — current repair and verification record.
 - [Phase 0 research](docs/research/phase-0-jev-opencode.md) · [Phase 1 research](docs/research/phase-1-research-and-architecture.md)
 
 ## Attribution

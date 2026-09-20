@@ -3,6 +3,34 @@ from poke_env.battle import AbstractBattle
 from jev_showdown.battle.candidates import CandidateAction
 
 
+def _enum_name(value: Any) -> str | None:
+    raw = getattr(value, "name", value)
+    if isinstance(raw, str):
+        return raw
+    return None
+
+
+def _condition_map(values: Any) -> dict[str, Any]:
+    if not isinstance(values, dict):
+        return {}
+    result: dict[str, Any] = {}
+    for key, value in values.items():
+        name = _enum_name(key) or str(key)
+        if isinstance(value, (bool, int, float, str)) or value is None:
+            result[name] = value
+        else:
+            result[name] = _enum_name(value) or str(value)
+    return result
+
+
+def _effect_names(values: Any) -> list[str]:
+    if isinstance(values, dict):
+        values = list(values.keys())
+    if not isinstance(values, (list, set, tuple)):
+        return []
+    return [name for value in values if (name := (_enum_name(value) or str(value)))]
+
+
 def _mon_view(mon: Any, *, revealed: bool = True) -> dict[str, Any]:
     """Serialize a poke_env Pokemon into the snapshot schema."""
     if mon is None or not revealed:
@@ -16,20 +44,24 @@ def _mon_view(mon: Any, *, revealed: bool = True) -> dict[str, Any]:
             "fainted": False,
             "status": None,
         }
-    status = getattr(mon, "status", None)
-    types = [getattr(getattr(mon, "type_1", None), "name", "")]
-    if getattr(mon, "type_2", None):
-        types.append(getattr(mon.type_2, "name", ""))
+    status = _enum_name(getattr(mon, "status", None))
+    types = []
+    for type_value in (getattr(mon, "type_1", None), getattr(mon, "type_2", None)):
+        type_name = _enum_name(type_value)
+        if type_name:
+            types.append(type_name)
     return {
         "revealed": True,
-        "species": getattr(mon, "species", "Unknown"),
+        "species": str(getattr(mon, "species", "Unknown")),
         "hp_fraction": getattr(mon, "current_hp_fraction", 1.0),
         "hp": getattr(mon, "current_hp", None),
         "max_hp": getattr(mon, "max_hp", None),
         "level": getattr(mon, "level", None),
         "fainted": getattr(mon, "fainted", False),
-        "status": getattr(status, "name", None) if status is not None else None,
+        "status": status,
         "types": types,
+        "boosts": _condition_map(getattr(mon, "boosts", {})),
+        "effects": _effect_names(getattr(mon, "effects", set())),
     }
 
 
@@ -54,12 +86,24 @@ class BattleSnapshotSerializer:
             # Unrevealed Poké Ball: capacity slot, nothing is guessed.
             opp_team_slots.append(_mon_view(None, revealed=False))
 
+        weather_names = _effect_names(getattr(battle, "weather", {}))
+
         return {
             "state_schema": 1,
             "battle_format": getattr(battle, "format", "gen9randombattle"),
             "turn": getattr(battle, "turn", 1),
-            "weather": getattr(battle.weather, "name", None) if getattr(battle, "weather", None) else None,
-            "fields": [getattr(f, "name", str(f)) for f in getattr(battle, "fields", [])],
+            "weather": weather_names[0] if weather_names else None,
+            "fields": [
+                name
+                for field in getattr(battle, "fields", [])
+                if (name := (_enum_name(field) or str(field)))
+            ],
+            "side_conditions": {
+                "self": _condition_map(getattr(battle, "side_conditions", {})),
+                "opponent": _condition_map(
+                    getattr(battle, "opponent_side_conditions", {})
+                ),
+            },
             "can_tera": getattr(battle, "can_tera", False),
             "self": {
                 "active_pokemon": self_active,

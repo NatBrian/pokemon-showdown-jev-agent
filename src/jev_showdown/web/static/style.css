@@ -318,6 +318,18 @@ body.arcade-theme {
   pointer-events: none;
 }
 
+.arena-source-note {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  z-index: 1;
+  color: var(--cyan);
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: 0.8px;
+  text-shadow: 0 0 5px rgba(0, 243, 255, 0.45);
+}
+
 /* ---------- Embedded official Showdown client (live feed) ---------- */
 .sd-frame-wrap {
   position: relative;

@@ -12,4 +12,5 @@ class JevDecisionResponse:
     output_tokens: int = 0
     cost: str = "0"
     raw_response: dict[str, Any] = field(default_factory=dict)
+    request_payload: dict[str, Any] = field(default_factory=dict)
     error: str | None = None

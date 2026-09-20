@@ -1,14 +1,33 @@
 from typing import Any
 from poke_env.battle import AbstractBattle
-from poke_env.player.battle_order import BattleOrder
+from poke_env.player.battle_order import BattleOrder, DefaultBattleOrder
 from jev_showdown.battle.candidates import CandidateAction
 from jev_showdown.battle.validator import ValidatedOrder
 from jev_showdown.decision.protocol import JevDecisionResponse
 
 def select_deterministic_fallback(candidates: dict[str, CandidateAction], battle: AbstractBattle, reason: str) -> ValidatedOrder:
     if not candidates:
-        # Default safety net
-        return ValidatedOrder(order=BattleOrder(None), is_fallback=True, fallback_reason=reason, chosen_id="emergency_none")
+        # Candidate enumeration can be empty while poke-env still exposes a
+        # legal order (for example during a forced request transition). Use
+        # that order before falling back to poke-env's protocol-safe default.
+        try:
+            legal_orders = getattr(battle, "valid_orders", None)
+            legal_order = next(iter(legal_orders), None) if legal_orders else None
+        except Exception:
+            legal_order = None
+        if legal_order is not None:
+            return ValidatedOrder(
+                order=legal_order,
+                is_fallback=True,
+                fallback_reason=reason,
+                chosen_id="legal_order_0",
+            )
+        return ValidatedOrder(
+            order=DefaultBattleOrder(),
+            is_fallback=True,
+            fallback_reason=reason,
+            chosen_id="emergency_default",
+        )
 
     # Priority 1: Legal forced single action
     if len(candidates) == 1:

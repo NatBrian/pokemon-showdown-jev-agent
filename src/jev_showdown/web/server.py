@@ -14,6 +14,7 @@ import json
 import os
 import re
 import time
+from contextlib import asynccontextmanager
 from typing import Any, Callable
 
 import httpx
@@ -253,18 +254,20 @@ def create_app(
         asyncio task when a dashboard client sends
         ``{"action": "START_BATTLE"}`` over ``/ws``.
     """
-    app = FastAPI(title="Jev Pokémon Showdown Dashboard")
     manager = ConnectionManager()
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        # Needed for thread-safe telemetry publishing (see ConnectionManager).
+        manager.set_loop(asyncio.get_running_loop())
+        yield
+
+    app = FastAPI(title="Jev Pokémon Showdown Dashboard", lifespan=lifespan)
     static_dir = os.path.join(os.path.dirname(__file__), "static")
     os.makedirs(static_dir, exist_ok=True)
 
     app.state.manager = manager
     app.state.settings = settings
-
-    @app.on_event("startup")
-    async def _capture_dashboard_loop() -> None:
-        # Needed for thread-safe telemetry publishing (see ConnectionManager).
-        manager.set_loop(asyncio.get_running_loop())
 
     @app.get("/", response_class=HTMLResponse)
     async def get_index() -> str:

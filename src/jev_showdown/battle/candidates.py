@@ -15,6 +15,16 @@ class CandidateAction:
 def _sanitize_id(text: str) -> str:
     return re.sub(r"[^a-zA-Z0-9_]", "", text.lower().replace("-", "").replace(" ", ""))
 
+
+def _unique_id(base: str, existing: dict[str, CandidateAction]) -> str:
+    """Keep telemetry/action IDs unique even for duplicate protocol names."""
+    if base not in existing:
+        return base
+    suffix = 2
+    while f"{base}_{suffix}" in existing:
+        suffix += 1
+    return f"{base}_{suffix}"
+
 def build_candidate_actions(battle: AbstractBattle) -> dict[str, CandidateAction]:
     candidates: dict[str, CandidateAction] = {}
     
@@ -24,7 +34,7 @@ def build_candidate_actions(battle: AbstractBattle) -> dict[str, CandidateAction
             continue
         move_name = getattr(move, "id", str(move))
         clean_name = _sanitize_id(move_name)
-        cid = f"move_{clean_name}"
+        cid = _unique_id(f"move_{clean_name}", candidates)
         display_label = getattr(move, "id", clean_name).replace("_", " ").title()
         
         candidates[cid] = CandidateAction(
@@ -42,7 +52,7 @@ def build_candidate_actions(battle: AbstractBattle) -> dict[str, CandidateAction
         
         # Tera variant if Terastallization is available
         if getattr(battle, "can_tera", False):
-            tera_cid = f"move_{clean_name}_tera"
+            tera_cid = _unique_id(f"{cid}_tera", candidates)
             candidates[tera_cid] = CandidateAction(
                 id=tera_cid,
                 kind="move_tera",
@@ -61,7 +71,7 @@ def build_candidate_actions(battle: AbstractBattle) -> dict[str, CandidateAction
     for mon in battle.available_switches:
         species_name = getattr(mon, "species", "pokemon")
         clean_species = _sanitize_id(species_name)
-        cid = f"switch_{clean_species}"
+        cid = _unique_id(f"switch_{clean_species}", candidates)
         hp_frac = getattr(mon, "current_hp_fraction", 1.0)
         
         candidates[cid] = CandidateAction(

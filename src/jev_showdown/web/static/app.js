@@ -22,9 +22,6 @@ const state = {
   inspectExpanded: false,
   historyExpanded: false,
   lastTurn: 0,
-  // Embedded official Showdown client (live feed iframe).
-  sdFrameTarget: null,
-  sdFrameOk: false,
 };
 
 /* ---------------- DOM helpers ---------------- */
@@ -275,13 +272,12 @@ function onStartBattleClick() {
 function handleTurnDecision(data) {
   state.battleActive = true;
 
-  // Point the embedded Showdown client at the live battle room.
-  if (data.battle_tag) navigateShowdown(data.battle_tag);
-
   const turn = data.turn != null ? data.turn
     : (data.snapshot && data.snapshot.turn != null ? data.snapshot.turn : state.lastTurn);
   const snapshot = data.snapshot || data.state || null;
-  const criteria = data.criteria || data.question || {};
+  const jevRequest = data.jev_request || {};
+  const question = data.question || (jevRequest.questions && jevRequest.questions.action) || {};
+  const criteria = data.criteria || question.criteria || {};
   const jev = data.jev_response || data.jev || {};
   const validation = data.validation || {
     chosen_id: data.chosen_id || jev.choice || null,
@@ -289,6 +285,7 @@ function handleTurnDecision(data) {
     fallback_reason: data.fallback_reason || null,
   };
   const chosenId = validation.chosen_id || jev.choice || data.chosen_id || null;
+  const submittedOrder = data.submitted_order || {};
   const recentHistory = data.recent_history || [];
   const latency = fmtLatency(jev.latency_ms);
   if (turn != null) state.lastTurn = turn;
@@ -317,14 +314,14 @@ function handleTurnDecision(data) {
   renderHistory(recentHistory);
 
   // Bottom action strip
-  renderActionStrip(chosenId, snapshot, criteria, latency, validation);
+  renderActionStrip(chosenId, snapshot, criteria, latency, validation, submittedOrder);
 
   // Status bar
   renderStatusBar(turn, chosenId, latency, snapshot);
 
   // Inspect data
   state.inspect.state = snapshot || null;
-  state.inspect.question = Object.keys(criteria).length ? criteria : null;
+  state.inspect.question = Object.keys(question).length ? question : null;
   state.inspect.response = Object.keys(jev).length ? jev : null;
   renderInspect();
 
@@ -597,7 +594,19 @@ function renderFacts(snapshot, criteria, chosenId) {
     ));
   }
   if (Array.isArray(facts.estimated_damage_range) && facts.estimated_damage_range.length === 2) {
-    el.appendChild(chip("EST. DAMAGE", facts.estimated_damage_range[0] + "–" + facts.estimated_damage_range[1] + "%", "deterministic estimate"));
+    const exact = facts.calculation_mode === "poke_env_gen9";
+    el.appendChild(chip(
+      exact ? "CALCULATED DAMAGE" : "ESTIMATED DAMAGE",
+      facts.estimated_damage_range[0] + "–" + facts.estimated_damage_range[1] + "%",
+      exact ? "poke-env Gen 9 range" : "incomplete-information estimate",
+    ));
+  }
+  if (facts.calculation_mode) {
+    el.appendChild(chip(
+      "FACT SOURCE",
+      facts.calculation_mode === "poke_env_gen9" ? "GEN 9 CALCULATOR" : "HEURISTIC",
+      Array.isArray(facts.calculation_assumptions) ? facts.calculation_assumptions.join(" • ") : "",
+    ));
   }
   if (facts.estimated_ko != null) {
     el.appendChild(chip("KO CHECK", facts.estimated_ko ? "LIKELY KO" : "NOT GUARANTEED", facts.estimated_ko ? "target down" : "target survives", facts.estimated_ko ? "good" : null));
@@ -723,6 +732,7 @@ function renderRightPanel(jev, validation, chosenId, snapshot, latency) {
     const tout = jev.output_tokens != null ? jev.output_tokens : "--";
     const cost = jev.cost != null ? String(jev.cost) : "0";
     setText("decision-usage", "IN " + tin + " \u2022 OUT " + tout + " \u2022 COST $" + cost);
+    setText("cost-badge", "◉ COST $" + cost);
   }
   const chip = $("decision-completed");
   chip.classList.toggle("hidden", !completed);
@@ -806,7 +816,7 @@ function renderHistory(events) {
 
 /* ---------------- Bottom action strip ---------------- */
 
-function renderActionStrip(chosenId, snapshot, criteria, latency, validation) {
+function renderActionStrip(chosenId, snapshot, criteria, latency, validation, submittedOrder) {
   const legal = snapshot && Array.isArray(snapshot.legal_actions) ? snapshot.legal_actions : [];
   const chosen = legal.find((a) => a.id === chosenId) || null;
   const label = chosen ? (chosen.label || chosen.id) : (chosenId ? String(chosenId) : "ACTION");
@@ -825,19 +835,26 @@ function renderActionStrip(chosenId, snapshot, criteria, latency, validation) {
   setText("validate-time", valMs != null && Number.isFinite(valMs) ? valMs.toFixed(2) + " MS" : "< 1 MS");
 
   setText("act-status", chosenId ? "SEND " + label.toUpperCase() : "STANDBY");
-  setText("act-desc", "Execute action command and await game response");
+  setText(
+    "act-desc",
+    submittedOrder && submittedOrder.message
+      ? "SUBMITTED " + String(submittedOrder.message).toUpperCase()
+      : "Execute action command and await game response",
+  );
 
   let damage = null;
   if (Array.isArray(facts.estimated_damage_range) && facts.estimated_damage_range.length === 2) {
     damage = facts.estimated_damage_range[0] + "–" + facts.estimated_damage_range[1] + "%";
   }
   const ko = facts.estimated_ko === true;
-  setText("result-status", chosenId ? (damage ? damage + " DAMAGE" : "ACTION EXECUTED") : "PENDING");
+  setText("result-status", chosenId ? "PREDICTION ONLY" : "AWAITING SHOWDOWN");
   setText(
     "result-desc",
     chosenId
-      ? (ko ? "TARGET LIKELY FAINED (next turn state computed)." : "TARGET SURVIVES (next turn state computed).")
-      : "Next turn state...",
+      ? (damage
+        ? "EXPECTED " + damage + " DAMAGE" + (ko ? " • KO POSSIBLE" : " • KO NOT GUARANTEED")
+        : "Action submitted; waiting for the observed battle result.")
+      : "The game result appears after Showdown resolves the action.",
   );
   // Estimated remaining HP of the target after the chosen action.
   const hpWrap = $("result-hp-wrap");
@@ -848,7 +865,7 @@ function renderActionStrip(chosenId, snapshot, criteria, latency, validation) {
     const lo = Math.max(0, Math.round(base - facts.estimated_damage_range[1]));
     const [low, high] = hi < lo ? [hi, lo] : [lo, hi];
     hpWrap.classList.remove("hidden");
-    setText("result-hp-label", "HP \u2248 " + low + " \u2013 " + high + "%");
+    setText("result-hp-label", "EXPECTED HP \u2248 " + low + " \u2013 " + high + "%");
     const fill = $("result-hp-fill");
     fill.style.width = Math.max(2, (low + high) / 2) + "%";
     fill.className = "hp-fill " + hpClass((low + high) / 200);
@@ -873,12 +890,12 @@ function renderStatusBar(turn, chosenId, latency, snapshot) {
   const range = chosen && Array.isArray(chosen.facts.estimated_damage_range) && chosen.facts.estimated_damage_range.length === 2
     ? "Damage " + chosen.facts.estimated_damage_range[0] + "–" + chosen.facts.estimated_damage_range[1] + "%"
     : "Damage --";
-  const target = chosen && chosen.facts.estimated_ko === true ? "Likely KO" : "Target survives";
+  const target = chosen && chosen.facts.estimated_ko === true ? "Expected KO" : "Expected target survives";
   const parts = [
     "TURN " + (turn != null ? turn : "--"),
     "Jev chose " + (chosenId ? String(chosenId).toUpperCase() : "--"),
     latency !== "--" ? latency + " MS" : "-- MS",
-    range,
+    "Expected " + range,
     target,
     "Next turn state ready",
   ];
@@ -1069,6 +1086,5 @@ document.addEventListener("DOMContentLoaded", () => {
   // Idle state until the first telemetry arrives
   setLoaderStep(0, null, false);
   renderInitialTeams();
-  initShowdownFrame();
   connectSocket();
 });

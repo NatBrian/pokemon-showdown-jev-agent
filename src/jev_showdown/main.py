@@ -60,6 +60,7 @@ class BattleOrchestrator:
         self._session: asyncio.Task | None = None
         self._playing_announced = False
         self._match_found = asyncio.Event()
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     @property
     def busy(self) -> bool:
@@ -95,10 +96,18 @@ class BattleOrchestrator:
 
     def _on_battle_event(self, event: dict[str, Any]) -> None:
         if event.get("type") == "BATTLE_START":
-            self._match_found.set()
+            self._signal_match_found()
             self._publish_status("MATCH FOUND — INITIALIZING BATTLE")
         elif event.get("type") == "BATTLE_END":
             self._publish_event(event)
+
+    def _signal_match_found(self) -> None:
+        """Wake the matchmaking task from any poke-env callback thread."""
+        loop = self._loop
+        if loop is None or loop.is_closed():
+            self._match_found.set()
+            return
+        loop.call_soon_threadsafe(self._match_found.set)
 
     # ------------------------------------------------------------------ start
 
@@ -106,6 +115,7 @@ class BattleOrchestrator:
         """Entry point invoked by the dashboard START_BATTLE action."""
         if self.busy:
             return
+        self._loop = asyncio.get_running_loop()
         self._match_found.clear()
         self._playing_announced = False
         self._session = asyncio.create_task(self._run())

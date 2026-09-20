@@ -25,13 +25,42 @@ from jev_showdown.battle.facts import annotate_candidates_with_facts
 from jev_showdown.battle.snapshot import BattleSnapshotSerializer
 from jev_showdown.battle.validator import ValidatedOrder
 from jev_showdown.config import Settings, load_settings
-from jev_showdown.decision.opencode_jev import JevSystemOneClient
+from jev_showdown.decision.opencode_jev import (
+    DEFAULT_DECISION_INSTRUCTIONS,
+    JevSystemOneClient,
+)
 from jev_showdown.decision.protocol import JevDecisionResponse
 from jev_showdown.strategy.fallback import (
     resolve_order,
     select_deterministic_fallback,
 )
 from jev_showdown.telemetry.events import BattleEventScanner, TurnHistoryTracker
+
+_SENSITIVE_RESPONSE_KEYS = {
+    "authorization",
+    "password",
+    "token",
+    "auth_token",
+    "access_token",
+    "api_key",
+    "apikey",
+    "secret",
+}
+
+
+def _redact_observable(value: Any) -> Any:
+    """Remove credential-like response fields before dashboard telemetry."""
+    if isinstance(value, dict):
+        return {
+            key: _redact_observable(item)
+            for key, item in value.items()
+            if str(key).lower().replace("-", "_") not in _SENSITIVE_RESPONSE_KEYS
+        }
+    if isinstance(value, list):
+        return [_redact_observable(item) for item in value]
+    if isinstance(value, tuple):
+        return [_redact_observable(item) for item in value]
+    return value
 
 
 class JevPlayer(Player):
@@ -88,6 +117,7 @@ class JevPlayer(Player):
         fallback ladder takes over, so the battle never stalls.
         """
         candidates: dict[str, CandidateAction] = {}
+        criteria: dict[str, str] = {}
         snapshot: dict[str, Any] | None = None
         t_val_start = time.perf_counter()
         try:
@@ -113,13 +143,22 @@ class JevPlayer(Player):
             )
         val_latency_ms = (time.perf_counter() - t_val_start) * 1000.0
 
-        self._record_turn(battle, candidates, jev_res, validated, snapshot, val_latency_ms)
+        self._record_turn(
+            battle,
+            candidates,
+            criteria,
+            jev_res,
+            validated,
+            snapshot,
+            val_latency_ms,
+        )
         return validated.order
 
     def _record_turn(
         self,
         battle: AbstractBattle,
         candidates: dict[str, CandidateAction],
+        criteria: dict[str, str],
         jev_res: JevDecisionResponse,
         validated: ValidatedOrder,
         snapshot: dict[str, Any] | None = None,
@@ -155,6 +194,22 @@ class JevPlayer(Player):
             note=note,
         )
 
+        jev_request = jev_res.request_payload or {
+            "model": jev_res.model,
+            "state": snapshot,
+            "questions": {
+                "action": {
+                    "type": "choice",
+                    "instructions": DEFAULT_DECISION_INSTRUCTIONS,
+                    "criteria": criteria,
+                }
+            },
+        }
+        try:
+            submitted_message = validated.order.message
+        except Exception:
+            submitted_message = None
+
         event_data: dict[str, Any] = {
             "type": "TURN_DECISION",
             "turn": turn,
@@ -166,12 +221,16 @@ class JevPlayer(Player):
             "is_fallback": validated.is_fallback,
             "fallback_reason": validated.fallback_reason,
             "snapshot": snapshot,
+            "criteria": criteria,
+            "question": jev_request.get("questions", {}).get("action", {}),
+            "jev_request": jev_request,
             "validation": {
                 "chosen_id": validated.chosen_id,
                 "is_fallback": validated.is_fallback,
                 "fallback_reason": validated.fallback_reason,
                 "legal_candidates": len(candidates),
                 "latency_ms": val_latency_ms,
+                "submitted_order": submitted_message,
             },
             "jev": {
                 "model": jev_res.model,
@@ -183,6 +242,23 @@ class JevPlayer(Player):
                 "output_tokens": jev_res.output_tokens,
                 "cost": jev_res.cost,
                 "error": jev_res.error,
+            },
+            "jev_response": {
+                "model": jev_res.model,
+                "choice": jev_res.choice,
+                "confidence": jev_res.confidence,
+                "probabilities": jev_res.probabilities,
+                "latency_ms": jev_res.latency_ms,
+                "input_tokens": jev_res.input_tokens,
+                "output_tokens": jev_res.output_tokens,
+                "cost": jev_res.cost,
+                "raw_response": _redact_observable(jev_res.raw_response),
+                "error": jev_res.error,
+            },
+            "submitted_order": {
+                "chosen_id": validated.chosen_id,
+                "message": submitted_message,
+                "is_fallback": validated.is_fallback,
             },
             "recent_history": self.history_tracker.get_recent_events(limit=5),
         }

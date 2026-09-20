@@ -1,5 +1,6 @@
 # tests/unit/test_orchestrator.py
 import asyncio
+import threading
 from unittest.mock import MagicMock
 
 import pytest
@@ -212,3 +213,17 @@ async def test_orchestrator_blocks_second_start_while_busy(monkeypatch):
     await asyncio.wait_for(first_session, timeout=5.0)
     assert orchestrator.busy is False
     assert _statuses(published)[-1] == PHASE_READY
+
+
+@pytest.mark.asyncio
+async def test_match_found_callback_from_foreign_thread_is_thread_safe():
+    orchestrator = BattleOrchestrator(_make_settings("jev_bot", "secret"))
+    orchestrator._loop = asyncio.get_running_loop()
+
+    thread = threading.Thread(
+        target=orchestrator._signal_match_found,
+    )
+    thread.start()
+    thread.join()
+
+    await asyncio.wait_for(orchestrator._match_found.wait(), timeout=1.0)

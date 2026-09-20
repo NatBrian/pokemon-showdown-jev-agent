@@ -43,3 +43,33 @@ def test_build_candidate_actions_moves_and_switches():
     cand_switch = candidates["switch_rotomwash"]
     assert cand_switch.kind == "switch"
     assert cand_switch.label == "Switch to Rotom-Wash"
+
+
+def test_build_candidate_actions_keeps_duplicate_ids_unique():
+    battle = MagicMock()
+    battle.can_tera = False
+    first = MagicMock()
+    first.id = "tackle"
+    first.base_power = 40
+    first.type.name = "NORMAL"
+    first.current_pp = 10
+    second = MagicMock()
+    second.id = "tackle"
+    second.base_power = 40
+    second.type.name = "NORMAL"
+    second.current_pp = 10
+    first_switch = MagicMock(spec=object)
+    first_switch.species = "Rotom"
+    first_switch.current_hp_fraction = 1.0
+    second_switch = MagicMock(spec=object)
+    second_switch.species = "Rotom"
+    second_switch.current_hp_fraction = 0.8
+    battle.available_moves = [first, second]
+    battle.available_switches = [first_switch, second_switch]
+
+    candidates = build_candidate_actions(battle)
+
+    assert "move_tackle" in candidates
+    assert "move_tackle_2" in candidates
+    assert "switch_rotom" in candidates
+    assert "switch_rotom_2" in candidates

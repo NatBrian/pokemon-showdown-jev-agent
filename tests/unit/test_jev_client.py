@@ -53,6 +53,20 @@ async def test_jev_client_success(test_settings):
         assert res.cost == "0"
         assert res.input_tokens == 309
         assert res.latency_ms > 0
+        assert res.request_payload == {
+            "model": "jev-1.13-free",
+            "state": {"active_pokemon": "Garchomp"},
+            "questions": {
+                "action": {
+                    "type": "choice",
+                    "instructions": "Choose the strongest legal action that maximizes win probability.",
+                    "criteria": {
+                        "move_earthquake": "Use Earthquake",
+                        "switch_rotom": "Switch to Rotom",
+                    },
+                }
+            },
+        }
 
 @pytest.mark.asyncio
 async def test_jev_client_timeout_error(test_settings):

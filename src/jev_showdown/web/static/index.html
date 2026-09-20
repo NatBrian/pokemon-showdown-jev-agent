@@ -57,11 +57,7 @@
 
       <!-- Live feed: the official Pok&eacute;mon Showdown client (real sprites,
            animations, move effects, avatars and chat — the actual game) -->
-      <div class="sd-frame-wrap">
-        <div class="sd-frame-note">OFFICIAL SHOWDOWN CLIENT &bull; LIVE</div>
-        <iframe id="showdown-frame" class="sd-frame" title="Pokémon Showdown — live battle"
-                src="about:blank" allow="autoplay"></iframe>
-      </div>
+      <div class="arena-source-note">STATE RENDERED FROM SHOWDOWN TELEMETRY &bull; FOG OF WAR HONORED</div>
 
       <!-- Local arena (fallback display when the embedded client cannot load) -->
       <div class="arena-view" id="arena-fallback">
@@ -289,15 +285,15 @@
     <div id="result-panel" class="strip-panel strip-result">
       <div class="strip-head">
         <span class="strip-icon">&#10036;</span>
-        <span class="strip-title">RESULT</span>
+        <span class="strip-title">OBSERVED RESULT</span>
         <span class="strip-source">(SHOWDOWN)</span>
         <span id="result-time" class="strip-time">&lt; 1 MS</span>
       </div>
       <div class="strip-body">
         <span id="result-sprite" class="result-sprite" aria-hidden="true"></span>
         <div class="strip-copy">
-          <div id="result-status" class="strip-status">PENDING</div>
-          <div id="result-desc" class="strip-desc">Next turn state&hellip;</div>
+          <div id="result-status" class="strip-status">AWAITING SHOWDOWN</div>
+          <div id="result-desc" class="strip-desc">The game result appears after Showdown resolves the action.</div>
           <div id="result-hp-wrap" class="result-hp hidden">
             <span id="result-hp-label" class="result-hp-label">HP --</span>
             <div class="result-hp-track">
@@ -324,6 +320,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=2"></script>
 </body>
 </html>

@@ -1,4 +1,7 @@
 from typing import Any
+
+from poke_env.calc.damage_calc_gen9 import calculate_damage
+from poke_env.player.battle_order import SingleBattleOrder
 from poke_env.battle import AbstractBattle
 from jev_showdown.battle.candidates import CandidateAction
 
@@ -34,6 +37,48 @@ def calculate_type_multiplier(attack_type: str, def_type_1: str | None, def_type
             mult *= TYPE_CHART[att][def_type_2.upper()]
     return mult
 
+
+def _exact_damage_percent(
+    battle: AbstractBattle,
+    candidate: Any,
+    opponent: Any,
+) -> list[int] | None:
+    """Return a poke-env Gen 9 damage range when all required state exists.
+
+    Random Battles expose incomplete opponent information, and the calculator
+    asserts when stats or identifiers are unavailable. Those cases are
+    intentionally returned as ``None`` so the caller can use a visibly
+    labeled heuristic estimate instead of pretending the result is exact.
+    Terastallize variants stay on the estimate path because the calculator's
+    battle object must be updated with the post-Tera attacker state first.
+    """
+    if candidate.kind != "move" or not isinstance(candidate.order_ref, SingleBattleOrder):
+        return None
+    attacker = getattr(battle, "active_pokemon", None)
+    attacker_identifier = getattr(attacker, "identifier", None)
+    defender_identifier = getattr(opponent, "identifier", None)
+    max_hp = getattr(opponent, "max_hp", None)
+    move = getattr(candidate.order_ref, "order", None)
+    if not isinstance(attacker_identifier, str) or not isinstance(defender_identifier, str):
+        return None
+    if not isinstance(max_hp, (int, float)) or max_hp <= 0 or move is None:
+        return None
+    try:
+        minimum, maximum = calculate_damage(
+            attacker_identifier,
+            defender_identifier,
+            move,
+            battle,
+        )
+        if not all(isinstance(value, (int, float)) for value in (minimum, maximum)):
+            return None
+        return [
+            max(0, round(float(minimum) / max_hp * 100)),
+            max(0, round(float(maximum) / max_hp * 100)),
+        ]
+    except (AssertionError, AttributeError, KeyError, TypeError, ValueError):
+        return None
+
 def annotate_candidates_with_facts(battle: AbstractBattle, candidates: dict[str, CandidateAction]) -> dict[str, str]:
     criteria: dict[str, str] = {}
     opp = getattr(battle, "opponent_active_pokemon", None)
@@ -48,15 +93,34 @@ def annotate_candidates_with_facts(battle: AbstractBattle, candidates: dict[str,
             mult = calculate_type_multiplier(m_type, opp_t1, opp_t2)
             cand.facts["type_multiplier"] = mult
 
-            # Simple bounded heuristic damage estimation % range
-            # Base power * multiplier * STAB factor (~1.2-1.5) scaled to %
-            approx_damage = int((base_power * mult * 0.4) * (1.5 if cand.kind == "move_tera" else 1.0))
-            damage_min = max(0, int(approx_damage * 0.85))
-            damage_max = max(0, int(approx_damage * 1.0))
+            exact_range = _exact_damage_percent(battle, cand, opp)
+            if exact_range is not None:
+                damage_min, damage_max = exact_range
+                cand.facts["calculation_mode"] = "poke_env_gen9"
+                cand.facts["calculation_assumptions"] = [
+                    "poke-env Gen 9 calculator",
+                    "current known battle stats and effects",
+                ]
+            else:
+                # Bounded estimate for incomplete-information Random Battle
+                # states. This is deliberately not called exact damage.
+                approx_damage = int(
+                    (base_power * mult * 0.4)
+                    * (1.5 if cand.kind == "move_tera" else 1.0)
+                )
+                damage_min = max(0, int(approx_damage * 0.85))
+                damage_max = max(0, int(approx_damage * 1.0))
+                cand.facts["calculation_mode"] = "heuristic_estimate"
+                cand.facts["calculation_assumptions"] = [
+                    "base power and type effectiveness",
+                    "approximate damage scaling",
+                    "unknown sets, items, abilities, and exact stats",
+                ]
             cand.facts["estimated_damage_range"] = [damage_min, damage_max]
             cand.facts["estimated_ko"] = (damage_min >= int(opp_hp * 100))
 
-            crit_desc = f"{cand.label}; Power: {base_power}, Type: {m_type}, {mult}x effective. Est Damage: {damage_min}-{damage_max}%"
+            damage_label = "Calc Damage" if cand.facts["calculation_mode"] == "poke_env_gen9" else "Est Damage"
+            crit_desc = f"{cand.label}; Power: {base_power}, Type: {m_type}, {mult}x effective. {damage_label}: {damage_min}-{damage_max}%"
             if cand.facts["estimated_ko"]:
                 crit_desc += " [Likely KO]"
             criteria[cid] = crit_desc

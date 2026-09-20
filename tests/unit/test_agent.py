@@ -83,6 +83,7 @@ async def test_choose_move_orchestrates_jev_turn_loop():
         input_tokens=309,
         output_tokens=24,
         cost="0",
+        raw_response={"headers": {"Authorization": "Bearer secret-token"}},
         error=None,
     )
     error_res = JevDecisionResponse(
@@ -135,6 +136,13 @@ async def test_choose_move_orchestrates_jev_turn_loop():
     assert event["is_fallback"] is False
     assert event["jev"]["confidence"] == 0.91
     assert event["jev"]["error"] is None
+    assert event["jev_request"]["model"] == "jev-1.13-free"
+    assert event["jev_request"]["state"] == state
+    assert event["jev_request"]["questions"]["action"]["criteria"] == criteria
+    assert event["jev_response"]["choice"] == "move_earthquake"
+    assert "secret-token" not in str(event["jev_response"])
+    assert "Authorization" not in str(event["jev_response"])
+    assert event["submitted_order"]["message"] == order.message
 
     # Turn history tracked for the active pokemon
     assert len(player.history_tracker.events) == 1

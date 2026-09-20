@@ -40,9 +40,14 @@ def test_frontend_assets_exist():
     # Both team rows explicitly (fog-of-war opponent vs known team)
     assert "OPPONENT TEAM" in html
     assert "YOUR TEAM" in html
+    # MVP battle view is local and deterministic; it must not depend on an
+    # iframe login/session to show the active battle.
+    assert "STATE RENDERED FROM SHOWDOWN TELEMETRY" in html
+    assert '<iframe id="showdown-frame"' not in html
     # Reported token usage / cost and target remaining-HP estimate
     assert "decision-usage" in html
     assert "result-hp-wrap" in html
+    assert "OBSERVED RESULT" in html
 
 
 def test_frontend_styles_match_arcade_direction():
@@ -63,3 +68,7 @@ def test_frontend_client_handles_lifecycle_states():
     assert "btn-error" in js
     # Fallback banner is driven by validation data, with adapter attribution
     assert "FALLBACK ACTION" in js
+    assert "jev_request" in js
+    assert "submitted_order" in js
+    assert "calculation_mode" in js
+    assert "initShowdownFrame();" not in js

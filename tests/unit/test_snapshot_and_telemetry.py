@@ -36,6 +36,39 @@ def test_fog_of_war_opponent_team_tracking():
     assert opp_team[1]["revealed"] is False
     assert opp_team[1]["species"] is None
 
+
+def test_snapshot_includes_observable_boosts_effects_and_side_conditions():
+    battle = MagicMock()
+    battle.turn = 4
+    sunny = MagicMock()
+    sunny.name = "SUNNYDAY"
+    battle.weather = {sunny: 1}
+    battle.fields = []
+    battle.can_tera = True
+    battle.side_conditions = {"stealthrock": 1}
+    battle.opponent_side_conditions = {"spikes": 2}
+    active = MagicMock()
+    active.species = "Garchomp"
+    active.current_hp_fraction = 0.75
+    active.status = None
+    active.fainted = False
+    active.boosts = {"atk": 2, "spe": -1}
+    active.effects = {"protect": 1}
+    active.type_1 = MagicMock(name="DRAGON")
+    active.type_2 = MagicMock(name="GROUND")
+    battle.active_pokemon = active
+    battle.team = {"garchomp": active}
+    battle.opponent_active_pokemon = None
+    battle.opponent_team = {}
+
+    state = BattleSnapshotSerializer().build_snapshot(battle, {})
+
+    assert state["side_conditions"]["self"] == {"stealthrock": 1}
+    assert state["side_conditions"]["opponent"] == {"spikes": 2}
+    assert state["weather"] == "SUNNYDAY"
+    assert state["self"]["active_pokemon"]["boosts"] == {"atk": 2, "spe": -1}
+    assert state["self"]["active_pokemon"]["effects"] == ["protect"]
+
 def test_turn_history_tracker():
     tracker = TurnHistoryTracker()
     tracker.add_event(turn=1, actor="Garchomp", action="Earthquake", damage_pct=85, status=None)

@@ -8,6 +8,7 @@ evaluation reproducible.
 """
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 
+from benchmarks.evaluation import latency_percentiles, summarize_series
 from jev_showdown.agent import JevPlayer
 from jev_showdown.config import Settings, server_configuration_for
 from jev_showdown.decision.opencode_jev import JevSystemOneClient
@@ -28,11 +29,14 @@ async def run_benchmark(
     """
     server_configuration = server_configuration_for(settings.showdown_server_url)
     jev_client = JevSystemOneClient(settings)
+    events: list[dict] = []
     jev_player = JevPlayer(
         settings=settings,
         jev_client=jev_client,
         battle_format=settings.battle_format,
         server_configuration=server_configuration,
+        on_turn_event=events.append,
+        on_battle_event=events.append,
     )
 
     if opponent_type == "simple_heuristics":
@@ -53,9 +57,16 @@ async def run_benchmark(
     await jev_player.battle_against(opponent, n_battles=n_matches)
 
     win_rate = (jev_player.n_won_battles / n_matches) * 100
+    metrics = summarize_series(events)
+    percentiles = latency_percentiles(metrics.decision_latencies_ms)
     print(
-        f"Benchmark Complete! Won {jev_player.n_won_battles}/{n_matches} "
-        f"battles ({win_rate:.1f}% win rate)"
+        f"Benchmark Complete! format={settings.battle_format} "
+        f"opponent={opponent_type} battles={metrics.battles} "
+        f"wins={metrics.wins} losses={metrics.losses} draws={metrics.draws} "
+        f"win_rate={win_rate:.1f}% decisions={metrics.decisions} "
+        f"fallbacks={metrics.fallbacks} illegal={metrics.illegal_actions} "
+        f"stale={metrics.stale_responses} "
+        f"latency_ms={percentiles}"
     )
     await jev_client.aclose()
     return win_rate

@@ -1,51 +1,53 @@
-/* ============================================================
-   AUTONOMOUS POKÉMON BATTLE AGENT — Dashboard client
-   Connects to the FastAPI WebSocket hub at /ws and renders
-   live battle telemetry, Jev decisions and end-game state.
-
-   Expected server messages (JSON):
-     { type: "STATUS_UPDATE",  status: "..." }
-     { type: "TURN_DECISION",  turn, snapshot, criteria,
-       jev_response | jev, validation, recent_history, ... }
-     { type: "BATTLE_START" | "BATTLE_FRAME" | "BATTLE_REPLAY", ... }
-     { type: "BATTLE_END",     won, total_turns, winner, ... }
-   ============================================================ */
+/*
+ * JEV battle dashboard client.
+ *
+ * The official Showdown renderer owns the game scene. This file owns only
+ * the presentation of harness input, actual Jev output, validation, action
+ * submission, and protocol-observed results.
+ */
 "use strict";
-
-/* ---------------- State ---------------- */
 
 const state = {
   ws: null,
   connected: false,
   battleActive: false,
-  inspect: { state: null, question: null, response: null },
-  inspectTab: "state",
-  inspectExpanded: false,
-  historyExpanded: false,
-  lastTurn: 0,
+  gamePhase: "IDLE",
   showdownBattleTag: null,
   showdownMountPromise: null,
   showdownUnavailable: false,
+  inspectOpen: false,
+  inspectTab: "state",
+  inspect: {
+    state: null,
+    question: null,
+    request: null,
+    response: null,
+    validation: null,
+    frames: [],
+  },
+  currentTurn: null,
+  currentDecision: null,
+  awaitingObservedResult: false,
+  reconnectTimer: null,
 };
 
-/* ---------------- DOM helpers ---------------- */
-
-// Keep the dashboard DOM helper lexical: Showdown's jQuery bundle owns the
-// global `$` name after the official renderer loads.
 const getEl = (id) => document.getElementById(id);
 
-function setText(id, text) {
-  const el = getEl(id);
-  if (el) el.textContent = text;
+function setText(id, value) {
+  const element = getEl(id);
+  if (element) element.textContent = value == null ? "" : String(value);
 }
 
-function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+function clearEl(element) {
+  if (!element) return;
+  while (element.firstChild) element.removeChild(element.firstChild);
+}
 
 function makeEl(tag, className, text) {
-  const el = document.createElement(tag);
-  if (className) el.className = className;
-  if (text != null) el.textContent = text;
-  return el;
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (text != null) element.textContent = text;
+  return element;
 }
 
 function fmtPct(value) {
@@ -53,195 +55,129 @@ function fmtPct(value) {
   return Math.round(Number(value) * 100) + "%";
 }
 
-function fmtLatency(ms) {
-  if (ms == null || Number.isNaN(Number(ms))) return "--";
-  return Math.round(Number(ms));
+function fmtLatency(value) {
+  if (value == null || Number.isNaN(Number(value))) return "--";
+  return String(Math.round(Number(value)));
 }
 
-function hpClass(fraction) {
-  if (fraction > 0.5) return "hp-full";
-  if (fraction > 0.2) return "hp-mid";
-  return "hp-low";
+function humanize(value) {
+  return String(value || "")
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-/* ---------------- Pokémon sprites & type tags ---------------- */
-
-const TYPE_CLASS = {
-  NORMAL: "normal", FIRE: "fire", WATER: "water", ELECTRIC: "electric",
-  GRASS: "grass", ICE: "ice", FIGHTING: "fighting", POISON: "poison",
-  GROUND: "ground", FLYING: "flying", PSYCHIC: "psychic", BUG: "bug",
-  ROCK: "rock", GHOST: "ghost", DRAGON: "dragon", DARK: "dark",
-  STEEL: "steel", FAIRY: "fairy",
-};
-
-function speciesSlug(species) {
-  return String(species || "")
-    .toLowerCase()
-    .replace(/[’']/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]+/g, "")
-    .replace(/^-+|-+$/g, "");
+function upper(value, fallback = "--") {
+  const text = humanize(value);
+  return text ? text.toUpperCase() : fallback;
 }
 
-const SHOWDOWN_SPRITE_BASE = "https://play.pokemonshowdown.com/sprites/";
-
-function showdownSpriteSlug(species) {
-  let slug = speciesSlug(species);
-  const hyphenatedForm = slug.match(
-    /^(.+?)(alola|galar|hisui|paldea|east|west|north|south|pompom|pau|sensu)$/i
-  );
-  if (hyphenatedForm && !hyphenatedForm[1].endsWith("-")) {
-    slug = hyphenatedForm[1] + "-" + hyphenatedForm[2];
-  }
-  // Showdown's sprite filenames use compact forme suffixes for these common
-  // random-battle forms rather than the full species display name.
-  return slug
-    .replace(/-rapid-strike$/i, "-rapidstrike")
-    .replace(/-single-strike$/i, "-singlestrike")
-    .replace(/-school-form$/i, "-school")
-    .replace(/-schooling-form$/i, "-school")
-    .replace(/-10-percent-form$/i, "-10")
-    .replace(/-complete-form$/i, "-complete");
+function formatAction(action) {
+  if (!action) return "ACTION";
+  return upper(action.label || action.id || action.kind || "ACTION");
 }
 
-function spriteUrls(species, perspective = "front") {
-  const slug = showdownSpriteSlug(species);
-  if (!slug) return [];
-  const folder = perspective === "back" ? "xyani-back" : "xyani";
-  const fallbackFolder = perspective === "back" ? "xyani" : "gen5";
-  return [
-    SHOWDOWN_SPRITE_BASE + folder + "/" + slug + ".gif",
-    SHOWDOWN_SPRITE_BASE + fallbackFolder + "/" + slug + ".png",
-  ];
+function findAction(snapshot, id) {
+  const legal = snapshot && Array.isArray(snapshot.legal_actions)
+    ? snapshot.legal_actions
+    : [];
+  return legal.find((action) => action && action.id === id) || null;
 }
 
-function frontSpriteUrl(species) {
-  return spriteUrls(species, "front")[0] || "";
+function setStatusChip(id, text, mode) {
+  const element = getEl(id);
+  if (!element) return;
+  element.textContent = text;
+  element.classList.remove("online", "live", "warn", "error");
+  if (mode) element.classList.add(mode);
 }
 
-function backSpriteUrls(species) {
-  return spriteUrls(species, "back");
+function setGamePhase(phase) {
+  state.gamePhase = phase;
+  setText("game-state", phase);
 }
 
-function initials(species) {
-  const s = String(species || "??").trim();
-  return s.length <= 2 ? s.toUpperCase() : s.slice(0, 2).toUpperCase();
+function setStartButton(label, disabled) {
+  const button = getEl("start-btn");
+  if (!button) return;
+  button.textContent = label;
+  button.disabled = Boolean(disabled);
 }
 
-function showSprite(imgEl, avatarEl, urls, species) {
-  const candidates = Array.isArray(urls) ? urls : (urls ? [urls] : []);
-  let candidateIndex = 0;
-
-  const showFallback = () => {
-    imgEl.style.display = "none";
-    avatarEl.style.display = "";
-    avatarEl.textContent = initials(species);
-  };
-
-  const loadNext = () => {
-    if (candidateIndex >= candidates.length) {
-      showFallback();
-      return;
-    }
-    avatarEl.style.display = "none";
-    imgEl.style.display = "";
-    imgEl.onerror = () => {
-      candidateIndex += 1;
-      loadNext();
-    };
-    imgEl.src = candidates[candidateIndex];
-  };
-
-  loadNext();
+function setTraceStep(id, value, mode) {
+  const element = getEl(id);
+  if (!element) return;
+  element.classList.remove("trace-active", "trace-success", "trace-pending", "trace-error");
+  if (mode) element.classList.add(mode);
+  const strong = element.querySelector("strong");
+  if (strong) strong.textContent = value;
 }
 
-function humanizeFormat(format) {
-  let s = String(format || "").replace(/_/g, " ").trim();
-  s = s.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
-  s = s.replace(/([A-Za-z])(\d)/g, "$1 $2");
-  s = s.replace(/(\d)([A-Za-z])/g, "$1 $2");
-  // All-lowercase concatenated ids (e.g. "gen9randombattle") get a light
-  // dictionary split on common battle-format words.
-  const WORDS = [
-    "random", "battle", "gen", "double", "triple", "single", "suspect",
-    "ubers", "ultra", "national", "dex", "limited", "stadium", "custom",
-    "sketchy", "veteran", "beginner", "advanced", "middle",
-  ];
-  WORDS.forEach((w) => {
-    s = s.replace(new RegExp("(^|\\s)(" + w + ")([a-z0-9])", "gi"), "$1$2 $3");
-  });
-  return s.replace(/\s+/g, " ").toUpperCase();
+function setJevLoading(visible) {
+  const loader = getEl("jev-loader");
+  if (loader) loader.hidden = !visible;
 }
-
-function makeTypeTags(types) {
-  const wrap = document.createElement("div");
-  wrap.className = "type-tags";
-  fillTypeTags(wrap, types);
-  return wrap;
-}
-
-function fillTypeTags(container, types) {
-  clearEl(container);
-  (types || []).forEach((t) => {
-    if (!t) return;
-    const cls = TYPE_CLASS[String(t).toUpperCase()] || "";
-    container.appendChild(makeEl("span", "type-tag" + (cls ? " type-" + cls : ""), String(t).toUpperCase()));
-  });
-}
-
-/* ---------------- WebSocket lifecycle ---------------- */
 
 function connectSocket() {
   if (state.ws && (state.ws.readyState === WebSocket.OPEN || state.ws.readyState === WebSocket.CONNECTING)) {
     return;
   }
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
   try {
-    state.ws = new WebSocket("ws://" + window.location.host + "/ws");
-  } catch (err) {
+    state.ws = new WebSocket(protocol + "://" + window.location.host + "/ws");
+  } catch (error) {
+    setStatusChip("backend-status", "BACKEND OFFLINE", "error");
     scheduleReconnect();
     return;
   }
 
+  setStatusChip("backend-status", "BACKEND CONNECTING", "warn");
   state.ws.onopen = () => {
     state.connected = true;
-    console.log("[jev-dashboard] Connected to Jev WebSocket hub");
+    setStatusChip("backend-status", "BACKEND ONLINE", "online");
     if (!state.battleActive) {
       setStartButton("START JEV BATTLE", false);
-      setStatusLeft("CONNECTED TO TELEMETRY HUB | READY FOR SHOWDOWN BATTLE | SAME GAME. DEEPER INSIGHT.");
+      setGamePhase("IDLE");
     }
   };
-
   state.ws.onmessage = (event) => {
     let data;
     try {
       data = JSON.parse(event.data);
-    } catch (err) {
-      console.warn("[jev-dashboard] Non-JSON message ignored:", event.data);
+    } catch (error) {
+      console.warn("[jev-dashboard] ignored non-JSON message", event.data);
       return;
     }
     dispatchMessage(data);
   };
-
   state.ws.onclose = () => {
     state.connected = false;
-    if (!state.battleActive) setStartButton("RECONNECTING...", true);
+    setStatusChip("backend-status", "BACKEND OFFLINE", "error");
+    if (!state.battleActive) {
+      setStartButton("RECONNECTING...", true);
+      setGamePhase("OFFLINE");
+    } else {
+      setGamePhase("CONNECTION LOST");
+    }
     scheduleReconnect();
   };
-
   state.ws.onerror = () => {
-    // onclose will follow; nothing extra to do.
+    setStatusChip("backend-status", "BACKEND ERROR", "error");
   };
 }
 
 function scheduleReconnect() {
-  setTimeout(() => {
+  if (state.reconnectTimer) return;
+  state.reconnectTimer = window.setTimeout(() => {
+    state.reconnectTimer = null;
     if (!state.connected) connectSocket();
   }, 1500);
 }
 
 function sendAction(action) {
   if (state.ws && state.ws.readyState === WebSocket.OPEN) {
-    state.ws.send(JSON.stringify({ action: action }));
+    state.ws.send(JSON.stringify({ action }));
     return true;
   }
   return false;
@@ -249,782 +185,301 @@ function sendAction(action) {
 
 function dispatchMessage(data) {
   const type = data.type || data.event;
-  if (type === "STATUS_UPDATE") {
-    handleStatusUpdate(data);
-  } else if (type === "BATTLE_START") {
-    handleShowdownBattleStart(data);
-  } else if (type === "BATTLE_FRAME") {
-    handleShowdownFrame(data);
-  } else if (type === "BATTLE_REPLAY") {
-    handleShowdownReplay(data);
-  } else if (type === "TURN_DECISION") {
-    handleTurnDecision(data);
-  } else if (type === "BATTLE_END") {
-    handleBattleEnd(data);
-  } else if (data.turn != null && (data.jev || data.jev_response)) {
-    // Tolerate turn payloads broadcast without an explicit type tag.
-    handleTurnDecision(data);
-  }
+  if (type === "STATUS_UPDATE") handleStatusUpdate(data);
+  else if (type === "BATTLE_START") handleShowdownBattleStart(data);
+  else if (type === "BATTLE_FRAME") handleShowdownFrame(data);
+  else if (type === "BATTLE_REPLAY") handleShowdownReplay(data);
+  else if (type === "TURN_DECISION") handleTurnDecision(data);
+  else if (type === "BATTLE_END") handleBattleEnd(data);
+  else if (data.turn != null && (data.jev || data.jev_response)) handleTurnDecision(data);
 }
-
-/* ---------------- Button / status helpers ---------------- */
-
-function setStartButton(label, disabled) {
-  const btn = getEl("start-btn");
-  if (!btn) return;
-  btn.textContent = label;
-  btn.disabled = !!disabled;
-}
-
-function setStatusLeft(text) {
-  setText("status-left", text);
-}
-
-/* ---------------- STATUS_UPDATE ---------------- */
 
 function handleStatusUpdate(data) {
-  const status = (data.status || data.message || "").toUpperCase();
-  const btn = getEl("start-btn");
+  const status = upper(data.status || data.message || "STATUS");
+  const rawStatus = String(data.status || data.message || "").toUpperCase();
   if (data.error) {
-    // Clear, unmistakable error state (connection/auth/search failure).
     state.battleActive = false;
+    setJevLoading(false);
     setStartButton("RETRY BATTLE", false);
-    btn.classList.add("btn-error");
-    setStatusLeft(status + " | SAME GAME. DEEPER INSIGHT.");
-    // Back to idle in the Jev Output panel (no inference is in flight).
-    setLoaderStep(0, null, false);
+    const button = getEl("start-btn");
+    if (button) button.classList.add("btn-error");
+    setGamePhase("ERROR");
+    setStatusChip("showdown-connection-status", "SHOWDOWN ERROR", "error");
+    setStatusChip("jev-status", "JEV UNAVAILABLE", "error");
     return;
   }
-  btn.classList.remove("btn-error");
-  const busy = data.busy === undefined ? true : !!data.busy;
+
+  const button = getEl("start-btn");
+  if (button) button.classList.remove("btn-error");
+  const busy = data.busy === undefined ? true : Boolean(data.busy);
   if (busy) {
     state.battleActive = true;
-    setStartButton(status || "CONNECTING...", true);
-    // The only region that should visibly "wait" is Jev Output.
-    setLoaderStep(1, "JEV PROCESSING...");
-    setStatusLeft(status + " | AWAITING SHOWDOWN BATTLE");
-  } else {
-    state.battleActive = false;
-    // Back in the idle state: one clear button again.
+    setStartButton(rawStatus === "JEV PLAYING" ? "JEV PLAYING" : "CONNECTING...", true);
+    if (rawStatus === "JEV PLAYING") {
+      setGamePhase("JEV PLAYING");
+      setStatusChip("jev-status", "JEV INFERENCE", "live");
+      setJevLoading(true);
+    } else {
+      setGamePhase(status);
+      setStatusChip("showdown-connection-status", status, "warn");
+    }
+  } else if (!state.battleActive) {
+    setJevLoading(false);
     setStartButton("START JEV BATTLE", false);
-    setStatusLeft(status === "READY"
-      ? "READY FOR SHOWDOWN BATTLE | SAME GAME. DEEPER INSIGHT."
-      : (status || "READY") + " | SAME GAME. DEEPER INSIGHT.");
+    setGamePhase(rawStatus === "READY" ? "IDLE" : status);
+    if (rawStatus === "READY") {
+      setStatusChip("showdown-connection-status", "SHOWDOWN READY", "online");
+      setStatusChip("jev-status", "JEV READY", "online");
+    }
   }
 }
 
 function onStartBattleClick() {
   if (state.battleActive) return;
+  const button = getEl("start-btn");
+  if (button) button.classList.remove("btn-error");
   setStartButton("CONNECTING...", true);
-  const sent = sendAction("START_BATTLE");
-  if (!sent) {
-    setStartButton("OFFLINE — RETRY", true);
+  setGamePhase("CONNECTING");
+  if (!sendAction("START_BATTLE")) {
+    setStartButton("OFFLINE - RETRY", false);
+    setStatusChip("backend-status", "BACKEND OFFLINE", "error");
     scheduleReconnect();
   }
 }
 
-/* ---------------- TURN_DECISION ---------------- */
+function renderJevInput(snapshot, criteria, chosenId) {
+  const summary = getEl("input-summary");
+  const facts = getEl("input-facts");
+  const actions = getEl("legal-actions");
+  const count = getEl("legal-action-count");
+  clearEl(summary);
+  clearEl(facts);
+  clearEl(actions);
 
-function handleTurnDecision(data) {
-  state.battleActive = true;
-
-  const turn = data.turn != null ? data.turn
-    : (data.snapshot && data.snapshot.turn != null ? data.snapshot.turn : state.lastTurn);
-  const snapshot = data.snapshot || data.state || null;
-  const jevRequest = data.jev_request || {};
-  const question = data.question || (jevRequest.questions && jevRequest.questions.action) || {};
-  const criteria = data.criteria || question.criteria || {};
-  const jev = data.jev_response || data.jev || {};
-  const validation = data.validation || {
-    chosen_id: data.chosen_id || jev.choice || null,
-    is_fallback: !!data.is_fallback,
-    fallback_reason: data.fallback_reason || null,
-  };
-  const chosenId = validation.chosen_id || jev.choice || data.chosen_id || null;
-  const submittedOrder = data.submitted_order || {};
-  const recentHistory = data.recent_history || [];
-  const latency = fmtLatency(jev.latency_ms);
-  if (turn != null) state.lastTurn = turn;
-
-  // Header latency badge
-  setText("latency-badge", "⚡ LATENCY " + (latency === "--" ? "--" : latency) + " MS");
-
-  // Left panel: live battle
-  if (snapshot) {
-    renderTurnBadge(turn);
-    renderBattleContext(snapshot);
-    renderActiveMons(snapshot);
-    renderTeams(snapshot);
-    renderBattlePrompt(snapshot);
-  } else if (turn != null) {
-    renderTurnBadge(turn);
-  }
-
-  // Center panel: Jev input
-  renderCenterPanel(snapshot, criteria, chosenId, turn);
-
-  // Right panel: Jev output
-  renderRightPanel(jev, validation, chosenId, snapshot, latency);
-
-  // Turn history
-  renderHistory(recentHistory);
-
-  // Bottom action strip
-  renderActionStrip(chosenId, snapshot, criteria, latency, validation, submittedOrder);
-
-  // Status bar
-  renderStatusBar(turn, chosenId, latency, snapshot);
-
-  // Inspect data
-  state.inspect.state = snapshot || null;
-  state.inspect.question = Object.keys(question).length ? question : null;
-  state.inspect.response = Object.keys(jev).length ? jev : null;
-  renderInspect();
-
-  // Fallback alert banner (adapter attribution)
-  const banner = getEl("fallback-banner");
-  const actionLine = getEl("fallback-action-line");
-  if (validation.is_fallback) {
-    banner.classList.remove("hidden");
-    const reason = validation.fallback_reason ? " (" + validation.fallback_reason + ")" : "";
-    setText("fallback-banner-text", "JEV FAILED — FALLBACK USED" + reason);
-    if (actionLine) {
-      actionLine.textContent = "FALLBACK ACTION: " + (chosenId ? String(chosenId).toUpperCase() : "N/A");
-    }
-  } else {
-    banner.classList.add("hidden");
-  }
-
-  // The battle is live: the button shows the observable playing state.
-  if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {
-    setStartButton("START JEV BATTLE", false);
-  } else {
-    setStartButton("JEV PLAYING", true);
-  }
-}
-
-function renderTurnBadge(turn) {
-  setText("turn-badge", "TURN " + (turn != null ? turn : "--"));
-}
-
-function renderBattleContext(snapshot) {
-  const format = snapshot.battle_format;
-  if (format) {
-    setText("format-label", humanizeFormat(format));
-  }
-  const weather = snapshot.weather ? String(snapshot.weather).toUpperCase() : "NONE";
-  const fields = Array.isArray(snapshot.fields) && snapshot.fields.length
-    ? snapshot.fields.map((f) => String(f).toUpperCase()).join(", ")
-    : "NONE";
-  setText("weather-label", weather);
-  setText("terrain-label", fields);
-}
-
-function fmtHpLine(mon) {
-  // Prefer exact values when the protocol provides them ("HP 261 / 344"),
-  // fall back to a percentage otherwise.
-  if (mon && mon.hp != null && mon.max_hp) {
-    return {
-      bar: mon.max_hp > 0 ? mon.hp / mon.max_hp : 1.0,
-      text: Math.round(mon.hp) + " / " + Math.round(mon.max_hp),
-      pct: fmtPct(mon.hp / mon.max_hp),
-    };
-  }
-  const frac = mon && mon.hp_fraction != null ? Number(mon.hp_fraction) : 1.0;
-  return { bar: frac, text: fmtPct(frac), pct: fmtPct(frac) };
-}
-
-function renderHpCard(prefix, mon) {
-  if (!mon) return;
-  const info = fmtHpLine(mon);
-  const bar = getEl(prefix + "-hp-bar");
-  bar.style.width = Math.max(0, Math.min(100, info.bar * 100)) + "%";
-  bar.className = "hp-fill " + hpClass(info.bar);
-  const textEl = getEl(prefix + "-hp-text");
-  textEl.textContent = info.text;
-  textEl.title = info.pct;
-}
-
-function renderActiveMons(snapshot) {
-  const selfMon = snapshot.self && snapshot.self.active_pokemon;
-  const oppMon = snapshot.opponent && snapshot.opponent.active_pokemon;
-
-  if (selfMon) {
-    setText("self-name", selfMon.species || "---");
-    renderHpCard("self", selfMon);
-    fillTypeTags(getEl("self-types"), selfMon.types);
-    renderMonStatus("self-status", selfMon.status);
-    if (selfMon.level != null) setText("self-level", "Lv. " + selfMon.level);
-    showSprite(getEl("self-sprite"), getEl("self-avatar"), backSpriteUrls(selfMon.species), selfMon.species);
-  }
-
-  if (oppMon) {
-    setText("opp-name", oppMon.species || "???");
-    renderHpCard("opp", oppMon);
-    fillTypeTags(getEl("opp-types"), oppMon.types);
-    renderMonStatus("opp-status", oppMon.status);
-    if (oppMon.level != null) setText("opp-level", "Lv. " + oppMon.level);
-    showSprite(getEl("opp-sprite"), getEl("opp-avatar"), spriteUrls(oppMon.species), oppMon.species);
-  }
-}
-
-function renderMonStatus(id, status) {
-  const el = getEl(id);
-  if (!el) return;
-  if (status) {
-    el.textContent = String(status).toUpperCase();
-    el.classList.remove("hidden");
-  } else {
-    el.classList.add("hidden");
-  }
-}
-
-function renderBattlePrompt(snapshot) {
-  const selfMon = snapshot.self && snapshot.self.active_pokemon;
-  if (selfMon && selfMon.species) {
-    setText("prompt-label", "What will " + selfMon.species + " do?");
-  }
-}
-
-/* Fog-of-war team rows */
-
-function renderInitialTeams() {
-  // Pre-populate 6 slots per side so the arena reads complete before the
-  // first telemetry frame arrives. Opponent slots stay closed Poké Balls
-  // (fog of war); player slots read as open until Showdown reveals the team.
-  const oppSlots = getEl("opp-team-slots");
-  clearEl(oppSlots);
-  for (let i = 0; i < 6; i++) {
-    const el = makeEl("div", "team-slot unknown");
-    el.appendChild(makeEl("div", "pokeball-mini"));
-    el.appendChild(makeEl("span", "slot-name", "?"));
-    el.title = "Unrevealed Poké Ball — fog of war";
-    oppSlots.appendChild(el);
-  }
-  const selfSlots = getEl("self-team-slots");
-  clearEl(selfSlots);
-  for (let i = 0; i < 6; i++) {
-    const el = makeEl("div", "team-slot empty");
-    el.appendChild(makeEl("span", "slot-name", "\u00B7"));
-    el.title = "Awaiting team data";
-    selfSlots.appendChild(el);
-  }
-}
-
-function renderTeams(snapshot) {
-  const oppSlots = getEl("opp-team-slots");
-  clearEl(oppSlots);
-  const slots = snapshot.opponent && Array.isArray(snapshot.opponent.team_slots)
-    ? snapshot.opponent.team_slots
-    : [];
-  for (let i = 0; i < 6; i++) {
-    const slot = slots[i] || { revealed: false, species: null, fainted: false };
-    const el = makeEl("div", "team-slot");
-    if (slot.revealed && slot.species) {
-      el.classList.add("revealed");
-      if (slot.fainted) el.classList.add("fainted");
-      const img = document.createElement("img");
-      img.className = "slot-img";
-      img.alt = String(slot.species);
-      img.src = frontSpriteUrl(slot.species);
-      img.onerror = () => img.remove();
-      el.appendChild(img);
-      el.appendChild(makeEl("span", "slot-name", initials(slot.species)));
-      el.title = String(slot.species) + (slot.fainted ? " (fainted)" : "");
-    } else {
-      el.classList.add("unknown");
-      el.appendChild(makeEl("div", "pokeball-mini"));
-      el.appendChild(makeEl("span", "slot-name", "?"));
-      el.title = "Unrevealed Poké Ball — fog of war";
-    }
-    oppSlots.appendChild(el);
-  }
-
-  const selfSlots = getEl("self-team-slots");
-  clearEl(selfSlots);
-  const team = snapshot.self && Array.isArray(snapshot.self.team) ? snapshot.self.team : [];
-  const activeSpecies = snapshot.self && snapshot.self.active_pokemon
-    ? snapshot.self.active_pokemon.species
-    : null;
-  for (let i = 0; i < 6; i++) {
-    const mon = team[i];
-    const el = makeEl("div", "team-slot");
-    if (mon && mon.species) {
-      el.classList.add("revealed");
-      if (mon.fainted) el.classList.add("fainted");
-      if (mon.species === activeSpecies) el.classList.add("active");
-      const img = document.createElement("img");
-      img.className = "slot-img";
-      img.alt = String(mon.species);
-      img.src = frontSpriteUrl(mon.species);
-      img.onerror = () => img.remove();
-      el.appendChild(img);
-      el.appendChild(makeEl("span", "slot-name", initials(mon.species)));
-      el.title = String(mon.species) +
-        (mon.fainted ? " (fainted)" : " (HP " + fmtPct(mon.hp_fraction != null ? mon.hp_fraction : 1.0) + ")");
-    } else {
-      el.classList.add("empty");
-      el.appendChild(makeEl("span", "slot-name", "·"));
-      el.title = "Open team slot";
-    }
-    selfSlots.appendChild(el);
-  }
-}
-
-/* ---------------- Center panel: Jev Input ---------------- */
-
-function renderCenterPanel(snapshot, criteria, chosenId, turn) {
-  const stateEl = getEl("state-summary");
-  clearEl(stateEl);
-  if (snapshot) {
-    const selfMon = snapshot.self && snapshot.self.active_pokemon;
-    const oppMon = snapshot.opponent && snapshot.opponent.active_pokemon;
-    const selfName = selfMon ? selfMon.species : "???";
-    const oppName = oppMon ? oppMon.species : "???";
-    const selfHp = selfMon ? fmtPct(selfMon.hp_fraction) : "--";
-    const oppHp = oppMon ? fmtPct(oppMon.hp_fraction) : "--";
-    const kv = (label, value) => {
-      const line = makeEl("span", "kv");
-      const b = makeEl("b", "", label + ": ");
-      line.appendChild(b);
-      line.appendChild(document.createTextNode(String(value)));
-      return line;
-    };
-    stateEl.appendChild(kv("TURN", turn != null ? turn : snapshot.turn));
-    stateEl.appendChild(kv("ACTIVE", String(selfName) + " (" + selfHp + ")"));
-    stateEl.appendChild(kv("OPPOS", String(oppName) + " (" + oppHp + ")"));
-    if (selfMon && selfMon.status) stateEl.appendChild(kv("STATUS", selfMon.status));
-    if (oppMon && oppMon.status) stateEl.appendChild(kv("OPP STATUS", oppMon.status));
-  } else {
-    stateEl.appendChild(makeEl("span", "empty-note", "NO BATTLE STATE RECEIVED"));
-  }
-
-  const fieldEl = getEl("field-summary");
-  clearEl(fieldEl);
-  if (snapshot) {
-    const weather = snapshot.weather ? String(snapshot.weather).toUpperCase() : "NONE";
-    const terrain = Array.isArray(snapshot.fields) && snapshot.fields.length
-      ? snapshot.fields.map((f) => String(f).toUpperCase()).join(", ")
-      : "NONE";
-    const tera = snapshot.can_tera ? "AVAILABLE" : "UNAVAILABLE";
-    fieldEl.appendChild(document.createTextNode("WEATHER: " + weather + " | TERRAIN: " + terrain + " | TERA: " + tera));
-  } else {
-    fieldEl.appendChild(makeEl("span", "empty-note", "UNKNOWN"));
-  }
-
-  renderFacts(snapshot, criteria, chosenId);
-  renderLegalActions(snapshot, criteria, chosenId);
-}
-
-function renderFacts(snapshot, criteria, chosenId) {
-  const el = getEl("facts-summary");
-  clearEl(el);
-  if (!snapshot || !chosenId) {
-    el.appendChild(makeEl("span", "empty-note", "NO FACTS CALCULATED YET"));
-    return;
-  }
-  const legal = Array.isArray(snapshot.legal_actions) ? snapshot.legal_actions : [];
-  const chosen = legal.find((a) => a.id === chosenId) || null;
-  const facts = (chosen && chosen.facts) || {};
-  const crit = criteria[chosenId] || null;
-
-  const chip = (label, value, sub, tone) => {
-    const c = makeEl("div", "fact-chip" + (tone ? " " + tone : ""));
-    c.appendChild(makeEl("span", "fact-label", label));
-    c.appendChild(makeEl("span", "fact-value", value));
-    if (sub) c.appendChild(makeEl("span", "fact-sub", sub));
-    return c;
-  };
-
-  const mult = facts.type_multiplier;
-  if (mult != null) {
-    const tone = mult > 1 ? "good" : mult < 1 ? "bad" : null;
-    const oppTypes = snapshot.opponent && snapshot.opponent.active_pokemon && snapshot.opponent.active_pokemon.types
-      ? snapshot.opponent.active_pokemon.types.join("/")
-      : "opponent";
-    el.appendChild(chip(
-      String(facts.type || "TYPE").toUpperCase() + " EFFECTIVENESS",
-      Number(mult).toFixed(mult % 1 ? 1 : 0) + "\u00D7",
-      "vs " + oppTypes,
-      tone,
-    ));
-  }
-  if (Array.isArray(facts.estimated_damage_range) && facts.estimated_damage_range.length === 2) {
-    const exact = facts.calculation_mode === "poke_env_gen9";
-    el.appendChild(chip(
-      exact ? "CALCULATED DAMAGE" : "ESTIMATED DAMAGE",
-      facts.estimated_damage_range[0] + "–" + facts.estimated_damage_range[1] + "%",
-      exact ? "poke-env Gen 9 range" : "incomplete-information estimate",
-    ));
-  }
-  if (facts.calculation_mode) {
-    el.appendChild(chip(
-      "FACT SOURCE",
-      facts.calculation_mode === "poke_env_gen9" ? "GEN 9 CALCULATOR" : "HEURISTIC",
-      Array.isArray(facts.calculation_assumptions) ? facts.calculation_assumptions.join(" • ") : "",
-    ));
-  }
-  if (facts.estimated_ko != null) {
-    el.appendChild(chip("KO CHECK", facts.estimated_ko ? "LIKELY KO" : "NOT GUARANTEED", facts.estimated_ko ? "target down" : "target survives", facts.estimated_ko ? "good" : null));
-  }
-  if (facts.priority != null) {
-    el.appendChild(chip("PRIORITY", String(facts.priority), "move priority"));
-  }
-  if (facts.base_power != null) {
-    el.appendChild(chip("BASE POWER", String(facts.base_power), String(facts.category || "") + (facts.accuracy != null ? " | ACC " + facts.accuracy : "")));
-  }
-  if (chosen && chosen.kind) {
-    el.appendChild(chip("ACTION KIND", String(chosen.kind).toUpperCase(), chosen.label || ""));
-  }
-  if (crit) {
-    const c = makeEl("div", "fact-chip");
-    c.style.gridColumn = "1 / -1";
-    c.appendChild(makeEl("span", "fact-label", "HARNESS CRITERIA"));
-    c.appendChild(makeEl("span", "fact-sub", crit));
-    el.appendChild(c);
-  }
-  if (!el.hasChildNodes()) {
-    el.appendChild(makeEl("span", "empty-note", "NO FACTS FOR SELECTED ACTION"));
-  }
-}
-
-function kindIcon(kind) {
-  if (kind === "move") return "\u25B2";
-  if (kind === "move_tera") return "\u2605";
-  if (kind === "switch") return "\u21C4";
-  return "\u2022";
-}
-
-function renderLegalActions(snapshot, criteria, chosenId) {
-  const list = getEl("legal-actions-list");
-  clearEl(list);
-  const title = getEl("legal-actions-title");
   const legal = snapshot && Array.isArray(snapshot.legal_actions) ? snapshot.legal_actions : [];
-  title.textContent = "LEGAL ACTIONS (" + legal.length + ")";
-  if (!legal.length) {
-    list.appendChild(makeEl("span", "empty-note", "NO LEGAL ACTIONS YET"));
-    return;
+  const self = snapshot && snapshot.self && snapshot.self.active_pokemon;
+  const opponent = snapshot && snapshot.opponent && snapshot.opponent.active_pokemon;
+  const turn = snapshot && snapshot.turn != null ? snapshot.turn : state.currentTurn;
+  const summaryLine = makeEl("div", "summary-line");
+  summaryLine.appendChild(makeEl("span", "turn", "TURN " + (turn != null ? turn : "--")));
+  summaryLine.appendChild(document.createTextNode("  •  "));
+  summaryLine.appendChild(makeEl("span", "active", upper(self && self.species, "ACTIVE UNKNOWN")));
+  summaryLine.appendChild(document.createTextNode("  VS  "));
+  summaryLine.appendChild(makeEl("span", "opponent", upper(opponent && opponent.species, "OPPONENT UNKNOWN")));
+  summary.appendChild(summaryLine);
+
+  const fields = snapshot && Array.isArray(snapshot.fields) ? snapshot.fields : [];
+  const weather = snapshot && snapshot.weather ? String(snapshot.weather) : "";
+  if (fields.length || weather) {
+    const context = makeEl("div", "context-line");
+    const parts = [];
+    if (weather) parts.push("WEATHER: " + upper(weather));
+    if (fields.length) parts.push("FIELD: " + fields.map(upper).join(", "));
+    context.textContent = parts.join("  •  ");
+    summary.appendChild(context);
   }
-  legal.forEach((action) => {
-    const row = makeEl("div", "action-row");
-    if (action.id === chosenId) row.classList.add("selected");
-    const icon = makeEl("span", "a-icon kind-" + (action.kind || "move"), kindIcon(action.kind));
-    const body = makeEl("div", "a-body");
-    body.appendChild(makeEl("span", "a-id", (action.label || action.id || "").toUpperCase()));
-    const desc = criteria[action.id] || "";
-    body.appendChild(makeEl("span", "a-desc", desc));
-    row.appendChild(icon);
-    row.appendChild(body);
-    const factType = action.facts && action.facts.type;
-    if (factType) {
-      const tag = makeEl("span", "a-type", "");
-      tag.appendChild(makeTypeTags([factType]).children[0]);
-      row.appendChild(tag);
+
+  const selected = findAction(snapshot, chosenId);
+  renderFactChips(selected && selected.facts ? selected.facts : {}, facts);
+  if (count) count.textContent = String(legal.length);
+
+  const ordered = legal.slice();
+  ordered.sort((a, b) => (a.id === chosenId ? -1 : b.id === chosenId ? 1 : 0));
+  ordered.slice(0, 4).forEach((action) => {
+    const row = makeEl("div", "legal-action" + (action.id === chosenId ? " selected" : ""));
+    row.appendChild(makeEl("span", "action-marker", action.id === chosenId ? "*" : ">"));
+    row.appendChild(makeEl("span", "action-name", formatAction(action)));
+    row.appendChild(makeEl("span", "action-kind", upper(action.kind, "ACTION")));
+    actions.appendChild(row);
+  });
+  if (!legal.length) actions.appendChild(makeEl("span", "empty-note", "NO LEGAL ACTIONS YET"));
+
+  // Criteria remain available through Technical Inspection; the visible rail
+  // shows only the decision-relevant state and calculated candidate facts.
+  void criteria;
+}
+
+function renderFactChips(factObject, container) {
+  const facts = factObject && typeof factObject === "object" ? factObject : {};
+  const entries = Object.entries(facts).filter(([, value]) => value != null && value !== "");
+  entries.slice(0, 6).forEach(([key, value]) => {
+    let display = value;
+    if (Array.isArray(value)) display = value.join("- ");
+    else if (typeof value === "boolean") display = value ? "YES" : "NO";
+    else if (typeof value === "object") return;
+    const chip = makeEl("span", "fact-chip", upper(key) + ": " + upper(display, String(display)));
+    container.appendChild(chip);
+  });
+  if (!container.childNodes.length) container.appendChild(makeEl("span", "empty-note", "NO CALCULATED FACTS"));
+}
+
+function renderJevOutput(jev, validation, chosenId, snapshot) {
+  const response = jev || {};
+  const isFallback = Boolean(validation && validation.is_fallback);
+  setJevLoading(false);
+  setText("decision-source", response.model ? String(response.model) : (isFallback ? "ADAPTER FALLBACK" : "MODEL --"));
+  setText("decision-choice", chosenId ? upper(chosenId) : (isFallback ? "FALLBACK ACTION" : "AWAITING DECISION"));
+  setText("decision-confidence", fmtPct(response.confidence));
+  renderProbabilities(response.probabilities || {}, snapshot, chosenId);
+
+  const meta = ["LATENCY " + fmtLatency(response.latency_ms) + " MS"];
+  if (response.input_tokens != null) meta.push("IN " + response.input_tokens);
+  if (response.output_tokens != null) meta.push("OUT " + response.output_tokens);
+  if (response.cost != null) meta.push("COST " + response.cost);
+  setText("decision-meta", meta.join(" • "));
+
+  const banner = getEl("fallback-banner");
+  if (banner) {
+    if (isFallback) {
+      const reason = validation.fallback_reason ? " • " + validation.fallback_reason : "";
+      banner.textContent = "FALLBACK USED" + reason + " • FALLBACK ACTION: " + upper(chosenId, "NONE");
+      banner.hidden = false;
+    } else {
+      banner.hidden = true;
+      banner.textContent = "";
     }
-    list.appendChild(row);
-  });
+  }
+  if (isFallback) setStatusChip("jev-status", "JEV FALLBACK", "warn");
+  else if (response.model) setStatusChip("jev-status", "JEV ONLINE", "online");
 }
 
-/* ---------------- Right panel: Jev Output ---------------- */
-
-function setLoaderStep(step, title, done) {
-  const spinner = document.querySelector("#processing-loader .arcade-spinner");
-  const titleEl = getEl("loader-title");
-  const items = document.querySelectorAll("#loader-checklist li");
-  if (spinner) {
-    spinner.classList.toggle("idle", !title);
-    spinner.classList.toggle("done", !!done);
-  }
-  if (titleEl) {
-    titleEl.textContent = title || "JEV IDLE";
-    titleEl.classList.toggle("done", !!done);
-  }
-  items.forEach((li) => {
-    const i = Number(li.getAttribute("data-step"));
-    li.classList.remove("todo", "active", "done");
-    if (done || i < step) li.classList.add("done");
-    else if (i === step) li.classList.add("active");
-    else li.classList.add("todo");
-  });
-}
-
-function renderRightPanel(jev, validation, chosenId, snapshot, latency) {
-  const isFallback = !!validation.is_fallback;
-  const completed = !isFallback && chosenId != null;
-
-  // Loader: inference is the only "meaningful wait"
-  if (latency !== "--") {
-    setLoaderStep(5, completed ? "API INFERENCE COMPLETE" : "FALLBACK ENGAGED", true);
-    setText("loader-latency", "API INFERENCE " + latency + " MS");
-  } else {
-    setLoaderStep(3, "JEV ERROR — FALLBACK LADDER", true);
-    setText("loader-latency", "API INFERENCE FAILED");
-  }
-
-  // Decision card
-  setText("chosen-action", chosenId ? String(chosenId).toUpperCase() : (isFallback ? "FALLBACK ACTION" : "AWAITING DECISION"));
-  const kindEl = getEl("chosen-kind");
-  let kind = null;
-  if (snapshot && Array.isArray(snapshot.legal_actions) && chosenId) {
-    const legal = snapshot.legal_actions.find((a) => a.id === chosenId);
-    if (legal) kind = legal.kind;
-  }
-  if (kind) {
-    kindEl.textContent = String(kind).toUpperCase();
-    kindEl.classList.remove("hidden");
-  } else {
-    kindEl.classList.add("hidden");
-  }
-
-  const confidence = jev && jev.confidence != null ? Number(jev.confidence) : null;
-  setText("confidence-val", confidence != null ? Math.round(confidence * 100) + "%" : "--%");
-  const confBar = getEl("confidence-bar");
-  if (confBar) confBar.style.width = (confidence != null ? Math.max(0, Math.min(100, confidence * 100)) : 0) + "%";
-
-  setText("decision-model", jev && jev.model ? "MODEL: " + String(jev.model).toUpperCase() : "MODEL: --");
-  // Reported token usage and cost (observable model I/O, never invented).
-  if (jev && (jev.input_tokens != null || jev.output_tokens != null || jev.cost != null)) {
-    const tin = jev.input_tokens != null ? jev.input_tokens : "--";
-    const tout = jev.output_tokens != null ? jev.output_tokens : "--";
-    const cost = jev.cost != null ? String(jev.cost) : "0";
-    setText("decision-usage", "IN " + tin + " \u2022 OUT " + tout + " \u2022 COST $" + cost);
-    setText("cost-badge", "◉ COST $" + cost);
-  }
-  const chip = getEl("decision-completed");
-  chip.classList.toggle("hidden", !completed);
-
-  // Probabilities bar chart
-  renderProbabilities(jev, chosenId, snapshot);
-}
-
-function renderProbabilities(jev, chosenId, snapshot) {
-  const container = getEl("prob-bars");
+function renderProbabilities(probabilities, snapshot, chosenId) {
+  const container = getEl("decision-probabilities");
   clearEl(container);
-  const probs = (jev && jev.probabilities) || {};
-  const entries = Object.entries(probs);
+  const entries = probabilities && typeof probabilities === "object"
+    ? Object.entries(probabilities)
+    : [];
   if (!entries.length) {
     container.appendChild(makeEl("span", "empty-note", "NO PROBABILITY DISTRIBUTION"));
     return;
   }
-  const legal = snapshot && Array.isArray(snapshot.legal_actions) ? snapshot.legal_actions : [];
-  entries
-    .sort((a, b) => Number(b[1]) - Number(a[1]))
-    .forEach(([id, p]) => {
-      const pct = Number.isFinite(Number(p)) ? Math.round(Number(p) * 100) : 0;
-      const row = makeEl("div", "prob-bar-row");
-      if (id === chosenId) row.classList.add("selected");
-
-      const action = legal.find((a) => a.id === id);
-      const factType = action && action.facts && action.facts.type;
-      if (factType) {
-        const typeWrap = makeEl("span", "p-type", "");
-        typeWrap.appendChild(makeTypeTags([factType]).children[0]);
-        row.appendChild(typeWrap);
-      }
-      row.appendChild(makeEl("span", "prob-label", String(id).toUpperCase()));
-      const track = makeEl("div", "prob-track");
-      const fill = makeEl("div", "prob-fill");
-      fill.style.width = Math.max(0, Math.min(100, pct)) + "%";
-      track.appendChild(fill);
-      row.appendChild(track);
-      row.appendChild(makeEl("span", "prob-pct", pct + "%"));
-      container.appendChild(row);
-    });
-}
-
-/* ---------------- Turn history ---------------- */
-
-function renderHistory(events) {
-  const list = getEl("history-cards");
-  clearEl(list);
-  if (!events.length) {
-    list.appendChild(makeEl("span", "empty-note", "NO EVENTS YET"));
-    return;
-  }
-  // Most recent first so the newest action sits on top.
-  events.slice().reverse().forEach((ev) => {
-    const card = makeEl("div", "history-card");
-    card.appendChild(makeEl("span", "h-turn", "TURN " + (ev.turn != null ? ev.turn : "?")));
-    const actor = ev.actor ? String(ev.actor) + " " : "";
-    const action = ev.action ? String(ev.action) : (ev.kind === "switch" ? "Switch" : "Action");
-    card.appendChild(makeEl("span", "h-text", actor + action));
-    const badges = makeEl("div", "h-badges");
-    if (ev.damage_pct != null) badges.appendChild(makeEl("span", "h-badge dmg", "-" + ev.damage_pct + "%"));
-    if (ev.status) badges.appendChild(makeEl("span", "h-badge status", String(ev.status).toUpperCase()));
-    if (ev.kind === "switch" || (ev.action && /switch/i.test(String(ev.action)))) {
-      badges.appendChild(makeEl("span", "h-badge switch", "SWITCH"));
-    }
-    if (ev.fainted) badges.appendChild(makeEl("span", "h-badge faint", "FAINT"));
-    if (Array.isArray(ev.badges)) {
-      ev.badges.forEach((b) => {
-        badges.appendChild(makeEl("span", "h-badge stat", String(b)));
-      });
-    }
-    if (ev.note) {
-      const note = makeEl("span", "h-badge note", String(ev.note));
-      note.title = String(ev.note);
-      badges.appendChild(note);
-    }
-    card.appendChild(badges);
-    list.appendChild(card);
+  entries.sort((a, b) => Number(b[1]) - Number(a[1])).slice(0, 6).forEach(([id, value]) => {
+    const probability = Number(value);
+    const pct = Number.isFinite(probability) ? Math.max(0, Math.min(100, Math.round(probability * 100))) : 0;
+    const row = makeEl("div", "probability-row" + (id === chosenId ? " selected" : ""));
+    row.appendChild(makeEl("span", "probability-label", formatAction(findAction(snapshot, id)) || upper(id)));
+    const track = makeEl("div", "probability-track");
+    const fill = makeEl("div", "probability-fill");
+    fill.style.width = pct + "%";
+    track.appendChild(fill);
+    row.appendChild(track);
+    row.appendChild(makeEl("span", "probability-value", pct + "%"));
+    container.appendChild(row);
   });
 }
 
-/* ---------------- Bottom action strip ---------------- */
+function renderActionTrace(chosenId, snapshot, validation, submittedOrder) {
+  const selected = findAction(snapshot, chosenId);
+  const label = selected ? formatAction(selected) : upper(chosenId, "ACTION");
+  const fallback = Boolean(validation && validation.is_fallback);
+  setTraceStep("validate-step", chosenId
+    ? (fallback ? "FALLBACK VALIDATED" : "LEGAL ACTION")
+    : "WAITING FOR DECISION", fallback ? "trace-pending" : (chosenId ? "trace-success" : "trace-active"));
 
-function renderActionStrip(chosenId, snapshot, criteria, latency, validation, submittedOrder) {
-  const legal = snapshot && Array.isArray(snapshot.legal_actions) ? snapshot.legal_actions : [];
-  const chosen = legal.find((a) => a.id === chosenId) || null;
-  const label = chosen ? (chosen.label || chosen.id) : (chosenId ? String(chosenId) : "ACTION");
-  const facts = (chosen && chosen.facts) || {};
-  const crit = criteria && criteria[chosenId] ? criteria[chosenId] : "";
-  const resultPanel = getEl("result-panel");
-  if (resultPanel) resultPanel.classList.remove("result-victory");
-
-  setText("validate-status", chosenId ? (validation && validation.is_fallback ? "FALLBACK VALIDATED" : "LEGAL ACTION") : "PENDING");
-  setText(
-    "validate-desc",
-    chosenId
-      ? label.toUpperCase() + " is a valid " + ((chosen && chosen.kind) || "action") + " in the current state."
-      : "Validating Jev output against legal candidates...",
-  );
-  // Adapter validation is near-instant: show the measured time when known.
-  const valMs = validation && validation.latency_ms != null ? Number(validation.latency_ms) : null;
-  setText("validate-time", valMs != null && Number.isFinite(valMs) ? valMs.toFixed(2) + " MS" : "< 1 MS");
-
-  setText("act-status", chosenId ? "SEND " + label.toUpperCase() : "STANDBY");
-  setText(
-    "act-desc",
-    submittedOrder && submittedOrder.message
-      ? "SUBMITTED " + String(submittedOrder.message).toUpperCase()
-      : "Execute action command and await game response",
-  );
-
-  let damage = null;
-  if (Array.isArray(facts.estimated_damage_range) && facts.estimated_damage_range.length === 2) {
-    damage = facts.estimated_damage_range[0] + "–" + facts.estimated_damage_range[1] + "%";
-  }
-  const ko = facts.estimated_ko === true;
-  setText("result-status", chosenId ? "PREDICTION ONLY" : "AWAITING SHOWDOWN");
-  setText(
-    "result-desc",
-    chosenId
-      ? (damage
-        ? "EXPECTED " + damage + " DAMAGE" + (ko ? " • KO POSSIBLE" : " • KO NOT GUARANTEED")
-        : "Action submitted; waiting for the observed battle result.")
-      : "The game result appears after Showdown resolves the action.",
-  );
-  // Estimated remaining HP of the target after the chosen action.
-  const hpWrap = getEl("result-hp-wrap");
-  const oppMon = snapshot && snapshot.opponent && snapshot.opponent.active_pokemon;
-  if (chosenId && Array.isArray(facts.estimated_damage_range) && facts.estimated_damage_range.length === 2) {
-    const base = oppMon && oppMon.hp_fraction != null ? Number(oppMon.hp_fraction) * 100 : 100;
-    const hi = Math.max(0, Math.round(base - facts.estimated_damage_range[0]));
-    const lo = Math.max(0, Math.round(base - facts.estimated_damage_range[1]));
-    const [low, high] = hi < lo ? [hi, lo] : [lo, hi];
-    hpWrap.classList.remove("hidden");
-    setText("result-hp-label", "EXPECTED HP \u2248 " + low + " \u2013 " + high + "%");
-    const fill = getEl("result-hp-fill");
-    fill.style.width = Math.max(2, (low + high) / 2) + "%";
-    fill.className = "hp-fill " + hpClass((low + high) / 200);
-  } else {
-    hpWrap.classList.add("hidden");
-  }
-  // Small target sprite in the result panel.
-  const resultSprite = getEl("result-sprite");
-  clearEl(resultSprite);
-  if (oppMon && oppMon.species) {
-    const img = document.createElement("img");
-    img.alt = "";
-    img.src = frontSpriteUrl(oppMon.species);
-    img.onerror = () => img.remove();
-    resultSprite.appendChild(img);
-  }
+  const submitted = submittedOrder && submittedOrder.message;
+  setTraceStep("act-step", submitted ? "SUBMITTED " + upper(submitted) : "ORDER READY", submitted ? "trace-success" : "trace-pending");
+  setTraceStep("result-step", "AWAITING SHOWDOWN", "trace-pending");
+  void label;
 }
 
-function renderStatusBar(turn, chosenId, latency, snapshot) {
-  const legal = snapshot && Array.isArray(snapshot.legal_actions) ? snapshot.legal_actions : [];
-  const chosen = legal.find((a) => a.id === chosenId);
-  const range = chosen && Array.isArray(chosen.facts.estimated_damage_range) && chosen.facts.estimated_damage_range.length === 2
-    ? "Damage " + chosen.facts.estimated_damage_range[0] + "–" + chosen.facts.estimated_damage_range[1] + "%"
-    : "Damage --";
-  const target = chosen && chosen.facts.estimated_ko === true ? "Expected KO" : "Expected target survives";
-  const parts = [
-    "TURN " + (turn != null ? turn : "--"),
-    "Jev chose " + (chosenId ? String(chosenId).toUpperCase() : "--"),
-    latency !== "--" ? latency + " MS" : "-- MS",
-    "Expected " + range,
-    target,
-    "Next turn state ready",
-  ];
-  setStatusLeft(parts.join(" | "));
+function renderObservedResult(message, mode = "trace-success") {
+  setTraceStep("result-step", message || "RESULT OBSERVED FROM SHOWDOWN", mode);
+  state.awaitingObservedResult = false;
 }
 
-/* ---------------- Inspect Data ---------------- */
+function handleTurnDecision(data) {
+  state.battleActive = true;
+  state.currentTurn = data.turn != null
+    ? data.turn
+    : (data.snapshot && data.snapshot.turn != null ? data.snapshot.turn : state.currentTurn);
+  const snapshot = data.snapshot || data.state || null;
+  const request = data.jev_request || {};
+  const question = data.question || (request.questions && request.questions.action) || {};
+  const criteria = data.criteria || question.criteria || {};
+  const jev = data.jev_response || data.jev || {};
+  const validation = data.validation || {
+    chosen_id: data.chosen_id || jev.choice || null,
+    is_fallback: Boolean(data.is_fallback),
+    fallback_reason: data.fallback_reason || null,
+  };
+  const chosenId = validation.chosen_id || jev.choice || data.chosen_id || null;
+  const submittedOrder = data.submitted_order || {};
 
-function renderInspect() {
-  const preview = getEl("inspect-preview");
-  const box = getEl("inspect-content");
-  const data = state.inspect[state.inspectTab];
+  state.currentDecision = { chosenId, turn: state.currentTurn };
+  state.awaitingObservedResult = true;
+  state.inspect.state = snapshot;
+  state.inspect.question = question;
+  state.inspect.request = request;
+  state.inspect.response = data.jev_response || jev;
+  state.inspect.validation = validation;
 
-  // Compact structured preview (never a wall of JSON by default)
-  const snapshot = state.inspect.state;
-  if (snapshot) {
-    const turn = snapshot.turn != null ? snapshot.turn : (state.lastTurn || "--");
-    const active = snapshot.self && snapshot.self.active_pokemon ? snapshot.self.active_pokemon.species : "---";
-    const nLegal = Array.isArray(snapshot.legal_actions) ? snapshot.legal_actions.length : "--";
-    preview.textContent = "TURN " + turn + " | ACTIVE: " + active + " | LEGAL ACTIONS " + nLegal;
-  } else {
-    preview.textContent = "TURN -- | ACTIVE: --- | LEGAL ACTIONS --";
+  setGamePhase("JEV PLAYING");
+  setStartButton("JEV PLAYING", true);
+  setStatusChip("showdown-connection-status", "SHOWDOWN LIVE", "live");
+  renderJevInput(snapshot, criteria, chosenId);
+  renderJevOutput(jev, validation, chosenId, snapshot);
+  renderActionTrace(chosenId, snapshot, validation, submittedOrder);
+  renderInspector();
+}
+
+function protocolSummary(lines) {
+  const relevant = Array.isArray(lines) ? lines.slice().reverse() : [];
+  for (const line of relevant) {
+    const parts = String(line).split("|");
+    const type = parts[1];
+    if (type === "move") return "MOVE OBSERVED: " + upper(parts[3] || parts[2], "MOVE");
+    if (type === "-damage") return "DAMAGE OBSERVED: " + upper(parts[2] || "TARGET");
+    if (type === "-status") return "STATUS OBSERVED: " + upper(parts[3] || parts[2], "STATUS");
+    if (type === "faint") return "FAINT OBSERVED: " + upper(parts[2], "POKEMON");
+    if (type === "turn") return "TURN " + (parts[2] || "--") + " RESOLVED";
+    if (type === "win") return "WIN OBSERVED: " + upper(parts[2], "WINNER");
+    if (type === "tie") return "BATTLE TIE OBSERVED";
   }
+  return "";
+}
 
-  if (state.inspectExpanded) {
-    box.classList.remove("hidden");
-    box.textContent = data == null
-      ? "-- AWAITING DATA --"
-      : JSON.stringify(data, null, 2);
-  } else {
-    box.classList.add("hidden");
+function hasResolvedProtocolEvent(lines) {
+  return Array.isArray(lines) && lines.some((line) => /\|(move|-damage|-status|faint|turn|win|tie)\|/.test(String(line)));
+}
+
+function handleShowdownFrame(data) {
+  const tag = data.battle_tag || "jev-showdown";
+  if (state.showdownBattleTag !== tag) handleShowdownBattleStart({ battle_tag: tag });
+  const lines = Array.isArray(data.lines) ? data.lines : [];
+  const summary = protocolSummary(lines);
+  if (summary) {
+    setText("showdown-caption", summary);
+    if (state.awaitingObservedResult && hasResolvedProtocolEvent(lines)) renderObservedResult(summary);
+  }
+  state.inspect.frames.push({ battle_tag: tag, lines: lines.slice() });
+  if (state.inspect.frames.length > 40) state.inspect.frames.shift();
+  renderInspector();
+  if (window.JevShowdownRenderer) {
+    window.JevShowdownRenderer.feed(lines);
+    mountShowdownRenderer().catch(() => {});
   }
 }
 
-function switchTab(tab, btn) {
-  state.inspectTab = tab;
-  document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
-  if (btn) btn.classList.add("active");
-  renderInspect();
+function handleShowdownReplay(data) {
+  handleShowdownBattleStart({ battle_tag: data.battle_tag });
+  (Array.isArray(data.frames) ? data.frames : []).forEach((lines) => {
+    handleShowdownFrame({ battle_tag: data.battle_tag, lines });
+  });
 }
-
-function toggleInspectExpand() {
-  state.inspectExpanded = !state.inspectExpanded;
-  const btn = getEl("inspect-expand");
-  if (btn) btn.textContent = state.inspectExpanded ? "COLLAPSE \u25B4" : "EXPAND \u25BE";
-  renderInspect();
-}
-
-function toggleHistoryExpand() {
-  state.historyExpanded = !state.historyExpanded;
-  const btn = getEl("history-expand");
-  const list = getEl("history-cards");
-  if (btn) btn.textContent = state.historyExpanded ? "COLLAPSE \u25B4" : "EXPAND \u25BE";
-  if (list) list.classList.toggle("expanded", state.historyExpanded);
-}
-
-/* ---------------- Official Showdown battle scene ---------------- */
 
 function showShowdownScene() {
   const arena = getEl("showdown-arena");
   const fallback = getEl("arena-fallback");
   if (arena) arena.hidden = false;
-  if (fallback) fallback.classList.add("hidden");
+  if (fallback) fallback.hidden = true;
 }
 
 function showArenaFallback(message) {
   const arena = getEl("showdown-arena");
   const fallback = getEl("arena-fallback");
   if (arena) arena.hidden = true;
-  if (fallback) fallback.classList.remove("hidden");
-  if (message) setText("prompt-label", message);
+  if (fallback) fallback.hidden = false;
+  if (message) setText("fallback-arena-copy", message);
 }
 
 function mountShowdownRenderer() {
@@ -1032,7 +487,6 @@ function mountShowdownRenderer() {
     return Promise.reject(new Error("Showdown renderer adapter is unavailable"));
   }
   if (state.showdownMountPromise) return state.showdownMountPromise;
-
   state.showdownMountPromise = window.JevShowdownRenderer.mount(
     getEl("showdown-frame"),
     getEl("showdown-log"),
@@ -1042,13 +496,11 @@ function mountShowdownRenderer() {
     return true;
   }).catch((error) => {
     state.showdownUnavailable = true;
-    showArenaFallback("TELEMETRY FALLBACK — OFFICIAL SCENE UNAVAILABLE");
+    showArenaFallback("OFFICIAL SHOWDOWN RENDERER UNAVAILABLE - TELEMETRY FALLBACK ACTIVE");
     if (window.JevShowdownRenderer) {
-      window.JevShowdownRenderer.setUnavailable(
-        "OFFICIAL SHOWDOWN RENDERER UNAVAILABLE — TELEMETRY FALLBACK ACTIVE",
-      );
+      window.JevShowdownRenderer.setUnavailable("OFFICIAL SHOWDOWN RENDERER UNAVAILABLE - TELEMETRY FALLBACK ACTIVE");
     }
-    throw error;
+    return Promise.reject(error);
   });
   return state.showdownMountPromise;
 }
@@ -1057,119 +509,70 @@ function handleShowdownBattleStart(data) {
   state.showdownBattleTag = data.battle_tag || "jev-showdown";
   state.showdownUnavailable = false;
   state.showdownMountPromise = null;
-  if (window.JevShowdownRenderer) {
-    window.JevShowdownRenderer.reset(state.showdownBattleTag);
-  }
-  showArenaFallback("LOADING OFFICIAL SHOWDOWN SCENE…");
+  state.inspect.frames = [];
+  setStatusChip("showdown-connection-status", "SHOWDOWN STARTING", "live");
+  if (window.JevShowdownRenderer) window.JevShowdownRenderer.reset(state.showdownBattleTag);
+  showArenaFallback("LOADING OFFICIAL SHOWDOWN SCENE...");
   mountShowdownRenderer().catch(() => {});
 }
 
-function handleShowdownFrame(data) {
-  const tag = data.battle_tag || "jev-showdown";
-  if (state.showdownBattleTag !== tag) {
-    handleShowdownBattleStart({ battle_tag: tag });
+function handleBattleEnd(data) {
+  state.battleActive = false;
+  state.awaitingObservedResult = false;
+  setJevLoading(false);
+  setStartButton("START JEV BATTLE", false);
+  setGamePhase("BATTLE COMPLETE");
+  setStatusChip("showdown-connection-status", "SHOWDOWN BATTLE ENDED", "online");
+  setStatusChip("jev-status", "JEV READY", "online");
+  const outcome = data.won === true ? "VICTORY" : data.won === false ? "DEFEAT" : "BATTLE OVER";
+  const turns = data.total_turns != null ? " AFTER " + data.total_turns + " TURNS" : "";
+  renderObservedResult(outcome + turns + " - RESULT OBSERVED FROM SHOWDOWN");
+  if (window.JevShowdownRenderer && state.showdownMountPromise && !state.showdownUnavailable) {
+    window.JevShowdownRenderer.end();
   }
-  if (!window.JevShowdownRenderer) return;
-  window.JevShowdownRenderer.feed(data.lines);
-  mountShowdownRenderer().catch(() => {});
+  const arena = getEl("showdown-arena");
+  if (arena && state.showdownMountPromise && !state.showdownUnavailable) arena.hidden = false;
 }
 
-function handleShowdownReplay(data) {
-  handleShowdownBattleStart({ battle_tag: data.battle_tag });
-  (Array.isArray(data.frames) ? data.frames : []).forEach((lines) => {
-    handleShowdownFrame({ battle_tag: data.battle_tag, lines: lines });
+function renderInspector() {
+  const content = getEl("inspect-content");
+  if (!content) return;
+  const data = state.inspect[state.inspectTab];
+  content.textContent = data == null ? "No data for this tab yet." : JSON.stringify(data, null, 2);
+  document.querySelectorAll(".inspect-tab").forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.inspectTab === state.inspectTab);
   });
 }
 
-/* ---------------- BATTLE_END ---------------- */
-
-function handleBattleEnd(data) {
-  let won = data.won;
-  if (won == null) {
-    const hint = String(data.result || data.outcome || data.winner || "").toLowerCase();
-    if (/win|victory|you/i.test(hint)) won = true;
-    else if (/loss|defeat|opponent|enemy|lose/i.test(hint)) won = false;
-  }
-
-  const titleEl = getEl("end-title");
-  const box = getEl("overlay-box");
-  titleEl.classList.remove("victory-text", "defeat-text");
-  box.classList.remove("victory", "defeat");
-
-  if (won === true) {
-    titleEl.textContent = "VICTORY";
-    titleEl.classList.add("victory-text");
-    box.classList.add("victory");
-  } else if (won === false) {
-    titleEl.textContent = "DEFEAT";
-    titleEl.classList.add("defeat-text");
-    box.classList.add("defeat");
-  } else {
-    titleEl.textContent = "BATTLE OVER";
-  }
-
-  const stats = [];
-  if (data.total_turns != null || data.turns != null) {
-    stats.push("COMPLETED IN " + (data.total_turns != null ? data.total_turns : data.turns) + " TURNS");
-  }
-  if (data.winner != null) stats.push("WINNER: " + String(data.winner).toUpperCase());
-  if (data.battle_format) stats.push("FORMAT: " + humanizeFormat(data.battle_format));
-  if (data.summary) stats.push(String(data.summary).toUpperCase());
-  if (data.score != null) stats.push("RECORD: " + data.score);
-  setText("end-stats", stats.length ? stats.join(" \u2022 ") : "BATTLE COMPLETED");
-
-  // The turn card is a prediction until Showdown resolves it. Once the
-  // battle-end event arrives, replace that prediction with the observed match
-  // outcome so the bottom strip remains truthful after the overlay is closed.
-  const resultStatus = won === true ? "VICTORY" : won === false ? "DEFEAT" : "BATTLE OVER";
-  const resultTurns = data.total_turns != null ? " AFTER " + data.total_turns + " TURNS" : "";
-  setText("result-status", resultStatus);
-  setText("result-desc", "BATTLE ENDED" + resultTurns + " • RESULT OBSERVED FROM SHOWDOWN");
-  setText("result-time", "MATCH END");
-  const resultPanel = getEl("result-panel");
-  if (resultPanel) resultPanel.classList.toggle("result-victory", won === true);
-  const resultHpWrap = getEl("result-hp-wrap");
-  if (resultHpWrap) resultHpWrap.classList.add("hidden");
-  clearEl(getEl("result-sprite"));
-
-  getEl("end-overlay").classList.remove("hidden");
-
-  // Reset for the next battle
-  state.battleActive = false;
-  setStartButton("START JEV BATTLE", false);
-  setLoaderStep(0, null, false);
-  setText("loader-latency", "API INFERENCE -- MS");
-  if (data.total_turns != null) renderTurnBadge(data.total_turns);
-  const showdownStatus = getEl("showdown-status");
-  const showdownArena = getEl("showdown-arena");
-  if (showdownStatus && state.showdownMountPromise && !state.showdownUnavailable) {
-    if (window.JevShowdownRenderer && window.JevShowdownRenderer.end) {
-      window.JevShowdownRenderer.end();
-    }
-    showdownStatus.textContent = "SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED";
-    if (showdownArena) showdownArena.hidden = false;
-  }
-  setStatusLeft(
-    (won === true ? "VICTORY" : won === false ? "DEFEAT" : "BATTLE OVER") +
-    " | " + (data.total_turns != null ? data.total_turns + " TURNS" : "") +
-    " | SAME GAME. DEEPER INSIGHT.",
-  );
+function toggleInspector(open) {
+  state.inspectOpen = open == null ? !state.inspectOpen : Boolean(open);
+  const drawer = getEl("inspect-drawer");
+  if (drawer) drawer.hidden = !state.inspectOpen;
+  if (state.inspectOpen) renderInspector();
 }
 
-function closeOverlay() {
-  getEl("end-overlay").classList.add("hidden");
+function selectInspectTab(tab) {
+  state.inspectTab = tab;
+  renderInspector();
 }
-
-/* ---------------- Boot ---------------- */
 
 document.addEventListener("DOMContentLoaded", () => {
-  getEl("start-btn").addEventListener("click", onStartBattleClick);
-  getEl("inspect-expand").addEventListener("click", toggleInspectExpand);
-  getEl("history-expand").addEventListener("click", toggleHistoryExpand);
-  getEl("end-dismiss").addEventListener("click", closeOverlay);
-
-  // Idle state until the first telemetry arrives
-  setLoaderStep(0, null, false);
-  renderInitialTeams();
+  const start = getEl("start-btn");
+  if (start) start.addEventListener("click", onStartBattleClick);
+  const inspect = getEl("technical-inspect");
+  if (inspect) inspect.addEventListener("click", () => toggleInspector(true));
+  const close = getEl("inspect-close");
+  if (close) close.addEventListener("click", () => toggleInspector(false));
+  document.querySelectorAll(".inspect-tab").forEach((tab) => {
+    tab.addEventListener("click", () => selectInspectTab(tab.dataset.inspectTab));
+  });
+  setStatusChip("backend-status", "BACKEND CONNECTING", "warn");
+  setStatusChip("showdown-connection-status", "SHOWDOWN IDLE");
+  setStatusChip("jev-status", "JEV IDLE");
+  setGamePhase("IDLE");
+  setTraceStep("validate-step", "READY");
+  setTraceStep("act-step", "STANDBY");
+  setTraceStep("result-step", "AWAITING SHOWDOWN");
+  renderInspector();
   connectSocket();
 });

@@ -28,7 +28,7 @@ def test_http_index(test_app):
     client = TestClient(test_app)
     response = client.get("/")
     assert response.status_code == 200
-    assert 'AUTONOMOUS "POKÉMON BATTLE" AGENT' in response.text
+    assert "<title>JEV BATTLE AGENT</title>" in response.text
 
 
 def test_websocket_receives_threadsafe_publish(test_app):

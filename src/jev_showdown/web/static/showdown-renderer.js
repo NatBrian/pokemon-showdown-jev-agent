@@ -182,7 +182,7 @@
       resizeStage();
       const arena = frameElement.closest ? frameElement.closest("#showdown-arena") : null;
       if (arena) arena.hidden = false;
-      setStatus("LIVE SHOWDOWN SCENE — RAW PROTOCOL CONNECTED");
+      setStatus(battleEnded ? "SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED" : "LIVE SHOWDOWN SCENE — RAW PROTOCOL CONNECTED");
       const queued = pendingLines;
       pendingLines = [];
       addLines(queued);

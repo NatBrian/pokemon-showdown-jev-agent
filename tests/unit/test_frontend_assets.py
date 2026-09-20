@@ -178,3 +178,11 @@ def test_showdown_ended_callback_preserves_final_scene_label():
     adapter = _read(os.path.join(static_dir, "showdown-renderer.js"))
 
     assert 'event === "ended") setStatus("SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED")' in adapter
+
+
+def test_slow_renderer_mount_does_not_overwrite_ended_state():
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
+    adapter = _read(os.path.join(static_dir, "showdown-renderer.js"))
+
+    assert 'battleEnded ? "SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED"' in adapter

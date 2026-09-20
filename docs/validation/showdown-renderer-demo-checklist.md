@@ -26,7 +26,7 @@ Status: `PASS — real local browser validation completed`
 - [x] No iframe is present in the dashboard HTML.
 - [x] The custom arena remains a telemetry fallback only.
 - [x] Test command: `.venv\Scripts\python.exe -m pytest -q`.
-- [x] Result: `60 passed, 2 dependency deprecation warnings`.
+- [x] Result: `62 passed, 2 dependency deprecation warnings`.
 - [x] JavaScript syntax checks passed with `node --check` for `app.js` and `showdown-renderer.js`.
 
 ## Real end-to-end battle evidence
@@ -38,6 +38,7 @@ Status: `PASS — real local browser validation completed`
 - [x] A live captured state showed Jev selecting `MOVE_HEADSMASH_TERA`; the official stage and telemetry panels updated in the same browser session.
 - [x] Post-battle state showed `BATTLE ENDED … RESULT OBSERVED FROM SHOWDOWN`, preserved the final official scene, and rendered the actual `DEFEAT` result.
 - [x] A late protocol frame after `BATTLE_END` did not overwrite the final-scene status.
+- [x] A battle ending before renderer mount completion also preserves the final-scene status.
 
 ## Browser/runtime signals
 

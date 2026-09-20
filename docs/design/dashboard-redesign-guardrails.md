@@ -165,3 +165,110 @@ copied literally:
 
 The image remains useful for the overall composition: a large battle-first
 viewport, a compact Jev rail, and a thin action trace.
+
+## Product objective and audience
+
+This is a local, recording-ready showcase for technical and non-technical
+viewers. A viewer should understand the system without reading source code:
+
+```text
+Game State → Harness → Extract / Calculate → Jev Input
+Jev Input → Jev Decision → Game Action
+```
+
+The dashboard is not a generic analytics console and is not a written essay.
+The battle, decision state, and observed result should carry the explanation.
+
+## Real-time presentation
+
+The interface should feel alive through real state changes, not simulated
+reasoning:
+
+- the official scene updates from the raw Showdown protocol stream;
+- only the Jev decision area visibly waits during API inference;
+- input, validation, and order submission use short state transitions because
+  those operations are normally near-instant;
+- the selected action receives a clear active state while it is validated and
+  submitted;
+- the official battle message/effect shows what Showdown actually observed;
+- confidence/probability bars animate only when a real Jev response arrives;
+- no chain-of-thought, psychological explanation, or fake multi-step reasoning
+  is shown.
+
+The event sequence must remain truthful when a battle is fast, a renderer is
+still mounting, a WebSocket reconnects, or a battle ends between two UI
+updates.
+
+## Information density and responsive behavior
+
+The primary recording target is a normal desktop/laptop landscape viewport,
+with browser validation at a standard size such as 1440×900 or 1600×900. The
+first viewport must show the battle bay, Jev decision summary, system status,
+and action trace without page scrolling.
+
+Use top-K summaries for data that cannot fit:
+
+- show the selected action plus the most useful legal alternatives in the
+  decision rail;
+- show a small number of deterministic fact chips;
+- keep full state, criteria, response, validation, and protocol frames in the
+  single-click inspector;
+- allow the inspector or protocol history to scroll independently.
+
+Mobile support may collapse the rail below the battle bay, but it must not
+drive the desktop composition or shrink the official scene into an unreadable
+thumbnail.
+
+## Asset ownership
+
+Production battle visuals must use the audited official Showdown renderer,
+sprites, arena backgrounds, effects, and protocol mapping. Do not use image
+generation to recreate or replace Pokémon, battle stages, move effects, HP
+bars, team indicators, or animations.
+
+Custom dashboard chrome may use CSS and existing code-native UI primitives.
+If a new non-Pokémon bitmap asset is genuinely needed for the outer arcade
+frame, CRT texture, or decorative background, generate it with the image
+generation tool, store it in the repository, and test it at the recording
+viewport. Do not add generated art merely to fill space.
+
+## System status and degraded states
+
+The compact status rail must expose, without dominating the battle:
+
+- backend/WebSocket connection;
+- Showdown battle connection or search state;
+- Jev availability and active model when known;
+- current game state such as idle, connecting, waiting for decision, playing,
+  reconnecting, ended, or fallback.
+
+If Jev fails, the dashboard must say that the adapter used a deterministic
+fallback and identify the fallback action. It must never present the fallback
+as a Jev decision. If the official renderer fails, show the existing
+telemetry fallback with explicit renderer attribution.
+
+## Outcomes and notifications
+
+Winning, losing, and battle-ended states must reuse the battle bay, message
+caption, status rail, and action trace. Do not show a large popup or modal for
+normal outcomes. Preserve the final official scene and label the observed
+result in place.
+
+## Visual QA acceptance
+
+Before implementation is considered complete, validate the actual browser
+experience at a standard landscape viewport with Playwright and inspect the
+rendered screenshot visually. Check:
+
+- the official battle bay is the dominant, tightly fitted 16:9 region;
+- there is no avoidable blank wrapper space or separate log/status block below
+  the stage;
+- no duplicate Pokémon, team, terrain, weather, or HP widgets appear outside
+  the official scene;
+- the right rail remains readable without hunting or excessive scrolling;
+- the Jev decision uses actual response fields;
+- the action trace is chronological and truthful;
+- normal outcomes do not create modal overlays;
+- healthy, fallback, reconnecting, and ended states are understandable;
+- browser console errors, failed required asset requests, and WebSocket errors
+  are absent or explicitly handled.

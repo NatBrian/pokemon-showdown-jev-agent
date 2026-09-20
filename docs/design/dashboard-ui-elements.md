@@ -5,6 +5,12 @@ This document does not define application logic, data models, APIs, or implement
 
 Reference image: [dashboard-mockup-final.png](dashboard-mockup-final.png)
 
+Current redesign rules supersede older illustrative component lists in this
+document. See [dashboard-redesign-guardrails.md](dashboard-redesign-guardrails.md)
+for the binding decisions: the generated image is a composition reference
+only, the official Showdown renderer owns game visuals, Jev panels must use
+actual data, and duplicate game-state widgets must not be rebuilt.
+
 The values shown in the mockup are illustrative placeholders. Real Pokémon, moves, HP values, probabilities, latency, damage ranges, and labels may change when connected to live battle data.
 
 ## 1. Overall visual direction

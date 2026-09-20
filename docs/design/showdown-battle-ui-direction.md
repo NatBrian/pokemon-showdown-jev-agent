@@ -196,6 +196,12 @@ The effect layer must be driven by the same observed protocol stream. It must ne
 
 The mockup is a visual direction reference, not a pixel-perfect implementation specification. The actual renderer will use real Showdown assets and protocol timing, so exact Pokémon, move effects, weather, and text will vary from battle to battle.
 
+For the current dashboard redesign, see the binding implementation rules in
+[`dashboard-redesign-guardrails.md`](dashboard-redesign-guardrails.md). The
+generated mockup must not be copied literally: the official Showdown
+renderer owns game visuals, Jev Output must use actual provider data, and
+`OBSERVED RESULT` must reflect the protocol result of the submitted order.
+
 ## Research references
 
 - [Official Pokémon Showdown client](https://github.com/smogon/pokemon-showdown-client)

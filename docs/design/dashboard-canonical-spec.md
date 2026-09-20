@@ -140,7 +140,11 @@ T10  PROTECT        83%  517 ms  ACCEPTED
 Each row may expose turn, selected action, confidence, latency, and validation
 status. Selecting a row may populate Technical Inspection with the full
 request, response, and validation data. Do not copy the official Showdown
-battle log into this list.
+ battle log into this list.
+
+The default visible history is the five most recent Jev decisions. It resets
+when a new battle starts and remains visible after a battle ends until the
+next battle begins.
 
 ## Technical Inspection
 

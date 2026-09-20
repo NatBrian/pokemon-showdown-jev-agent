@@ -1,188 +1,146 @@
-# tests/unit/test_frontend_assets.py
 import os
 
 
-def _read(path: str) -> str:
-    with open(path, "r", encoding="utf-8") as f:
+def _static_dir() -> str:
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    return os.path.join(base_dir, "src", "jev_showdown", "web", "static")
+
+
+def _read(name: str) -> str:
+    with open(os.path.join(_static_dir(), name), "r", encoding="utf-8") as f:
         return f.read()
 
 
-def test_frontend_assets_exist():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
+def test_frontend_assets_exist_and_use_the_battle_first_shell():
+    static_dir = _static_dir()
+    assert os.path.exists(os.path.join(static_dir, "index.html"))
+    assert os.path.exists(os.path.join(static_dir, "style.css"))
+    assert os.path.exists(os.path.join(static_dir, "app.js"))
 
-    html_path = os.path.join(static_dir, "index.html")
-    css_path = os.path.join(static_dir, "style.css")
-    js_path = os.path.join(static_dir, "app.js")
+    html = _read("index.html")
+    for required in (
+        'class="battle-bay"',
+        'class="decision-rail"',
+        'id="jev-input"',
+        'id="jev-output"',
+        'id="truth-strip"',
+        'id="technical-inspect"',
+        'id="inspect-drawer"',
+        'id="showdown-arena"',
+        'id="showdown-frame"',
+        'id="showdown-log"',
+        'id="showdown-caption"',
+    ):
+        assert required in html
 
-    assert os.path.exists(html_path)
-    assert os.path.exists(css_path)
-    assert os.path.exists(js_path)
+    for obsolete in (
+        'id="end-overlay"',
+        'id="history-cards"',
+        'id="self-team-slots"',
+        'id="opp-team-slots"',
+        "OBSERVABLE DATA",
+        "SAME GAME. DEEPER INSIGHT.",
+        "TURN HISTORY",
+    ):
+        assert obsolete not in html
 
-    html = _read(html_path)
-    # Core layout required by docs/design/dashboard-ui-elements.md
     assert "START JEV BATTLE" in html
-    assert "LIVE BATTLE" in html
     assert "JEV INPUT" in html
-    assert "JEV OUTPUT" in html
-    assert "INSPECT DATA" in html
-    assert "TURN HISTORY" in html
-    # Information-ownership labels (transparency requirement)
-    assert "CALCULATED BY HARNESS" in html
-    assert "API INFERENCE (MODEL)" in html
-    assert "SHOWDOWN" in html
-    # Fallback must be visually attributed to the adapter, never Jev
-    assert "JEV FAILED — FALLBACK USED" in html
-    # Bottom fast action strip
+    assert "JEV DECISION" in html
     assert "VALIDATE" in html
-    assert "ACT" in html
-    assert "RESULT" in html
-    # Both team rows explicitly (fog-of-war opponent vs known team)
-    assert "OPPONENT TEAM" in html
-    assert "YOUR TEAM" in html
-    # MVP battle view is local and deterministic; it must not depend on an
-    # iframe login/session to show the active battle.
-    assert "STATE RENDERED FROM SHOWDOWN TELEMETRY" in html
-    assert '<iframe id="showdown-frame"' not in html
-    # Reported token usage / cost and target remaining-HP estimate
-    assert "decision-usage" in html
-    assert "result-hp-wrap" in html
     assert "OBSERVED RESULT" in html
+    assert '<iframe' not in html.lower()
 
 
-def test_frontend_styles_match_arcade_direction():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    css = _read(os.path.join(base_dir, "src", "jev_showdown", "web", "static", "style.css"))
-    # 1990s arcade-retro direction: deep navy, CRT scanlines, error state
+def test_frontend_styles_match_retro_battle_bay_direction():
+    css = _read("style.css")
     assert "#0b0d1b" in css
     assert ".scanlines" in css
     assert ".btn-error" in css
+    assert "aspect-ratio: 16 / 9" in css
+    assert ".showdown-stage-canvas" in css
+    assert "position: absolute" in css
+    assert ".showdown-log-viewport" in css
 
 
-def test_frontend_client_handles_lifecycle_states():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    js = _read(os.path.join(base_dir, "src", "jev_showdown", "web", "static", "app.js"))
-    # Observable startup/playing/error states for the START JEV BATTLE flow
+def test_frontend_client_uses_real_jev_telemetry_without_duplicate_renderers():
+    js = _read("app.js")
     assert "JEV PLAYING" in js
-    assert "RETRY BATTLE" in js
-    assert "btn-error" in js
-    # Fallback banner is driven by validation data, with adapter attribution
     assert "FALLBACK ACTION" in js
     assert "jev_request" in js
     assert "submitted_order" in js
-    assert "calculation_mode" in js
-    assert "initShowdownFrame();" not in js
+    assert "probabilities" in js
+    assert "fallback_reason" in js
+    assert "BATTLE_FRAME" in js
+
+    for obsolete in (
+        "renderActiveMons",
+        "renderTeams",
+        "renderHistory",
+        "closeOverlay",
+        "win chance",
+        "risk (faint)",
+        "MODEL v3.1",
+        "jev-1.13-free",
+    ):
+        assert obsolete.lower() not in js.lower()
 
 
-def test_frontend_uses_official_showdown_sprites_without_iframe():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    js = _read(os.path.join(base_dir, "src", "jev_showdown", "web", "static", "app.js"))
-
-    assert 'https://play.pokemonshowdown.com/sprites/' in js
-    assert '"xyani"' in js
-    assert '"xyani-back"' in js
-    assert "hyphenatedForm" in js
-    assert "exeggutor-alola" not in js  # resolved generically from compact IDs
-
-
-def test_frontend_surfaces_observed_match_result_after_overlay():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    js = _read(os.path.join(base_dir, "src", "jev_showdown", "web", "static", "app.js"))
-    html = _read(os.path.join(base_dir, "src", "jev_showdown", "web", "static", "index.html"))
-
-    assert "BATTLE ENDED" in js
-    assert "OBSERVED RESULT" in html
-    assert "img.pokemondb.net" not in js
-
-
-def test_dashboard_has_official_showdown_stage_and_adapter():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
-    html = _read(os.path.join(static_dir, "index.html"))
-
-    assert 'id="showdown-arena"' in html
-    assert 'id="showdown-frame"' in html
-    assert 'id="showdown-log"' in html
+def test_frontend_uses_the_official_showdown_renderer_without_iframe():
+    html = _read("index.html")
     assert "showdown-renderer.js" in html
     assert "<iframe" not in html.lower()
 
-
-def test_adapter_loads_renderer_in_dependency_order_and_handles_frames():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
-    adapter = _read(os.path.join(static_dir, "showdown-renderer.js"))
-
+    adapter = _read("showdown-renderer.js")
     assert "window.JevShowdownRenderer" in adapter
     assert "js/battle.js" in adapter
     assert "BATTLE_REPLAY" not in adapter
     assert "battle.add" in adapter
     assert "battle.play" in adapter
+    assert "const BASE_HEIGHT = 360" in adapter
+    assert "const BASE_HEIGHT = 380" not in adapter
 
 
-def test_dashboard_uses_battle_first_layout_and_truth_strip():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
-    html = _read(os.path.join(static_dir, "index.html"))
-    css = _read(os.path.join(static_dir, "style.css"))
-
-    assert "VALIDATE" in html
-    assert "ACT" in html
-    assert "OBSERVED RESULT" in html
-    assert "grid-template-columns: minmax(0, 1.6fr) minmax(360px, 0.85fr)" in css
-    assert ".panel-battle { grid-column: 1; grid-row: 1 / span 2; }" in css
-
-
-def test_frontend_has_explicit_renderer_failure_fallback_copy():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
-    html = _read(os.path.join(static_dir, "index.html"))
-
-    assert "TELEMETRY FALLBACK &mdash; OFFICIAL SHOWDOWN RENDERER UNAVAILABLE" in html
-
-
-def test_battle_end_preserves_final_official_scene_and_marks_result_observed():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
-    js = _read(os.path.join(static_dir, "app.js"))
-    handler = js[js.index("function handleBattleEnd"):js.index("function closeOverlay")]
-
-    assert 'getEl("showdown-status")' in handler
-    assert "SHOWDOWN BATTLE ENDED" in handler
-    assert "RESULT OBSERVED FROM SHOWDOWN" in handler
-    assert "JevShowdownRenderer.end" in handler
-    assert "JevShowdownRenderer.destroy" not in handler
-
-
-def test_dashboard_dom_helper_does_not_collide_with_showdown_jquery():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
-    js = _read(os.path.join(static_dir, "app.js"))
-
-    assert "const $ =" not in js
-    assert "const getEl =" in js
-
-
-def test_showdown_frame_has_flow_wrapper_for_official_absolute_scene():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
-    html = _read(os.path.join(static_dir, "index.html"))
-    css = _read(os.path.join(static_dir, "style.css"))
-
+def test_dashboard_keeps_official_scene_and_places_messages_inside_the_bay():
+    html = _read("index.html")
     assert 'class="showdown-stage-canvas"' in html
-    assert ".showdown-stage-canvas" in css
+    assert 'id="showdown-caption"' in html
+    assert 'id="showdown-status"' in html
+    assert "TELEMETRY FALLBACK" in html
+
+    css = _read("style.css")
+    assert ".showdown-stage-viewport" in css
+    assert ".showdown-caption" in css
+    assert ".showdown-status" in css
 
 
-def test_showdown_ended_callback_preserves_final_scene_label():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
-    adapter = _read(os.path.join(static_dir, "showdown-renderer.js"))
+def test_battle_end_preserves_final_official_scene_and_observed_result():
+    js = _read("app.js")
+    assert "SHOWDOWN BATTLE ENDED" in js
+    assert "RESULT OBSERVED FROM SHOWDOWN" in js
+    assert "JevShowdownRenderer.end" in js
+    assert "JevShowdownRenderer.destroy" not in js
 
-    assert 'event === "ended") setStatus("SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED")' in adapter
+    adapter = _read("showdown-renderer.js")
+    assert 'event === "ended") setStatus("SHOWDOWN BATTLE ENDED' in adapter
+    assert 'battleEnded ? "SHOWDOWN BATTLE ENDED' in adapter
 
 
-def test_slow_renderer_mount_does_not_overwrite_ended_state():
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
-    adapter = _read(os.path.join(static_dir, "showdown-renderer.js"))
+def test_dashboard_has_single_click_technical_inspector():
+    html = _read("index.html")
+    js = _read("app.js")
+    for required in ('id="technical-inspect"', 'id="inspect-drawer"', 'id="inspect-close"'):
+        assert required in html
+    for required in ("STATE", "JEV REQUEST", "JEV RESPONSE", "VALIDATION", "PROTOCOL"):
+        assert required in html
+    for required in ("inspect", "question", "response", "BATTLE_FRAME", "JSON.stringify"):
+        assert required.lower() in js.lower()
 
-    assert 'battleEnded ? "SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED"' in adapter
+
+def test_dashboard_uses_a_single_desktop_grid_and_stacks_on_small_screens():
+    css = _read("style.css")
+    assert ".dashboard-main" in css
+    assert ".decision-rail" in css
+    assert "grid-template-columns: minmax(0, 7fr) minmax(320px, 3fr)" in css
+    assert "@media (max-width: 900px)" in css
+    assert "grid-template-columns: 1fr" in css

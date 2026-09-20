@@ -41,6 +41,10 @@ def select_deterministic_fallback(candidates: dict[str, CandidateAction], battle
         if cand.kind in ("move", "move_tera"):
             bp = cand.facts.get("base_power", 0)
             mult = cand.facts.get("type_multiplier", 1.0)
+            if isinstance(mult, dict):
+                mult = mult.get("value", 1.0)
+            if not isinstance(mult, (int, float)):
+                mult = 1.0
             score = bp * mult
             if score > best_score:
                 best_score = score

@@ -38,7 +38,6 @@
   let battleTag = "jev-showdown";
   let pendingLines = [];
   let battleEnded = false;
-  let hasProtocol = false;
 
   function setStatus(text) {
     if (statusElement) statusElement.textContent = text;
@@ -144,11 +143,9 @@
 
   function addLines(lines) {
     if (!battle || !Array.isArray(lines)) return;
-    let added = false;
     for (const rawLine of lines) {
       const line = normalizeLine(rawLine);
       if (!line) continue;
-      added = true;
       try {
         battle.add(line);
       } catch (error) {
@@ -156,9 +153,7 @@
         console.error("[jev-dashboard] Showdown renderer rejected protocol line", error);
       }
     }
-    if (!added) return;
     try { battle.play(); } catch (error) { console.error(error); }
-    if (!battleEnded) setStatus("LIVE SHOWDOWN SCENE - RAW PROTOCOL CONNECTED");
   }
 
   function mount(nextFrame, nextLog, nextStatus) {
@@ -179,7 +174,7 @@
         id: battleTag,
         subscription: function (event) {
           if (event === "ended") setStatus("SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED");
-          else if (!battleEnded && hasProtocol && (event === "playing" || event === "turn")) setStatus("LIVE SHOWDOWN SCENE");
+          else if (!battleEnded && (event === "playing" || event === "turn")) setStatus("LIVE SHOWDOWN SCENE");
         },
       });
       resizeObserver = new ResizeObserver(resizeStage);
@@ -187,7 +182,7 @@
       resizeStage();
       const arena = frameElement.closest ? frameElement.closest("#showdown-arena") : null;
       if (arena) arena.hidden = false;
-      setStatus(battleEnded ? "SHOWDOWN BATTLE ENDED - FINAL SCENE PRESERVED" : "SHOWDOWN RENDERER READY");
+      setStatus(battleEnded ? "SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED" : "LIVE SHOWDOWN SCENE — RAW PROTOCOL CONNECTED");
       const queued = pendingLines;
       pendingLines = [];
       addLines(queued);
@@ -203,7 +198,6 @@
   function reset(nextBattleTag) {
     battleTag = nextBattleTag || "jev-showdown";
     battleEnded = false;
-    hasProtocol = false;
     pendingLines = [];
     destroyBattle();
     setStatus("WAITING FOR SHOWDOWN BATTLE PROTOCOL…");
@@ -213,7 +207,6 @@
     if (!Array.isArray(lines)) return 0;
     const normalized = lines.map(normalizeLine).filter(Boolean);
     if (!normalized.length) return 0;
-    hasProtocol = true;
     if (!battle) pendingLines = pendingLines.concat(normalized);
     else addLines(normalized);
     return normalized.length;

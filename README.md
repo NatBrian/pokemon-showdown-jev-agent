@@ -128,7 +128,7 @@ src/jev_showdown/
 ├── telemetry/events.py # Turn history tracker + raw battle-line event scanner
 └── web/
     ├── server.py       # FastAPI app + WebSocket hub (thread-safe publish)
-    └── static/         # Dashboard (index.html / app.js / style.css)
+    └── static/         # Official renderer assets; dashboard shell is intentionally absent
 benchmarks/             # Local reproducible benchmark harness
 tests/                  # Unit + end-to-end integration tests
 docs/                   # Alignment record, design docs, research logs, plan

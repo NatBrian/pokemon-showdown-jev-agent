@@ -189,3 +189,33 @@ async def test_real_protocol_sequence_produces_scanner_events():
     ours = [h for h in hist if h.get("actor", "").lower() == "oranguru" and h.get("turn") == 1]
     assert len(ours) == 1, "our move must merge into the decision card, not duplicate"
     assert ours[0].get("damage_pct"), "our decision card must carry damage"
+
+
+async def test_real_protocol_result_phase_uses_command_names_only():
+    phases: list[dict] = []
+    player = JevPlayer(
+        settings=_make_settings(),
+        jev_client=_client([_resp()]),
+        on_decision_phase=phases.append,
+        start_listening=False,
+        battle_format="gen9randombattle",
+    )
+    tag = "battle-gen9randombattle-phase-123"
+    battle = _make_battle(turn=1)
+    battle.battle_tag = tag
+    battle.player_role = "p1"
+    player._battles[tag] = battle
+
+    await player.choose_move(battle)
+    await player._handle_battle_message(
+        [
+            [f">{tag}"],
+            ["", "move", "p1a: Garchomp", "Earthquake", "p2a: Heatran"],
+            ["", "-damage", "p2a: Heatran", "0/344"],
+        ]
+    )
+
+    observed = [event for event in phases if event["phase"] == "RESULT_OBSERVED"]
+    assert len(observed) == 1
+    assert observed[0]["observed_commands"] == ["move", "-damage"]
+    assert "Heatran" not in str(observed[0])

@@ -1,9 +1,9 @@
 # Dashboard UI Elements
 
-Status: Visual mockup specification only.  
+Status: Historical visual specification; superseded by dashboard-redesign-guardrails.md.
 This document does not define application logic, data models, APIs, or implementation details.
 
-Reference image: [dashboard-mockup-final.png](dashboard-mockup-final.png)
+Visual guidance: [dashboard-redesign-guardrails.md](dashboard-redesign-guardrails.md)
 
 Current redesign rules supersede older illustrative component lists in this
 document. See [dashboard-redesign-guardrails.md](dashboard-redesign-guardrails.md)
@@ -11,7 +11,8 @@ for the binding decisions: the generated image is a composition reference
 only, the official Showdown renderer owns game visuals, Jev panels must use
 actual data, and duplicate game-state widgets must not be rebuilt.
 
-The values shown in the mockup are illustrative placeholders. Real Pokémon, moves, HP values, probabilities, latency, damage ranges, and labels may change when connected to live battle data.
+The illustrative values in this historical document are not implementation
+requirements. Follow the binding guardrails document for current work.
 
 ## 1. Overall visual direction
 
@@ -507,12 +508,6 @@ The mockup is a shared visual target, not a promise that every displayed value o
 
 ## 13. Final reference
 
-The current visual reference is:
-
-[dashboard-mockup-final.png](dashboard-mockup-final.png)
-
-Previous iterations remain in the same folder for comparison:
-
-- [dashboard-mockup-v2.png](dashboard-mockup-v2.png)
-- [dashboard-mockup-v3.png](dashboard-mockup-v3.png)
-- [dashboard-mockup-v4.png](dashboard-mockup-v4.png)
+The former raster mockups were intentionally removed. Use
+[dashboard-redesign-guardrails.md](dashboard-redesign-guardrails.md) as the
+current visual and implementation reference.

@@ -490,9 +490,9 @@ The visual should label the origin of information:
 
 The dashboard concept should use `Typed decision evaluation` rather than `Model inference` as a label, because the former is transparent about what is actually observable.
 
-The refined dashboard mockup is a visual reference only and is not final application code:
-
-- [Refined dashboard mockup](design/dashboard-mockup-v3.png)
+The refined dashboard raster mockup was a visual reference only and has been
+removed. The current binding reference is
+[dashboard-redesign-guardrails.md](design/dashboard-redesign-guardrails.md).
 
 ## 20. Dashboard refinement feedback
 
@@ -507,9 +507,8 @@ The refined visual direction is therefore:
 
 The visual should feel dynamic rather than like a static process diagram. The only visibly waiting/loading section should be the Jev output/API inference panel. Validation and action should show very small latency badges, while the result should show the actual damage/state update.
 
-The arcade-retro reference image is:
-
-- [Arcade dashboard mockup v3](design/dashboard-mockup-v3.png)
+The earlier arcade-retro raster reference has been removed; use the textual
+dashboard design documents instead.
 
 The owner also requested that the cleaner visual retain the previously discussed transparency features. The next refinement restores:
 
@@ -517,9 +516,9 @@ The owner also requested that the cleaner visual retain the previously discussed
 - an `INSPECT DATA` section inside the Jev Output area with `STATE`, `QUESTION`, and `RESPONSE` tabs;
 - the fast bottom `VALIDATE`, `ACT`, and `RESULT` sequence.
 
-The updated reference is:
+The updated reference is the textual design documentation:
 
-- [Arcade dashboard mockup final](design/dashboard-mockup-final.png)
+- [Dashboard redesign guardrails](design/dashboard-redesign-guardrails.md)
 - [Dashboard UI elements](design/dashboard-ui-elements.md)
 
 The live battle panel must also show both team rows explicitly. `YOUR TEAM` can display the player's known six Pokémon from the start. `OPPONENT TEAM` must begin with unknown Poké Ball slots in the standard Gen 9 Random Battle flow, because the protocol provides the opponent's team size without revealing the identities of unrevealed Pokémon when Team Preview is not used. Each enemy slot becomes a revealed species only after Showdown exposes it; the dashboard must not guess hidden species, moves, items, abilities, or Tera types. If a future format emits Team Preview, the row should adapt to the information actually provided by the protocol.

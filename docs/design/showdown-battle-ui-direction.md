@@ -1,6 +1,6 @@
 # Final Pokémon Battle UI Visual Direction
 
-Status: `FINAL MOCKUP / IMPLEMENTATION REFERENCE`
+Status: `FINAL RENDERER DIRECTION / RASTER MOCKUP REMOVED`
 
 Date: `2026-09-20`
 
@@ -192,7 +192,8 @@ The effect layer must be driven by the same observed protocol stream. It must ne
 
 ## Mockup
 
-![Final live battle UI mockup](showdown-battle-ui-mockup-v1.png)
+The former raster mockup was intentionally removed. Use the textual direction
+and binding rules below instead.
 
 The mockup is a visual direction reference, not a pixel-perfect implementation specification. The actual renderer will use real Showdown assets and protocol timing, so exact Pokémon, move effects, weather, and text will vary from battle to battle.
 

@@ -386,7 +386,7 @@ git commit -m "test: validate official showdown battle demo"
 - [ ] Run `git status --short` and confirm only intentional committed changes exist.
 - [ ] Run `.\.venv\Scripts\pytest.exe -q` and record the exact count.
 - [ ] Run the local dashboard and inspect the rendered page with Playwright, not only source files.
-- [ ] Take a fresh screenshot and compare it to `docs/design/showdown-battle-ui-mockup-v1.png`: battle stage remains the visual focus, Jev Input/Output remain readable, and the bottom truth strip is visible.
+- [ ] Take a fresh screenshot and compare it to `docs/design/dashboard-redesign-guardrails.md`: battle stage remains the visual focus, Jev Input/Output remain readable, and the bottom truth strip is visible.
 - [ ] Verify no iframe or complete Showdown website chrome is used.
 - [ ] Verify the final scene is official Showdown output driven by raw protocol, with custom fallback only on renderer failure.
 - [ ] Complete a final self-review because no subagent tool is available in this session, and record any deferred minor findings in the execution ledger.

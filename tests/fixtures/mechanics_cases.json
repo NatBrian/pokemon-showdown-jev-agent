@@ -1,0 +1,125 @@
+{
+  "format": "gen9randombattle",
+  "cases": [
+    {
+      "id": "type_immunity",
+      "observed_inputs": {
+        "move_type": "ELECTRIC",
+        "defender_type_1": "GROUND",
+        "defender_type_2": null
+      },
+      "expected": {
+        "field": "type_multiplier",
+        "value": 0.0,
+        "unit": "multiplier",
+        "source": "calculated",
+        "assumptions": ["Gen 9 type chart"]
+      }
+    },
+    {
+      "id": "dual_type_4x",
+      "observed_inputs": {
+        "move_type": "GROUND",
+        "defender_type_1": "FIRE",
+        "defender_type_2": "STEEL"
+      },
+      "expected": {
+        "field": "type_multiplier",
+        "value": 4.0,
+        "unit": "multiplier",
+        "source": "calculated",
+        "assumptions": ["Gen 9 type chart"]
+      }
+    },
+    {
+      "id": "known_exact_damage_range",
+      "observed_inputs": {
+        "attacker_identifier": "p1a: Garchomp",
+        "defender_identifier": "p2a: Heatran",
+        "target_max_hp": 200,
+        "raw_damage_range": [100, 120]
+      },
+      "expected": {
+        "field": "damage",
+        "value": [50, 60],
+        "unit": "percent_of_target_max_hp",
+        "source": "calculated",
+        "assumptions": [
+          "poke-env Gen 9 calculator",
+          "current known battle stats and effects"
+        ]
+      }
+    },
+    {
+      "id": "hazard_switch_in",
+      "observed_inputs": {
+        "switch_species": "Rotom-Wash",
+        "hp_fraction": 0.75,
+        "status": "HEALTHY",
+        "hazard_state": "not_verified"
+      },
+      "expected": {
+        "field": "entry_hazard_damage",
+        "value": null,
+        "unit": "percent_of_max_hp",
+        "source": "unknown",
+        "assumptions": ["entry hazards and switch-in mechanics are not verified here"]
+      }
+    },
+    {
+      "id": "status_effect",
+      "observed_inputs": {
+        "species": "Heatran",
+        "status": "PARALYZED"
+      },
+      "expected": {
+        "field": "status",
+        "value": "PARALYZED",
+        "unit": "status",
+        "source": "observed",
+        "assumptions": []
+      }
+    },
+    {
+      "id": "forced_switch_request",
+      "observed_inputs": {
+        "rqid": "req-switch",
+        "forceSwitch": [true]
+      },
+      "expected": {
+        "field": "request_type",
+        "value": "switch",
+        "unit": "request_type",
+        "source": "observed",
+        "assumptions": []
+      }
+    },
+    {
+      "id": "wait_request",
+      "observed_inputs": {
+        "wait": true
+      },
+      "expected": {
+        "field": "request_type",
+        "value": "wait",
+        "unit": "request_type",
+        "source": "observed",
+        "assumptions": []
+      }
+    },
+    {
+      "id": "tera_move",
+      "observed_inputs": {
+        "move_id": "earthquake",
+        "terastallize": true
+      },
+      "expected": {
+        "field": "kind",
+        "value": "move_tera",
+        "unit": "action_kind",
+        "source": "observed",
+        "assumptions": ["the exact Tera order is present in battle.valid_orders"]
+      }
+    }
+  ]
+}

@@ -2,8 +2,9 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from poke_env.battle import Move, Pokemon
 from poke_env.player import Player
-from poke_env.player.battle_order import BattleOrder
+from poke_env.player.battle_order import BattleOrder, SingleBattleOrder
 
 from jev_showdown.agent import JevPlayer
 from jev_showdown.config import Settings
@@ -54,6 +55,10 @@ def _make_battle(turn: int = 1):
     battle.opponent_team = {"heatran": opp}
     battle.available_moves = [_make_move("earthquake")]
     battle.available_switches = [_make_pokemon("Rotom")]
+    battle.valid_orders = [
+        SingleBattleOrder(Move("earthquake", 9)),
+        SingleBattleOrder(Pokemon(9, species="Rotom", name="rotom")),
+    ]
     return battle
 
 

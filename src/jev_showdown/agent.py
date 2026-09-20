@@ -28,7 +28,6 @@ from jev_showdown.config import Settings, load_settings
 from jev_showdown.decision.opencode_jev import (
     DEFAULT_DECISION_INSTRUCTIONS,
     JevSystemOneClient,
-    build_request_payload,
 )
 from jev_showdown.decision.protocol import JevDecisionResponse
 from jev_showdown.strategy.fallback import (
@@ -77,7 +76,6 @@ class JevPlayer(Player):
         on_turn_event: Callable[[dict[str, Any]], Any] | None = None,
         on_battle_event: Callable[[dict[str, Any]], Any] | None = None,
         on_battle_frame: Callable[[dict[str, Any]], Any] | None = None,
-        on_decision_phase: Callable[[dict[str, Any]], Any] | None = None,
         **player_kwargs: Any,
     ) -> None:
         """Initialize the Jev player.
@@ -95,8 +93,6 @@ class JevPlayer(Player):
             telemetry (``BATTLE_START`` / ``BATTLE_END``) dicts.
         :param on_battle_frame: Optional callback invoked with one raw
             protocol frame after it has been filtered to a battle room.
-        :param on_decision_phase: Optional callback invoked for observable
-            decision-pipeline phases before and after Jev evaluation.
         :param player_kwargs: Forwarded to poke_env's Player constructor
             (e.g. account_configuration, battle_format, start_listening).
         """
@@ -114,10 +110,7 @@ class JevPlayer(Player):
         self.on_turn_event = on_turn_event
         self.on_battle_event = on_battle_event
         self.on_battle_frame = on_battle_frame
-        self.on_decision_phase = on_decision_phase
         self._scanners: dict[str, BattleEventScanner] = {}
-        self._decision_sequence = 0
-        self._pending_decisions: dict[str, dict[str, Any]] = {}
 
     # ------------------------------------------------------------ choose_move
 
@@ -130,35 +123,11 @@ class JevPlayer(Player):
         candidates: dict[str, CandidateAction] = {}
         criteria: dict[str, str] = {}
         snapshot: dict[str, Any] | None = None
-        decision_id = self._new_decision_id(battle)
-        self._emit_decision_phase(battle, decision_id, "EXTRACTING")
         t_val_start = time.perf_counter()
         try:
             candidates = build_candidate_actions(battle)
             criteria = annotate_candidates_with_facts(battle, candidates)
             snapshot = self.serializer.build_snapshot(battle, candidates)
-            request_payload = build_request_payload(
-                self.settings.jev_model,
-                snapshot,
-                criteria,
-            )
-            self._emit_decision_phase(
-                battle,
-                decision_id,
-                "CALCULATING",
-                snapshot=snapshot,
-                legal_action_count=len(candidates),
-            )
-            self._emit_decision_phase(
-                battle,
-                decision_id,
-                "JEV_EVALUATING",
-                snapshot=snapshot,
-                criteria=criteria,
-                question=request_payload["questions"]["action"],
-                request_payload=request_payload,
-                model=self.settings.jev_model,
-            )
             jev_res = await self.jev_client.evaluate_decision(
                 state=snapshot, criteria=criteria
             )
@@ -177,21 +146,6 @@ class JevPlayer(Player):
                 candidates, battle, f"Order resolution error: {exc}"
             )
         val_latency_ms = (time.perf_counter() - t_val_start) * 1000.0
-        submitted_message = self._submitted_order_message(validated)
-        self._emit_decision_phase(
-            battle,
-            decision_id,
-            "LEGAL",
-            validation={
-                "chosen_id": validated.chosen_id,
-                "is_fallback": validated.is_fallback,
-                "fallback_reason": validated.fallback_reason,
-                "legal_candidates": len(candidates),
-                "latency_ms": val_latency_ms,
-            },
-            is_fallback=validated.is_fallback,
-            fallback_reason=validated.fallback_reason,
-        )
 
         self._record_turn(
             battle,
@@ -201,35 +155,6 @@ class JevPlayer(Player):
             validated,
             snapshot,
             val_latency_ms,
-            decision_id,
-        )
-        self._emit_decision_phase(
-            battle,
-            decision_id,
-            "ORDER_SUBMITTED",
-            submitted_order={
-                "chosen_id": validated.chosen_id,
-                "message": submitted_message,
-                "is_fallback": validated.is_fallback,
-            },
-            is_fallback=validated.is_fallback,
-        )
-        battle_tag = self._battle_tag(battle)
-        if battle_tag:
-            self._pending_decisions[battle_tag] = {
-                "decision_id": decision_id,
-                "turn": self._safe_turn(battle),
-                "battle_format": self._battle_format(battle),
-            }
-        self._emit_decision_phase(
-            battle,
-            decision_id,
-            "AWAITING_SHOWDOWN",
-            submitted_order={
-                "chosen_id": validated.chosen_id,
-                "message": submitted_message,
-                "is_fallback": validated.is_fallback,
-            },
         )
         return validated.order
 
@@ -242,7 +167,6 @@ class JevPlayer(Player):
         validated: ValidatedOrder,
         snapshot: dict[str, Any] | None = None,
         val_latency_ms: float = 0.0,
-        decision_id: str | None = None,
     ) -> None:
         """Track the resolved turn and dispatch telemetry if a hook is set."""
         turn = self._safe_turn(battle)
@@ -292,7 +216,6 @@ class JevPlayer(Player):
 
         event_data: dict[str, Any] = {
             "type": "TURN_DECISION",
-            "decision_id": decision_id,
             "turn": turn,
             "battle_tag": getattr(battle, "battle_tag", None),
             "battle_format": getattr(battle, "format", "unknown"),
@@ -351,8 +274,6 @@ class JevPlayer(Player):
 
     async def _create_battle(self, split_message: list[str]) -> AbstractBattle:
         battle = await super()._create_battle(split_message)
-        self.history_tracker.reset()
-        self._pending_decisions.clear()
         if self.on_battle_event is not None:
             try:
                 self.on_battle_event(
@@ -369,19 +290,6 @@ class JevPlayer(Player):
     def _battle_finished_callback(self, battle: AbstractBattle) -> None:
         super()._battle_finished_callback(battle)
         tag = battle.battle_tag
-        pending = self._pending_decisions.pop(tag, None)
-        if pending:
-            self._dispatch_decision_phase(
-                {
-                    "type": "DECISION_PHASE",
-                    "decision_id": pending["decision_id"],
-                    "battle_tag": tag,
-                    "battle_format": pending["battle_format"],
-                    "turn": pending["turn"],
-                    "phase": "RESULT_OBSERVED",
-                    "observed_commands": ["battle_end"],
-                }
-            )
         scanner = self._scanners.pop(tag, None)
         if scanner is not None:
             for event in scanner.flush():
@@ -427,9 +335,6 @@ class JevPlayer(Player):
                 )
             except Exception:
                 pass
-        if frame is not None:
-            tag, lines = frame
-            self._observe_pending_result(tag, lines)
         try:
             self._feed_scanner(split_messages)
         except Exception:
@@ -532,94 +437,6 @@ class JevPlayer(Player):
         )
 
     # ---------------------------------------------------------------- helpers
-
-    def _dispatch_decision_phase(self, event: dict[str, Any]) -> None:
-        if self.on_decision_phase is None:
-            return
-        try:
-            self.on_decision_phase(event)
-        except Exception:
-            pass
-
-    def _emit_decision_phase(
-        self,
-        battle: AbstractBattle,
-        decision_id: str,
-        phase: str,
-        **payload: Any,
-    ) -> None:
-        event = {
-            "type": "DECISION_PHASE",
-            "decision_id": decision_id,
-            "battle_tag": self._battle_tag(battle),
-            "battle_format": self._battle_format(battle),
-            "turn": self._safe_turn(battle),
-            "phase": phase,
-        }
-        event.update(payload)
-        self._dispatch_decision_phase(event)
-
-    def _new_decision_id(self, battle: AbstractBattle) -> str:
-        self._decision_sequence += 1
-        tag = self._battle_tag(battle) or "battle"
-        return f"{tag}:{self._safe_turn(battle)}:{self._decision_sequence}"
-
-    @staticmethod
-    def _battle_tag(battle: AbstractBattle) -> str | None:
-        value = getattr(battle, "battle_tag", None)
-        return value if isinstance(value, str) else None
-
-    def _battle_format(self, battle: AbstractBattle) -> str:
-        value = getattr(battle, "format", None)
-        if isinstance(value, str):
-            return value
-        return self.settings.battle_format
-
-    @staticmethod
-    def _submitted_order_message(validated: ValidatedOrder) -> Any:
-        try:
-            return validated.order.message
-        except Exception:
-            return None
-
-    def _observe_pending_result(self, tag: str, lines: list[str]) -> None:
-        pending = self._pending_decisions.get(tag)
-        if pending is None:
-            return
-        result_commands = {
-            "move",
-            "switch",
-            "drag",
-            "-damage",
-            "-heal",
-            "-status",
-            "-stat",
-            "faint",
-            "-terastallize",
-            "win",
-            "tie",
-            "cant",
-        }
-        observed_commands: list[str] = []
-        for line in lines:
-            parts = line.split("|")
-            command = parts[1] if len(parts) > 1 else ""
-            if command in result_commands and command not in observed_commands:
-                observed_commands.append(command)
-        if not observed_commands:
-            return
-        self._pending_decisions.pop(tag, None)
-        self._dispatch_decision_phase(
-            {
-                "type": "DECISION_PHASE",
-                "decision_id": pending["decision_id"],
-                "battle_tag": tag,
-                "battle_format": pending["battle_format"],
-                "turn": pending["turn"],
-                "phase": "RESULT_OBSERVED",
-                "observed_commands": observed_commands,
-            }
-        )
 
     @staticmethod
     def _safe_turn(battle: AbstractBattle) -> int:

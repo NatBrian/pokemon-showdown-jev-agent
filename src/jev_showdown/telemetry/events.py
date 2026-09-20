@@ -34,10 +34,6 @@ class TurnHistoryTracker:
 
     events: list[dict[str, Any]] = field(default_factory=list)
 
-    def reset(self) -> None:
-        """Clear all events at the start of a new battle."""
-        self.events.clear()
-
     def add_event(
         self,
         turn: int,

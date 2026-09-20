@@ -40,20 +40,6 @@ def _statuses(published: list[dict]) -> list[str]:
     return [m["status"] for m in published if m.get("type") == "STATUS_UPDATE"]
 
 
-def test_orchestrator_forwards_decision_phase():
-    manager, published = _capturing_manager()
-    orchestrator = BattleOrchestrator(_make_settings(), manager=manager)
-    event = {
-        "type": "DECISION_PHASE",
-        "decision_id": "battle-1:1:1",
-        "phase": "JEV_EVALUATING",
-    }
-
-    orchestrator._on_decision_phase(event)
-
-    assert published == [event]
-
-
 class _TrueFlag:
     def is_set(self) -> bool:
         return True

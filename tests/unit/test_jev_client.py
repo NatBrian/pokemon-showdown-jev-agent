@@ -1,11 +1,7 @@
 import pytest
 import httpx
 from unittest.mock import AsyncMock, patch
-from jev_showdown.decision.opencode_jev import (
-    DEFAULT_DECISION_INSTRUCTIONS,
-    JevSystemOneClient,
-    build_request_payload,
-)
+from jev_showdown.decision.opencode_jev import JevSystemOneClient
 from jev_showdown.config import Settings
 
 @pytest.fixture
@@ -21,26 +17,6 @@ def test_settings():
         battle_format="gen9randombattle",
         dashboard_port=8000,
     )
-
-
-def test_build_request_payload_matches_http_payload():
-    payload = build_request_payload(
-        "jev-1.13-free",
-        {"state_schema": 1, "turn": 4},
-        {"move_earthquake": "Use Earthquake."},
-    )
-
-    assert payload == {
-        "model": "jev-1.13-free",
-        "state": {"state_schema": 1, "turn": 4},
-        "questions": {
-            "action": {
-                "type": "choice",
-                "instructions": DEFAULT_DECISION_INSTRUCTIONS,
-                "criteria": {"move_earthquake": "Use Earthquake."},
-            }
-        },
-    }
 
 @pytest.mark.asyncio
 async def test_jev_client_success(test_settings):

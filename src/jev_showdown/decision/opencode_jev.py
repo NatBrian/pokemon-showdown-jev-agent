@@ -6,26 +6,6 @@ from jev_showdown.decision.protocol import JevDecisionResponse
 
 DEFAULT_DECISION_INSTRUCTIONS = "Choose the strongest legal action that maximizes win probability."
 
-
-def build_request_payload(
-    model: str,
-    state: dict[str, Any],
-    criteria: dict[str, str],
-    instructions: str = DEFAULT_DECISION_INSTRUCTIONS,
-) -> dict[str, Any]:
-    """Build the exact JSON payload sent to the Jev System One endpoint."""
-    return {
-        "model": model,
-        "state": state,
-        "questions": {
-            "action": {
-                "type": "choice",
-                "instructions": instructions,
-                "criteria": criteria,
-            }
-        },
-    }
-
 class JevSystemOneClient:
     def __init__(self, settings: Settings, http_client: httpx.AsyncClient | None = None):
         self.settings = settings
@@ -38,12 +18,17 @@ class JevSystemOneClient:
         instructions: str = DEFAULT_DECISION_INSTRUCTIONS,
     ) -> JevDecisionResponse:
         start_time = time.perf_counter()
-        payload = build_request_payload(
-            self.settings.jev_model,
-            state,
-            criteria,
-            instructions,
-        )
+        payload = {
+            "model": self.settings.jev_model,
+            "state": state,
+            "questions": {
+                "action": {
+                    "type": "choice",
+                    "instructions": instructions,
+                    "criteria": criteria
+                }
+            }
+        }
         headers = {
             "Authorization": self.settings.jev_auth_token,
             "Content-Type": "application/json"

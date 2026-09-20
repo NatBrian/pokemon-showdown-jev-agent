@@ -105,10 +105,6 @@ class BattleOrchestrator:
         """Forward the authoritative raw protocol frame to the dashboard."""
         self._publish_event(event)
 
-    def _on_decision_phase(self, event: dict[str, Any]) -> None:
-        """Forward the observable Jev/adapter phase to the dashboard."""
-        self._publish_event(event)
-
     def _signal_match_found(self) -> None:
         """Wake the matchmaking task from any poke-env callback thread."""
         loop = self._loop
@@ -157,7 +153,6 @@ class BattleOrchestrator:
                 on_turn_event=self._on_turn_event,
                 on_battle_event=self._on_battle_event,
                 on_battle_frame=self._on_battle_frame,
-                on_decision_phase=self._on_decision_phase,
                 battle_format=settings.battle_format,
                 server_configuration=server_configuration_for(
                     settings.showdown_server_url

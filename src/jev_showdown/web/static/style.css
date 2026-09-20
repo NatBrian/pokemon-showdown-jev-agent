@@ -351,8 +351,17 @@ body.arcade-theme {
   overflow: hidden;
   background: #050812;
 }
-.showdown-stage-viewport {
+.showdown-stage-canvas {
   position: relative;
+  width: 100%;
+  min-height: 160px;
+  overflow: hidden;
+  background: #050812;
+}
+.showdown-stage-viewport {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 640px;
   height: 380px;
   transform-origin: top left;

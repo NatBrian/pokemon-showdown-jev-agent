@@ -61,7 +61,9 @@
 
       <section class="showdown-arena" id="showdown-arena" aria-label="Live Pokemon Showdown battle" hidden>
         <div class="showdown-stage-shell">
-          <div class="showdown-stage-viewport" id="showdown-frame"></div>
+          <div class="showdown-stage-canvas">
+            <div class="showdown-stage-viewport" id="showdown-frame"></div>
+          </div>
           <div class="showdown-log-viewport" id="showdown-log"></div>
         </div>
         <p class="showdown-renderer-status" id="showdown-status">SHOWDOWN RENDERER LOADING&hellip;</p>
@@ -69,7 +71,7 @@
 
       <!-- Telemetry fallback display when the official renderer cannot load. -->
       <div class="arena-view" id="arena-fallback">
-        <div id="prompt-label" class="battle-prompt">TELEMETRY FALLBACK &mdash; OFFICIAL SCENE UNAVAILABLE</div>
+        <div id="prompt-label" class="battle-prompt">TELEMETRY FALLBACK &mdash; OFFICIAL SHOWDOWN RENDERER UNAVAILABLE</div>
 
         <!-- Opponent active Pokémon -->
         <div id="opp-card" class="pokemon-card opponent">
@@ -329,6 +331,6 @@
   </div>
 
   <script src="/static/showdown-renderer.js?v=1"></script>
-  <script src="/static/app.js?v=6"></script>
+  <script src="/static/app.js?v=7"></script>
 </body>
 </html>

@@ -242,6 +242,7 @@ class ConnectionManager:
         ``run_coroutine_threadsafe`` bridges the two. No-op when no loop
         has been captured yet or the loop is no longer running.
         """
+        message = self._normalize_battle_message(message)
         self._remember_battle_message(message)
         loop = self._loop
         if loop is None or loop.is_closed():
@@ -262,6 +263,27 @@ class ConnectionManager:
             lines = message.get("lines")
             if isinstance(lines, list) and all(isinstance(line, str) for line in lines):
                 self._battle_frames.append(battle_tag, lines)
+
+    @staticmethod
+    def _normalize_battle_message(message: dict[str, Any]) -> dict[str, Any]:
+        """Keep browser-facing raw frames protocol-shaped and JSON-safe."""
+        if message.get("type") != "BATTLE_FRAME":
+            return message
+        raw_lines = message.get("lines")
+        lines: list[str] = []
+        if isinstance(raw_lines, list):
+            for raw_line in raw_lines:
+                if not isinstance(raw_line, str):
+                    continue
+                line = raw_line.strip()
+                if not line or line == "|ping" or line.startswith(">"):
+                    continue
+                if not line.startswith("|"):
+                    line = "|" + line
+                lines.append(line)
+        normalized = dict(message)
+        normalized["lines"] = lines
+        return normalized
 
 
 def create_app(

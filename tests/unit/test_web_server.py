@@ -72,6 +72,22 @@ def test_websocket_replays_battle_frames_to_new_client(test_app):
     }
 
 
+def test_connection_manager_normalizes_empty_and_malformed_frame_lines(test_app):
+    manager = test_app.state.manager
+    manager.publish(
+        {"type": "BATTLE_START", "battle_tag": "battle-gen9randombattle-1"}
+    )
+    manager.publish(
+        {
+            "type": "BATTLE_FRAME",
+            "battle_tag": "battle-gen9randombattle-1",
+            "lines": ["", "  |turn|1  ", "turn|2", None, ">battle-noise"],
+        }
+    )
+
+    assert manager._battle_frames.replay()["frames"] == [["|turn|1", "|turn|2"]]
+
+
 def test_start_battle_hook_invoked():
     settings = Settings(
         showdown_username=None,

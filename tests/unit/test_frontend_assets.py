@@ -130,3 +130,51 @@ def test_dashboard_uses_battle_first_layout_and_truth_strip():
     assert "OBSERVED RESULT" in html
     assert "grid-template-columns: minmax(0, 1.6fr) minmax(360px, 0.85fr)" in css
     assert ".panel-battle { grid-column: 1; grid-row: 1 / span 2; }" in css
+
+
+def test_frontend_has_explicit_renderer_failure_fallback_copy():
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
+    html = _read(os.path.join(static_dir, "index.html"))
+
+    assert "TELEMETRY FALLBACK &mdash; OFFICIAL SHOWDOWN RENDERER UNAVAILABLE" in html
+
+
+def test_battle_end_preserves_final_official_scene_and_marks_result_observed():
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
+    js = _read(os.path.join(static_dir, "app.js"))
+    handler = js[js.index("function handleBattleEnd"):js.index("function closeOverlay")]
+
+    assert 'getEl("showdown-status")' in handler
+    assert "SHOWDOWN BATTLE ENDED" in handler
+    assert "RESULT OBSERVED FROM SHOWDOWN" in handler
+    assert "JevShowdownRenderer.end" in handler
+    assert "JevShowdownRenderer.destroy" not in handler
+
+
+def test_dashboard_dom_helper_does_not_collide_with_showdown_jquery():
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
+    js = _read(os.path.join(static_dir, "app.js"))
+
+    assert "const $ =" not in js
+    assert "const getEl =" in js
+
+
+def test_showdown_frame_has_flow_wrapper_for_official_absolute_scene():
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
+    html = _read(os.path.join(static_dir, "index.html"))
+    css = _read(os.path.join(static_dir, "style.css"))
+
+    assert 'class="showdown-stage-canvas"' in html
+    assert ".showdown-stage-canvas" in css
+
+
+def test_showdown_ended_callback_preserves_final_scene_label():
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
+    adapter = _read(os.path.join(static_dir, "showdown-renderer.js"))
+
+    assert 'event === "ended") setStatus("SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED")' in adapter

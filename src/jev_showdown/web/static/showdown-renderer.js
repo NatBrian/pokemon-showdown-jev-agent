@@ -37,6 +37,7 @@
   let resizeObserver = null;
   let battleTag = "jev-showdown";
   let pendingLines = [];
+  let battleEnded = false;
 
   function setStatus(text) {
     if (statusElement) statusElement.textContent = text;
@@ -109,15 +110,15 @@
 
   function resizeStage() {
     if (!frameElement) return;
-    const shell = frameElement.parentElement;
-    if (!shell) return;
-    const width = shell.clientWidth || BASE_WIDTH;
-    const scale = Math.min(1, width / BASE_WIDTH);
+    const canvas = frameElement.parentElement;
+    if (!canvas) return;
+    const width = canvas.clientWidth || BASE_WIDTH;
+    const scale = Math.min(2.25, width / BASE_WIDTH);
     frameElement.style.width = BASE_WIDTH + "px";
     frameElement.style.height = BASE_HEIGHT + "px";
     frameElement.style.transformOrigin = "top left";
     frameElement.style.transform = "scale(" + scale + ")";
-    shell.style.height = Math.ceil(BASE_HEIGHT * scale) + "px";
+    canvas.style.height = Math.ceil(BASE_HEIGHT * scale) + "px";
   }
 
   function destroyBattle() {
@@ -172,8 +173,8 @@
         $logFrame: window.jQuery(logElement),
         id: battleTag,
         subscription: function (event) {
-          if (event === "ended") setStatus("SHOWDOWN BATTLE ENDED");
-          else if (event === "playing" || event === "turn") setStatus("LIVE SHOWDOWN SCENE");
+          if (event === "ended") setStatus("SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED");
+          else if (!battleEnded && (event === "playing" || event === "turn")) setStatus("LIVE SHOWDOWN SCENE");
         },
       });
       resizeObserver = new ResizeObserver(resizeStage);
@@ -196,6 +197,7 @@
 
   function reset(nextBattleTag) {
     battleTag = nextBattleTag || "jev-showdown";
+    battleEnded = false;
     pendingLines = [];
     destroyBattle();
     setStatus("WAITING FOR SHOWDOWN BATTLE PROTOCOL…");
@@ -216,10 +218,16 @@
     if (arena) arena.hidden = true;
   }
 
+  function end() {
+    battleEnded = true;
+    setStatus("SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED");
+  }
+
   window.JevShowdownRenderer = {
     mount: mount,
     reset: reset,
     feed: feed,
+    end: end,
     setUnavailable: setUnavailable,
     destroy: destroyBattle,
   };

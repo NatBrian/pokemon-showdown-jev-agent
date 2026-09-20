@@ -30,10 +30,12 @@ const state = {
 
 /* ---------------- DOM helpers ---------------- */
 
-function $(id) { return document.getElementById(id); }
+// Keep the dashboard DOM helper lexical: Showdown's jQuery bundle owns the
+// global `$` name after the official renderer loads.
+const getEl = (id) => document.getElementById(id);
 
 function setText(id, text) {
-  const el = $(id);
+  const el = getEl(id);
   if (el) el.textContent = text;
 }
 
@@ -268,7 +270,7 @@ function dispatchMessage(data) {
 /* ---------------- Button / status helpers ---------------- */
 
 function setStartButton(label, disabled) {
-  const btn = $("start-btn");
+  const btn = getEl("start-btn");
   if (!btn) return;
   btn.textContent = label;
   btn.disabled = !!disabled;
@@ -282,7 +284,7 @@ function setStatusLeft(text) {
 
 function handleStatusUpdate(data) {
   const status = (data.status || data.message || "").toUpperCase();
-  const btn = $("start-btn");
+  const btn = getEl("start-btn");
   if (data.error) {
     // Clear, unmistakable error state (connection/auth/search failure).
     state.battleActive = false;
@@ -380,8 +382,8 @@ function handleTurnDecision(data) {
   renderInspect();
 
   // Fallback alert banner (adapter attribution)
-  const banner = $("fallback-banner");
-  const actionLine = $("fallback-action-line");
+  const banner = getEl("fallback-banner");
+  const actionLine = getEl("fallback-action-line");
   if (validation.is_fallback) {
     banner.classList.remove("hidden");
     const reason = validation.fallback_reason ? " (" + validation.fallback_reason + ")" : "";
@@ -435,10 +437,10 @@ function fmtHpLine(mon) {
 function renderHpCard(prefix, mon) {
   if (!mon) return;
   const info = fmtHpLine(mon);
-  const bar = $(prefix + "-hp-bar");
+  const bar = getEl(prefix + "-hp-bar");
   bar.style.width = Math.max(0, Math.min(100, info.bar * 100)) + "%";
   bar.className = "hp-fill " + hpClass(info.bar);
-  const textEl = $(prefix + "-hp-text");
+  const textEl = getEl(prefix + "-hp-text");
   textEl.textContent = info.text;
   textEl.title = info.pct;
 }
@@ -450,24 +452,24 @@ function renderActiveMons(snapshot) {
   if (selfMon) {
     setText("self-name", selfMon.species || "---");
     renderHpCard("self", selfMon);
-    fillTypeTags($("self-types"), selfMon.types);
+    fillTypeTags(getEl("self-types"), selfMon.types);
     renderMonStatus("self-status", selfMon.status);
     if (selfMon.level != null) setText("self-level", "Lv. " + selfMon.level);
-    showSprite($("self-sprite"), $("self-avatar"), backSpriteUrls(selfMon.species), selfMon.species);
+    showSprite(getEl("self-sprite"), getEl("self-avatar"), backSpriteUrls(selfMon.species), selfMon.species);
   }
 
   if (oppMon) {
     setText("opp-name", oppMon.species || "???");
     renderHpCard("opp", oppMon);
-    fillTypeTags($("opp-types"), oppMon.types);
+    fillTypeTags(getEl("opp-types"), oppMon.types);
     renderMonStatus("opp-status", oppMon.status);
     if (oppMon.level != null) setText("opp-level", "Lv. " + oppMon.level);
-    showSprite($("opp-sprite"), $("opp-avatar"), spriteUrls(oppMon.species), oppMon.species);
+    showSprite(getEl("opp-sprite"), getEl("opp-avatar"), spriteUrls(oppMon.species), oppMon.species);
   }
 }
 
 function renderMonStatus(id, status) {
-  const el = $(id);
+  const el = getEl(id);
   if (!el) return;
   if (status) {
     el.textContent = String(status).toUpperCase();
@@ -490,7 +492,7 @@ function renderInitialTeams() {
   // Pre-populate 6 slots per side so the arena reads complete before the
   // first telemetry frame arrives. Opponent slots stay closed Poké Balls
   // (fog of war); player slots read as open until Showdown reveals the team.
-  const oppSlots = $("opp-team-slots");
+  const oppSlots = getEl("opp-team-slots");
   clearEl(oppSlots);
   for (let i = 0; i < 6; i++) {
     const el = makeEl("div", "team-slot unknown");
@@ -499,7 +501,7 @@ function renderInitialTeams() {
     el.title = "Unrevealed Poké Ball — fog of war";
     oppSlots.appendChild(el);
   }
-  const selfSlots = $("self-team-slots");
+  const selfSlots = getEl("self-team-slots");
   clearEl(selfSlots);
   for (let i = 0; i < 6; i++) {
     const el = makeEl("div", "team-slot empty");
@@ -510,7 +512,7 @@ function renderInitialTeams() {
 }
 
 function renderTeams(snapshot) {
-  const oppSlots = $("opp-team-slots");
+  const oppSlots = getEl("opp-team-slots");
   clearEl(oppSlots);
   const slots = snapshot.opponent && Array.isArray(snapshot.opponent.team_slots)
     ? snapshot.opponent.team_slots
@@ -538,7 +540,7 @@ function renderTeams(snapshot) {
     oppSlots.appendChild(el);
   }
 
-  const selfSlots = $("self-team-slots");
+  const selfSlots = getEl("self-team-slots");
   clearEl(selfSlots);
   const team = snapshot.self && Array.isArray(snapshot.self.team) ? snapshot.self.team : [];
   const activeSpecies = snapshot.self && snapshot.self.active_pokemon
@@ -572,7 +574,7 @@ function renderTeams(snapshot) {
 /* ---------------- Center panel: Jev Input ---------------- */
 
 function renderCenterPanel(snapshot, criteria, chosenId, turn) {
-  const stateEl = $("state-summary");
+  const stateEl = getEl("state-summary");
   clearEl(stateEl);
   if (snapshot) {
     const selfMon = snapshot.self && snapshot.self.active_pokemon;
@@ -597,7 +599,7 @@ function renderCenterPanel(snapshot, criteria, chosenId, turn) {
     stateEl.appendChild(makeEl("span", "empty-note", "NO BATTLE STATE RECEIVED"));
   }
 
-  const fieldEl = $("field-summary");
+  const fieldEl = getEl("field-summary");
   clearEl(fieldEl);
   if (snapshot) {
     const weather = snapshot.weather ? String(snapshot.weather).toUpperCase() : "NONE";
@@ -615,7 +617,7 @@ function renderCenterPanel(snapshot, criteria, chosenId, turn) {
 }
 
 function renderFacts(snapshot, criteria, chosenId) {
-  const el = $("facts-summary");
+  const el = getEl("facts-summary");
   clearEl(el);
   if (!snapshot || !chosenId) {
     el.appendChild(makeEl("span", "empty-note", "NO FACTS CALCULATED YET"));
@@ -694,9 +696,9 @@ function kindIcon(kind) {
 }
 
 function renderLegalActions(snapshot, criteria, chosenId) {
-  const list = $("legal-actions-list");
+  const list = getEl("legal-actions-list");
   clearEl(list);
-  const title = $("legal-actions-title");
+  const title = getEl("legal-actions-title");
   const legal = snapshot && Array.isArray(snapshot.legal_actions) ? snapshot.legal_actions : [];
   title.textContent = "LEGAL ACTIONS (" + legal.length + ")";
   if (!legal.length) {
@@ -727,7 +729,7 @@ function renderLegalActions(snapshot, criteria, chosenId) {
 
 function setLoaderStep(step, title, done) {
   const spinner = document.querySelector("#processing-loader .arcade-spinner");
-  const titleEl = $("loader-title");
+  const titleEl = getEl("loader-title");
   const items = document.querySelectorAll("#loader-checklist li");
   if (spinner) {
     spinner.classList.toggle("idle", !title);
@@ -761,7 +763,7 @@ function renderRightPanel(jev, validation, chosenId, snapshot, latency) {
 
   // Decision card
   setText("chosen-action", chosenId ? String(chosenId).toUpperCase() : (isFallback ? "FALLBACK ACTION" : "AWAITING DECISION"));
-  const kindEl = $("chosen-kind");
+  const kindEl = getEl("chosen-kind");
   let kind = null;
   if (snapshot && Array.isArray(snapshot.legal_actions) && chosenId) {
     const legal = snapshot.legal_actions.find((a) => a.id === chosenId);
@@ -776,7 +778,7 @@ function renderRightPanel(jev, validation, chosenId, snapshot, latency) {
 
   const confidence = jev && jev.confidence != null ? Number(jev.confidence) : null;
   setText("confidence-val", confidence != null ? Math.round(confidence * 100) + "%" : "--%");
-  const confBar = $("confidence-bar");
+  const confBar = getEl("confidence-bar");
   if (confBar) confBar.style.width = (confidence != null ? Math.max(0, Math.min(100, confidence * 100)) : 0) + "%";
 
   setText("decision-model", jev && jev.model ? "MODEL: " + String(jev.model).toUpperCase() : "MODEL: --");
@@ -788,7 +790,7 @@ function renderRightPanel(jev, validation, chosenId, snapshot, latency) {
     setText("decision-usage", "IN " + tin + " \u2022 OUT " + tout + " \u2022 COST $" + cost);
     setText("cost-badge", "◉ COST $" + cost);
   }
-  const chip = $("decision-completed");
+  const chip = getEl("decision-completed");
   chip.classList.toggle("hidden", !completed);
 
   // Probabilities bar chart
@@ -796,7 +798,7 @@ function renderRightPanel(jev, validation, chosenId, snapshot, latency) {
 }
 
 function renderProbabilities(jev, chosenId, snapshot) {
-  const container = $("prob-bars");
+  const container = getEl("prob-bars");
   clearEl(container);
   const probs = (jev && jev.probabilities) || {};
   const entries = Object.entries(probs);
@@ -833,7 +835,7 @@ function renderProbabilities(jev, chosenId, snapshot) {
 /* ---------------- Turn history ---------------- */
 
 function renderHistory(events) {
-  const list = $("history-cards");
+  const list = getEl("history-cards");
   clearEl(list);
   if (!events.length) {
     list.appendChild(makeEl("span", "empty-note", "NO EVENTS YET"));
@@ -876,7 +878,7 @@ function renderActionStrip(chosenId, snapshot, criteria, latency, validation, su
   const label = chosen ? (chosen.label || chosen.id) : (chosenId ? String(chosenId) : "ACTION");
   const facts = (chosen && chosen.facts) || {};
   const crit = criteria && criteria[chosenId] ? criteria[chosenId] : "";
-  const resultPanel = $("result-panel");
+  const resultPanel = getEl("result-panel");
   if (resultPanel) resultPanel.classList.remove("result-victory");
 
   setText("validate-status", chosenId ? (validation && validation.is_fallback ? "FALLBACK VALIDATED" : "LEGAL ACTION") : "PENDING");
@@ -913,7 +915,7 @@ function renderActionStrip(chosenId, snapshot, criteria, latency, validation, su
       : "The game result appears after Showdown resolves the action.",
   );
   // Estimated remaining HP of the target after the chosen action.
-  const hpWrap = $("result-hp-wrap");
+  const hpWrap = getEl("result-hp-wrap");
   const oppMon = snapshot && snapshot.opponent && snapshot.opponent.active_pokemon;
   if (chosenId && Array.isArray(facts.estimated_damage_range) && facts.estimated_damage_range.length === 2) {
     const base = oppMon && oppMon.hp_fraction != null ? Number(oppMon.hp_fraction) * 100 : 100;
@@ -922,14 +924,14 @@ function renderActionStrip(chosenId, snapshot, criteria, latency, validation, su
     const [low, high] = hi < lo ? [hi, lo] : [lo, hi];
     hpWrap.classList.remove("hidden");
     setText("result-hp-label", "EXPECTED HP \u2248 " + low + " \u2013 " + high + "%");
-    const fill = $("result-hp-fill");
+    const fill = getEl("result-hp-fill");
     fill.style.width = Math.max(2, (low + high) / 2) + "%";
     fill.className = "hp-fill " + hpClass((low + high) / 200);
   } else {
     hpWrap.classList.add("hidden");
   }
   // Small target sprite in the result panel.
-  const resultSprite = $("result-sprite");
+  const resultSprite = getEl("result-sprite");
   clearEl(resultSprite);
   if (oppMon && oppMon.species) {
     const img = document.createElement("img");
@@ -961,8 +963,8 @@ function renderStatusBar(turn, chosenId, latency, snapshot) {
 /* ---------------- Inspect Data ---------------- */
 
 function renderInspect() {
-  const preview = $("inspect-preview");
-  const box = $("inspect-content");
+  const preview = getEl("inspect-preview");
+  const box = getEl("inspect-content");
   const data = state.inspect[state.inspectTab];
 
   // Compact structured preview (never a wall of JSON by default)
@@ -995,15 +997,15 @@ function switchTab(tab, btn) {
 
 function toggleInspectExpand() {
   state.inspectExpanded = !state.inspectExpanded;
-  const btn = $("inspect-expand");
+  const btn = getEl("inspect-expand");
   if (btn) btn.textContent = state.inspectExpanded ? "COLLAPSE \u25B4" : "EXPAND \u25BE";
   renderInspect();
 }
 
 function toggleHistoryExpand() {
   state.historyExpanded = !state.historyExpanded;
-  const btn = $("history-expand");
-  const list = $("history-cards");
+  const btn = getEl("history-expand");
+  const list = getEl("history-cards");
   if (btn) btn.textContent = state.historyExpanded ? "COLLAPSE \u25B4" : "EXPAND \u25BE";
   if (list) list.classList.toggle("expanded", state.historyExpanded);
 }
@@ -1011,15 +1013,15 @@ function toggleHistoryExpand() {
 /* ---------------- Official Showdown battle scene ---------------- */
 
 function showShowdownScene() {
-  const arena = $("showdown-arena");
-  const fallback = $("arena-fallback");
+  const arena = getEl("showdown-arena");
+  const fallback = getEl("arena-fallback");
   if (arena) arena.hidden = false;
   if (fallback) fallback.classList.add("hidden");
 }
 
 function showArenaFallback(message) {
-  const arena = $("showdown-arena");
-  const fallback = $("arena-fallback");
+  const arena = getEl("showdown-arena");
+  const fallback = getEl("arena-fallback");
   if (arena) arena.hidden = true;
   if (fallback) fallback.classList.remove("hidden");
   if (message) setText("prompt-label", message);
@@ -1032,9 +1034,9 @@ function mountShowdownRenderer() {
   if (state.showdownMountPromise) return state.showdownMountPromise;
 
   state.showdownMountPromise = window.JevShowdownRenderer.mount(
-    $("showdown-frame"),
-    $("showdown-log"),
-    $("showdown-status"),
+    getEl("showdown-frame"),
+    getEl("showdown-log"),
+    getEl("showdown-status"),
   ).then(() => {
     showShowdownScene();
     return true;
@@ -1089,8 +1091,8 @@ function handleBattleEnd(data) {
     else if (/loss|defeat|opponent|enemy|lose/i.test(hint)) won = false;
   }
 
-  const titleEl = $("end-title");
-  const box = $("overlay-box");
+  const titleEl = getEl("end-title");
+  const box = getEl("overlay-box");
   titleEl.classList.remove("victory-text", "defeat-text");
   box.classList.remove("victory", "defeat");
 
@@ -1124,13 +1126,13 @@ function handleBattleEnd(data) {
   setText("result-status", resultStatus);
   setText("result-desc", "BATTLE ENDED" + resultTurns + " • RESULT OBSERVED FROM SHOWDOWN");
   setText("result-time", "MATCH END");
-  const resultPanel = $("result-panel");
+  const resultPanel = getEl("result-panel");
   if (resultPanel) resultPanel.classList.toggle("result-victory", won === true);
-  const resultHpWrap = $("result-hp-wrap");
+  const resultHpWrap = getEl("result-hp-wrap");
   if (resultHpWrap) resultHpWrap.classList.add("hidden");
-  clearEl($("result-sprite"));
+  clearEl(getEl("result-sprite"));
 
-  $("end-overlay").classList.remove("hidden");
+  getEl("end-overlay").classList.remove("hidden");
 
   // Reset for the next battle
   state.battleActive = false;
@@ -1138,6 +1140,15 @@ function handleBattleEnd(data) {
   setLoaderStep(0, null, false);
   setText("loader-latency", "API INFERENCE -- MS");
   if (data.total_turns != null) renderTurnBadge(data.total_turns);
+  const showdownStatus = getEl("showdown-status");
+  const showdownArena = getEl("showdown-arena");
+  if (showdownStatus && state.showdownMountPromise && !state.showdownUnavailable) {
+    if (window.JevShowdownRenderer && window.JevShowdownRenderer.end) {
+      window.JevShowdownRenderer.end();
+    }
+    showdownStatus.textContent = "SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED";
+    if (showdownArena) showdownArena.hidden = false;
+  }
   setStatusLeft(
     (won === true ? "VICTORY" : won === false ? "DEFEAT" : "BATTLE OVER") +
     " | " + (data.total_turns != null ? data.total_turns + " TURNS" : "") +
@@ -1146,16 +1157,16 @@ function handleBattleEnd(data) {
 }
 
 function closeOverlay() {
-  $("end-overlay").classList.add("hidden");
+  getEl("end-overlay").classList.add("hidden");
 }
 
 /* ---------------- Boot ---------------- */
 
 document.addEventListener("DOMContentLoaded", () => {
-  $("start-btn").addEventListener("click", onStartBattleClick);
-  $("inspect-expand").addEventListener("click", toggleInspectExpand);
-  $("history-expand").addEventListener("click", toggleHistoryExpand);
-  $("end-dismiss").addEventListener("click", closeOverlay);
+  getEl("start-btn").addEventListener("click", onStartBattleClick);
+  getEl("inspect-expand").addEventListener("click", toggleInspectExpand);
+  getEl("history-expand").addEventListener("click", toggleHistoryExpand);
+  getEl("end-dismiss").addEventListener("click", closeOverlay);
 
   // Idle state until the first telemetry arrives
   setLoaderStep(0, null, false);

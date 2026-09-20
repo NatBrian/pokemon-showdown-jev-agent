@@ -37,7 +37,7 @@
     </div>
   </header>
 
-  <!-- ===================== 3-COLUMN MAIN VIEWPORT ===================== -->
+  <!-- ===================== BATTLE-FIRST MAIN VIEWPORT ===================== -->
   <main class="dashboard-grid">
 
     <!-- ============ LEFT: LIVE BATTLE ============ -->
@@ -55,13 +55,21 @@
         <span>TERRAIN: <b id="terrain-label">NONE</b></span>
       </div>
 
-      <!-- Live feed: the official Pok&eacute;mon Showdown client (real sprites,
+      <!-- The fallback below is retained for telemetry; the live scene above is the official renderer. The renderer owns real sprites,
            animations, move effects, avatars and chat — the actual game) -->
-      <div class="arena-source-note">STATE RENDERED FROM SHOWDOWN TELEMETRY &bull; FOG OF WAR HONORED</div>
+      <div class="arena-source-note">STATE RENDERED FROM SHOWDOWN TELEMETRY &bull; OFFICIAL SHOWDOWN RENDERER &bull; FOG OF WAR HONORED</div>
 
-      <!-- Local arena (fallback display when the embedded client cannot load) -->
+      <section class="showdown-arena" id="showdown-arena" aria-label="Live Pokemon Showdown battle" hidden>
+        <div class="showdown-stage-shell">
+          <div class="showdown-stage-viewport" id="showdown-frame"></div>
+          <div class="showdown-log-viewport" id="showdown-log"></div>
+        </div>
+        <p class="showdown-renderer-status" id="showdown-status">SHOWDOWN RENDERER LOADING&hellip;</p>
+      </section>
+
+      <!-- Telemetry fallback display when the official renderer cannot load. -->
       <div class="arena-view" id="arena-fallback">
-        <div id="prompt-label" class="battle-prompt">AWAITING BATTLE&hellip;</div>
+        <div id="prompt-label" class="battle-prompt">TELEMETRY FALLBACK &mdash; OFFICIAL SCENE UNAVAILABLE</div>
 
         <!-- Opponent active Pokémon -->
         <div id="opp-card" class="pokemon-card opponent">
@@ -320,6 +328,7 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=5"></script>
+  <script src="/static/showdown-renderer.js?v=1"></script>
+  <script src="/static/app.js?v=6"></script>
 </body>
 </html>

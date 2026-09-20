@@ -93,3 +93,40 @@ def test_frontend_surfaces_observed_match_result_after_overlay():
     assert "BATTLE ENDED" in js
     assert "OBSERVED RESULT" in html
     assert "img.pokemondb.net" not in js
+
+
+def test_dashboard_has_official_showdown_stage_and_adapter():
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
+    html = _read(os.path.join(static_dir, "index.html"))
+
+    assert 'id="showdown-arena"' in html
+    assert 'id="showdown-frame"' in html
+    assert 'id="showdown-log"' in html
+    assert "showdown-renderer.js" in html
+    assert "<iframe" not in html.lower()
+
+
+def test_adapter_loads_renderer_in_dependency_order_and_handles_frames():
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
+    adapter = _read(os.path.join(static_dir, "showdown-renderer.js"))
+
+    assert "window.JevShowdownRenderer" in adapter
+    assert "js/battle.js" in adapter
+    assert "BATTLE_REPLAY" not in adapter
+    assert "battle.add" in adapter
+    assert "battle.play" in adapter
+
+
+def test_dashboard_uses_battle_first_layout_and_truth_strip():
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    static_dir = os.path.join(base_dir, "src", "jev_showdown", "web", "static")
+    html = _read(os.path.join(static_dir, "index.html"))
+    css = _read(os.path.join(static_dir, "style.css"))
+
+    assert "VALIDATE" in html
+    assert "ACT" in html
+    assert "OBSERVED RESULT" in html
+    assert "grid-template-columns: minmax(0, 1.6fr) minmax(360px, 0.85fr)" in css
+    assert ".panel-battle { grid-column: 1; grid-row: 1 / span 2; }" in css

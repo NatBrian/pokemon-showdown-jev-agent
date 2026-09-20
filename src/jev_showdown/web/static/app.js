@@ -7,6 +7,7 @@
      { type: "STATUS_UPDATE",  status: "..." }
      { type: "TURN_DECISION",  turn, snapshot, criteria,
        jev_response | jev, validation, recent_history, ... }
+     { type: "BATTLE_START" | "BATTLE_FRAME" | "BATTLE_REPLAY", ... }
      { type: "BATTLE_END",     won, total_turns, winner, ... }
    ============================================================ */
 "use strict";
@@ -22,6 +23,9 @@ const state = {
   inspectExpanded: false,
   historyExpanded: false,
   lastTurn: 0,
+  showdownBattleTag: null,
+  showdownMountPromise: null,
+  showdownUnavailable: false,
 };
 
 /* ---------------- DOM helpers ---------------- */
@@ -245,6 +249,12 @@ function dispatchMessage(data) {
   const type = data.type || data.event;
   if (type === "STATUS_UPDATE") {
     handleStatusUpdate(data);
+  } else if (type === "BATTLE_START") {
+    handleShowdownBattleStart(data);
+  } else if (type === "BATTLE_FRAME") {
+    handleShowdownFrame(data);
+  } else if (type === "BATTLE_REPLAY") {
+    handleShowdownReplay(data);
   } else if (type === "TURN_DECISION") {
     handleTurnDecision(data);
   } else if (type === "BATTLE_END") {
@@ -998,71 +1008,75 @@ function toggleHistoryExpand() {
   if (list) list.classList.toggle("expanded", state.historyExpanded);
 }
 
-/* ---------------- Embedded Showdown client (live feed) ---------------- */
+/* ---------------- Official Showdown battle scene ---------------- */
 
-// The real Showdown client is proxied by the backend (/showdown/) with its
-// iframe guard patched, so the LIVE BATTLE panel shows the actual game.
-const SHOWDOWN_BASE = "/showdown/";
+function showShowdownScene() {
+  const arena = $("showdown-arena");
+  const fallback = $("arena-fallback");
+  if (arena) arena.hidden = false;
+  if (fallback) fallback.classList.add("hidden");
+}
 
-function navigateShowdown(battleTag) {
-  const frame = $("showdown-frame");
-  if (!frame) return;
-  const url = battleTag ? SHOWDOWN_BASE + "#" + String(battleTag) : SHOWDOWN_BASE;
-  if (state.sdFrameTarget === url) return;
-  state.sdFrameTarget = url;
-  // The embedded client runs in hash-routing mode (pushState is disabled by
-  // the boot shim), so changing only the hash makes its router join the
-  // room without a full document reload (which would drop the live battle
-  // view and flicker the connection).
-  if (state.sdFrameOk && frame.contentWindow) {
-    try {
-      const win = frame.contentWindow;
-      if (win.location.origin === window.location.origin) {
-        win.location.hash = battleTag ? "#" + String(battleTag) : "";
-        return;
-      }
-    } catch (e) {
-      /* fall through to a full reload */
-    }
+function showArenaFallback(message) {
+  const arena = $("showdown-arena");
+  const fallback = $("arena-fallback");
+  if (arena) arena.hidden = true;
+  if (fallback) fallback.classList.remove("hidden");
+  if (message) setText("prompt-label", message);
+}
+
+function mountShowdownRenderer() {
+  if (state.showdownUnavailable || !window.JevShowdownRenderer) {
+    return Promise.reject(new Error("Showdown renderer adapter is unavailable"));
   }
-  frame.src = url;
-}
+  if (state.showdownMountPromise) return state.showdownMountPromise;
 
-function showShowdownFrame() {
-  const arena = $("arena-fallback");
-  if (arena) arena.classList.add("hidden");
-}
-
-function showArenaFallback() {
-  const arena = $("arena-fallback");
-  if (arena) arena.classList.remove("hidden");
-}
-
-async function initShowdownFrame() {
-  const frame = $("showdown-frame");
-  if (!frame) return;
-  // The local arena is the safe display until the real client has loaded.
-  showArenaFallback();
-  frame.addEventListener("load", () => {
-    // Only the proxied client page counts as "loaded" (not about:blank).
-    if ((frame.src || "").indexOf("/showdown/") !== -1) {
-      state.sdFrameOk = true;
-      showShowdownFrame();
+  state.showdownMountPromise = window.JevShowdownRenderer.mount(
+    $("showdown-frame"),
+    $("showdown-log"),
+    $("showdown-status"),
+  ).then(() => {
+    showShowdownScene();
+    return true;
+  }).catch((error) => {
+    state.showdownUnavailable = true;
+    showArenaFallback("TELEMETRY FALLBACK — OFFICIAL SCENE UNAVAILABLE");
+    if (window.JevShowdownRenderer) {
+      window.JevShowdownRenderer.setUnavailable(
+        "OFFICIAL SHOWDOWN RENDERER UNAVAILABLE — TELEMETRY FALLBACK ACTIVE",
+      );
     }
+    throw error;
   });
-  frame.addEventListener("error", () => {
-    state.sdFrameOk = false;
-    showArenaFallback();
-  });
-  // Only embed the client when the backend can reach Showdown; offline
-  // environments keep the local arena.
-  const available = await fetch(SHOWDOWN_BASE, { method: "GET" })
-    .then((r) => r.ok)
-    .catch(() => false);
-  if (available) {
-    // Idle state: the live lobby (also the place to log in via "Choose name").
-    navigateShowdown(null);
+  return state.showdownMountPromise;
+}
+
+function handleShowdownBattleStart(data) {
+  state.showdownBattleTag = data.battle_tag || "jev-showdown";
+  state.showdownUnavailable = false;
+  state.showdownMountPromise = null;
+  if (window.JevShowdownRenderer) {
+    window.JevShowdownRenderer.reset(state.showdownBattleTag);
   }
+  showArenaFallback("LOADING OFFICIAL SHOWDOWN SCENE…");
+  mountShowdownRenderer().catch(() => {});
+}
+
+function handleShowdownFrame(data) {
+  const tag = data.battle_tag || "jev-showdown";
+  if (state.showdownBattleTag !== tag) {
+    handleShowdownBattleStart({ battle_tag: tag });
+  }
+  if (!window.JevShowdownRenderer) return;
+  window.JevShowdownRenderer.feed(data.lines);
+  mountShowdownRenderer().catch(() => {});
+}
+
+function handleShowdownReplay(data) {
+  handleShowdownBattleStart({ battle_tag: data.battle_tag });
+  (Array.isArray(data.frames) ? data.frames : []).forEach((lines) => {
+    handleShowdownFrame({ battle_tag: data.battle_tag, lines: lines });
+  });
 }
 
 /* ---------------- BATTLE_END ---------------- */

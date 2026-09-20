@@ -198,10 +198,11 @@ body.arcade-theme {
   box-shadow: 0 0 8px rgba(255, 234, 0, 0.35);
 }
 
-/* ---------- Main 3-column grid ---------- */
+/* ---------- Battle-first dashboard grid ---------- */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1.08fr 1fr 1fr;
+  grid-template-columns: minmax(0, 1.6fr) minmax(360px, 0.85fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: 14px;
   padding: 14px;
   flex: 1;
@@ -224,6 +225,9 @@ body.arcade-theme {
 .panel-battle { border-color: #1f6f80; box-shadow: 0 0 16px rgba(0, 243, 255, 0.12), inset 0 0 24px rgba(0, 0, 0, 0.5); }
 .panel-input { border-color: #2f4f9e; box-shadow: 0 0 16px rgba(61, 123, 255, 0.12), inset 0 0 24px rgba(0, 0, 0, 0.5); }
 .panel-output { border-color: #7a2f6b; box-shadow: 0 0 16px rgba(255, 0, 127, 0.12), inset 0 0 24px rgba(0, 0, 0, 0.5); }
+.panel-battle { grid-column: 1; grid-row: 1 / span 2; }
+.panel-input { grid-column: 2; grid-row: 1; }
+.panel-output { grid-column: 2; grid-row: 2; }
 
 .panel-header {
   display: flex;
@@ -330,7 +334,54 @@ body.arcade-theme {
   text-shadow: 0 0 5px rgba(0, 243, 255, 0.45);
 }
 
-/* ---------- Embedded official Showdown client (live feed) ---------- */
+/* ---------- Official Showdown battle renderer ---------- */
+.showdown-arena {
+  position: relative;
+  border: 1px solid var(--border-bright);
+  border-radius: 4px;
+  background: #050812;
+  padding: 8px;
+  overflow: hidden;
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.75), 0 0 12px rgba(0, 243, 255, 0.12);
+}
+.showdown-stage-shell {
+  position: relative;
+  width: 100%;
+  min-height: 160px;
+  overflow: hidden;
+  background: #050812;
+}
+.showdown-stage-viewport {
+  position: relative;
+  width: 640px;
+  height: 380px;
+  transform-origin: top left;
+}
+.showdown-log-viewport {
+  min-height: 28px;
+  max-height: 56px;
+  overflow: hidden;
+  margin-top: 5px;
+  padding: 4px 7px;
+  background: rgba(0, 0, 0, 0.68);
+  border-top: 1px solid rgba(74, 90, 168, 0.65);
+  color: var(--text);
+  font-size: 11px;
+}
+.showdown-renderer-status {
+  margin-top: 6px;
+  color: var(--cyan);
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: 0.7px;
+  line-height: 1.6;
+}
+.showdown-arena .battle {
+  transform-origin: top left;
+}
+.renderer-unavailable { opacity: 0.35; }
+
+/* ---------- Legacy telemetry fallback arena ---------- */
 .sd-frame-wrap {
   position: relative;
   border: 1px solid var(--border-bright);
@@ -1154,11 +1205,12 @@ body.arcade-theme {
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1180px) {
-  .dashboard-grid { grid-template-columns: 1fr 1fr; }
-  .panel-output { grid-column: 1 / -1; }
+  .dashboard-grid { grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.85fr); }
 }
 @media (max-width: 780px) {
   .dashboard-grid { grid-template-columns: 1fr; }
+  .dashboard-grid { grid-template-rows: none; }
+  .panel-battle, .panel-input, .panel-output { grid-column: auto; grid-row: auto; }
   .app-header { justify-content: center; text-align: center; }
   .header-right { justify-content: center; }
   .arcade-btn { min-width: 200px; }

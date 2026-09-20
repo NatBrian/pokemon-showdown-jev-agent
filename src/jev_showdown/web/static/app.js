@@ -137,6 +137,16 @@
       return value !== undefined && value !== null && value !== "" ? String(value) : null;
     }
 
+    function formatBattleFormat(value) {
+      if (value === "gen9randombattle") return "GEN 9 RANDOM BATTLE";
+      return String(value || "unknown")
+        .replace(/^gen(\d+)/i, "GEN $1 ")
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/[_-]+/g, " ")
+        .toUpperCase()
+        .trim();
+    }
+
     function addDataRow(container, label, value, className) {
       if (value === undefined || value === null || value === "") return null;
       const row = makeElement("div", "data-row" + (className ? " " + className : ""));
@@ -279,7 +289,7 @@
         nodes.start.disabled = state.status.busy || state.socket !== "open";
         setText(nodes.start, state.status.busy ? "JEV PLAYING" : "START JEV BATTLE");
       }
-      setText(nodes.format, state.battleFormat.toUpperCase());
+      setText(nodes.format, formatBattleFormat(state.battleFormat));
     }
 
     function renderInput() {
@@ -625,7 +635,7 @@
     }
 
     function handleBattleReplay(message) {
-      if (message.battle_tag && state.battleTag !== message.battle_tag) {
+      if (message.battle_tag) {
         state.battleTag = message.battle_tag;
         state.battleEnded = false;
         try {

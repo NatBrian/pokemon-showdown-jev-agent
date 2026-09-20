@@ -127,7 +127,7 @@ async def test_choose_move_orchestrates_jev_turn_loop():
     first_call = mock_client.evaluate_decision.await_args
     state = first_call.kwargs["state"]
     criteria = first_call.kwargs["criteria"]
-    assert state["state_schema"] == 1
+    assert state["state_schema"] == 2
     assert state["turn"] == 3
     assert state["self"]["active_pokemon"]["species"] == "Garchomp"
     assert "move_earthquake" in criteria

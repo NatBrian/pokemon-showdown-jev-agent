@@ -91,6 +91,8 @@ def test_annotate_uses_poke_env_damage_range_when_state_is_complete(monkeypatch)
     }
     assert candidate.facts["ko"]["value"] is False
     assert candidate.facts["ko"]["source"] == "calculated"
+    assert candidate.facts["target_state"]["source"] == "observed"
+    assert candidate.facts["target_state"]["value"]["max_hp"] == 200
 
 
 def test_type_immunity_and_dual_type_multiplier_are_explicit():

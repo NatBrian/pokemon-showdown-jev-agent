@@ -287,9 +287,23 @@ def annotate_candidates_with_facts(
             exact_range = _exact_damage_percent(battle, cand, opp)
             if exact_range is not None:
                 cand.facts["calculation_mode"] = "poke_env_gen9"
+                defender_identifier = getattr(opp, "identifier", None)
+                max_hp = getattr(opp, "max_hp", None)
                 assumptions = (
                     "poke-env Gen 9 calculator",
                     "current known battle stats and effects",
+                )
+                cand.facts["target_state"] = _fact(
+                    {
+                        "identifier": defender_identifier,
+                        "max_hp": max_hp,
+                        "current_hp_fraction": opp_hp
+                        if isinstance(opp_hp, (int, float))
+                        else None,
+                    },
+                    "observed",
+                    "state",
+                    1.0,
                 )
                 cand.facts["damage"] = _fact(
                     exact_range,

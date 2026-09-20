@@ -203,6 +203,46 @@ async def test_battle_finished_emits_battle_end_event():
 
 
 @pytest.mark.asyncio
+async def test_choose_move_rejects_response_when_request_changes_during_inference():
+    response = JevDecisionResponse(
+        model="jev-1.13-free",
+        choice="move_earthquake",
+        confidence=0.9,
+    )
+    mock_client = MagicMock()
+    battle = _make_battle(turn=3)
+    battle.battle_tag = "battle-gen9randombattle-stale"
+    battle.last_request = {
+        "rqid": "req-1",
+        "active": [{"moves": []}],
+    }
+
+    async def evaluate_and_change_request(**kwargs):
+        battle.last_request = {
+            "rqid": "req-2",
+            "active": [{"moves": []}],
+        }
+        return response
+
+    mock_client.evaluate_decision = evaluate_and_change_request
+    events: list[dict] = []
+    player = JevPlayer(
+        settings=_make_settings(),
+        jev_client=mock_client,
+        on_turn_event=events.append,
+        start_listening=False,
+    )
+
+    order = await player.choose_move(battle)
+
+    assert isinstance(order, BattleOrder)
+    assert events[0]["is_fallback"] is True
+    assert "stale" in events[0]["fallback_reason"].lower()
+    assert events[0]["request"]["rqid"] == "req-1"
+    assert events[0]["fingerprint"]["request_id"] == "req-1"
+
+
+@pytest.mark.asyncio
 async def test_battle_finished_loses_reports_lose():
     battle_events: list[dict] = []
     player = JevPlayer(

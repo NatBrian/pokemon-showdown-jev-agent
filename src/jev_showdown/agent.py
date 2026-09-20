@@ -20,9 +20,17 @@ from poke_env.battle import AbstractBattle
 from poke_env.player import Player
 from poke_env.player.battle_order import BattleOrder
 
+from jev_showdown.battle.beliefs import build_hidden_information_ledger
 from jev_showdown.battle.candidates import CandidateAction, build_candidate_actions
+from jev_showdown.battle.consequences import compile_action_responses
+from jev_showdown.battle.contracts import (
+    BattleRequestMetadata,
+    DecisionFingerprint,
+    build_decision_fingerprint,
+)
 from jev_showdown.battle.facts import annotate_candidates_with_facts
 from jev_showdown.battle.snapshot import BattleSnapshotSerializer
+from jev_showdown.battle.state import extract_request_metadata
 from jev_showdown.battle.validator import ValidatedOrder
 from jev_showdown.config import Settings, load_settings
 from jev_showdown.decision.opencode_jev import (
@@ -111,6 +119,7 @@ class JevPlayer(Player):
         self.on_battle_event = on_battle_event
         self.on_battle_frame = on_battle_frame
         self._scanners: dict[str, BattleEventScanner] = {}
+        self._state_versions: dict[str, int] = {}
 
     # ------------------------------------------------------------ choose_move
 
@@ -123,13 +132,43 @@ class JevPlayer(Player):
         candidates: dict[str, CandidateAction] = {}
         criteria: dict[str, str] = {}
         snapshot: dict[str, Any] | None = None
+        beliefs: dict[str, Any] = {}
+        opponent_responses: dict[str, Any] = {}
+        metadata: BattleRequestMetadata | None = None
+        expected_fingerprint: DecisionFingerprint | None = None
+        deadline_monotonic = time.monotonic() + float(
+            getattr(self.settings, "jev_timeout_seconds", 5.0)
+        )
         t_val_start = time.perf_counter()
         try:
+            state_version = self._next_state_version(battle)
+            metadata = extract_request_metadata(
+                battle,
+                state_version=state_version,
+                deadline_monotonic=deadline_monotonic,
+            )
             candidates = build_candidate_actions(battle)
             criteria = annotate_candidates_with_facts(battle, candidates)
-            snapshot = self.serializer.build_snapshot(battle, candidates)
+            beliefs = build_hidden_information_ledger(battle)
+            opponent_responses = compile_action_responses(
+                battle, candidates, beliefs
+            )
+            snapshot = self.serializer.build_snapshot(
+                battle,
+                candidates,
+                metadata=metadata,
+                criteria=criteria,
+                recent_history=self.history_tracker.get_recent_events(limit=5),
+                beliefs=beliefs,
+                consequences=opponent_responses,
+            )
+            expected_fingerprint = build_decision_fingerprint(
+                metadata, tuple(candidates)
+            )
             jev_res = await self.jev_client.evaluate_decision(
-                state=snapshot, criteria=criteria
+                state=snapshot,
+                criteria=criteria,
+                deadline_monotonic=deadline_monotonic,
             )
         except Exception as exc:
             jev_res = JevDecisionResponse(
@@ -140,7 +179,55 @@ class JevPlayer(Player):
             )
 
         try:
-            validated = resolve_order(jev_res, candidates, battle)
+            current_candidates = build_candidate_actions(battle)
+            if metadata is None:
+                state_version = self._next_state_version(battle)
+                metadata = extract_request_metadata(
+                    battle,
+                    state_version=state_version,
+                    deadline_monotonic=deadline_monotonic,
+                )
+            current_metadata = extract_request_metadata(
+                battle,
+                state_version=metadata.state_version,
+                deadline_monotonic=deadline_monotonic,
+            )
+            current_fingerprint = build_decision_fingerprint(
+                current_metadata, tuple(current_candidates)
+            )
+            if expected_fingerprint is not None:
+                initial_shape = (
+                    expected_fingerprint.battle_id,
+                    expected_fingerprint.request_id,
+                    expected_fingerprint.turn,
+                    expected_fingerprint.candidate_ids,
+                )
+                current_shape = (
+                    current_fingerprint.battle_id,
+                    current_fingerprint.request_id,
+                    current_fingerprint.turn,
+                    current_fingerprint.candidate_ids,
+                )
+                if current_shape != initial_shape:
+                    current_metadata = extract_request_metadata(
+                        battle,
+                        state_version=metadata.state_version + 1,
+                        deadline_monotonic=deadline_monotonic,
+                    )
+                    current_fingerprint = build_decision_fingerprint(
+                        current_metadata, tuple(current_candidates)
+                    )
+            else:
+                expected_fingerprint = build_decision_fingerprint(
+                    metadata, tuple(candidates)
+                )
+            validated = resolve_order(
+                jev_res,
+                current_candidates,
+                battle,
+                expected_fingerprint=expected_fingerprint,
+                current_fingerprint=current_fingerprint,
+            )
         except Exception as exc:
             validated = select_deterministic_fallback(
                 candidates, battle, f"Order resolution error: {exc}"
@@ -149,12 +236,19 @@ class JevPlayer(Player):
 
         self._record_turn(
             battle,
-            candidates,
+            current_candidates if "current_candidates" in locals() else candidates,
             criteria,
             jev_res,
             validated,
             snapshot,
             val_latency_ms,
+            metadata=metadata,
+            fingerprint=expected_fingerprint,
+            current_fingerprint=(
+                current_fingerprint if "current_fingerprint" in locals() else None
+            ),
+            beliefs=beliefs,
+            opponent_responses=opponent_responses,
         )
         return validated.order
 
@@ -167,6 +261,12 @@ class JevPlayer(Player):
         validated: ValidatedOrder,
         snapshot: dict[str, Any] | None = None,
         val_latency_ms: float = 0.0,
+        *,
+        metadata: BattleRequestMetadata | None = None,
+        fingerprint: DecisionFingerprint | None = None,
+        current_fingerprint: DecisionFingerprint | None = None,
+        beliefs: dict[str, Any] | None = None,
+        opponent_responses: dict[str, Any] | None = None,
     ) -> None:
         """Track the resolved turn and dispatch telemetry if a hook is set."""
         turn = self._safe_turn(battle)
@@ -225,6 +325,16 @@ class JevPlayer(Player):
             "is_fallback": validated.is_fallback,
             "fallback_reason": validated.fallback_reason,
             "snapshot": snapshot,
+            "state_schema": snapshot.get("state_schema") if snapshot else None,
+            "request": snapshot.get("request") if snapshot else None,
+            "fingerprint": self._fingerprint_view(fingerprint),
+            "current_fingerprint": self._fingerprint_view(current_fingerprint),
+            "beliefs": beliefs if beliefs is not None else (snapshot or {}).get("beliefs", {}),
+            "opponent_responses": (
+                opponent_responses
+                if opponent_responses is not None
+                else (snapshot or {}).get("opponent_responses", {})
+            ),
             "criteria": criteria,
             "question": jev_request.get("questions", {}).get("action", {}),
             "jev_request": jev_request,
@@ -444,3 +554,27 @@ class JevPlayer(Player):
             return int(getattr(battle, "turn", 1))
         except (TypeError, ValueError):
             return 1
+
+    def _battle_key(self, battle: AbstractBattle) -> str:
+        tag = getattr(battle, "battle_tag", None)
+        return tag if isinstance(tag, str) else f"object:{id(battle)}"
+
+    def _next_state_version(self, battle: AbstractBattle) -> int:
+        key = self._battle_key(battle)
+        version = self._state_versions.get(key, 0) + 1
+        self._state_versions[key] = version
+        return version
+
+    @staticmethod
+    def _fingerprint_view(
+        fingerprint: DecisionFingerprint | None,
+    ) -> dict[str, Any] | None:
+        if fingerprint is None:
+            return None
+        return {
+            "battle_id": fingerprint.battle_id,
+            "request_id": fingerprint.request_id,
+            "state_version": fingerprint.state_version,
+            "turn": fingerprint.turn,
+            "candidate_ids": list(fingerprint.candidate_ids),
+        }

@@ -287,6 +287,8 @@ async def test_full_simulated_battle_against_random():
         state: dict[str, Any],
         criteria: dict[str, str],
         instructions: str = "Choose the strongest legal action.",
+        *,
+        deadline_monotonic: float | None = None,
     ) -> JevDecisionResponse:
         first_candidate_key = next(iter(criteria), None)
         probabilities = (
@@ -332,7 +334,10 @@ async def test_full_simulated_battle_against_random():
     # The payload is a typed TURN_DECISION event carrying the snapshot and
     # the order validation result.
     assert first_evt["type"] == "TURN_DECISION"
+    assert first_evt["is_fallback"] is False
     assert "snapshot" in first_evt
     assert "validation" in first_evt
+    assert first_evt["request"]["rqid"] is not None
+    assert first_evt["fingerprint"]["candidate_ids"]
     # The snapshot always reports six opponent team slots (fog of war).
     assert len(first_evt["snapshot"]["opponent"]["team_slots"]) == 6

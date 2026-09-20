@@ -122,7 +122,13 @@ Our backend currently publishes summarized `TURN_DECISION` telemetry. The offici
 
 ### Duplicate state presentation
 
-The official renderer already draws Pokémon, HP bars, team indicators, effects, and a battle log. Keeping every existing custom battle card beside it would create duplication and reduce visual clarity. The likely final layout is the official battle scene as the left-panel focal point, with the Jev Input/Output columns and the bottom validation/action/result strip preserved.
+The official renderer already draws Pokémon, HP bars, team indicators, effects,
+and a battle log. Keeping every existing custom battle card beside it would
+create duplication and reduce visual clarity. The custom surface must therefore
+remain an observability layer around the official renderer, while its exact
+composition is intentionally left open. Preserve the source-of-truth and
+decision-data rules in
+[dashboard-product-contract.md](../design/dashboard-product-contract.md).
 
 ## Recommendation
 

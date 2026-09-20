@@ -1,75 +1,91 @@
 from unittest.mock import MagicMock
-from jev_showdown.battle.candidates import CandidateAction, build_candidate_actions
 
-def test_build_candidate_actions_moves_and_switches():
-    mock_battle = MagicMock()
-    mock_battle.can_tera = True
-    
-    # Mock active pokemon moves
-    move1 = MagicMock()
-    move1.id = "earthquake"
-    move1.base_power = 100
-    move1.type.name = "GROUND"
-    move1.current_pp = 10
-    
-    move2 = MagicMock()
-    move2.id = "swordsdance"
-    move2.base_power = 0
-    move2.type.name = "NORMAL"
-    move2.current_pp = 20
-    
-    mock_battle.available_moves = [move1, move2]
-    
-    # Mock available switches
-    switch1 = MagicMock()
-    switch1.species = "Rotom-Wash"
-    switch1.current_hp_fraction = 1.0
-    mock_battle.available_switches = [switch1]
-    
-    candidates = build_candidate_actions(mock_battle)
-    assert "move_earthquake" in candidates
-    assert "move_swordsdance" in candidates
-    assert "move_earthquake_tera" in candidates
-    assert "switch_rotomwash" in candidates
-    
-    cand_eq = candidates["move_earthquake"]
-    assert cand_eq.kind == "move"
-    assert cand_eq.label == "Earthquake"
-    
-    cand_tera = candidates["move_earthquake_tera"]
-    assert cand_tera.kind == "move_tera"
-    assert cand_tera.label == "Earthquake (Terastallize)"
-    
-    cand_switch = candidates["switch_rotomwash"]
-    assert cand_switch.kind == "switch"
-    assert cand_switch.label == "Switch to Rotom-Wash"
+from poke_env.battle import Move, Pokemon
+from poke_env.player.battle_order import DefaultBattleOrder, SingleBattleOrder
+
+from jev_showdown.battle.candidates import build_candidate_actions
 
 
-def test_build_candidate_actions_keeps_duplicate_ids_unique():
+def _battle(orders, **flags):
     battle = MagicMock()
-    battle.can_tera = False
-    first = MagicMock()
-    first.id = "tackle"
-    first.base_power = 40
-    first.type.name = "NORMAL"
-    first.current_pp = 10
-    second = MagicMock()
-    second.id = "tackle"
-    second.base_power = 40
-    second.type.name = "NORMAL"
-    second.current_pp = 10
-    first_switch = MagicMock(spec=object)
-    first_switch.species = "Rotom"
-    first_switch.current_hp_fraction = 1.0
-    second_switch = MagicMock(spec=object)
-    second_switch.species = "Rotom"
-    second_switch.current_hp_fraction = 0.8
-    battle.available_moves = [first, second]
-    battle.available_switches = [first_switch, second_switch]
+    battle.valid_orders = orders
+    battle.force_switch = flags.get("force_switch", False)
+    battle.wait = flags.get("wait", False)
+    return battle
 
-    candidates = build_candidate_actions(battle)
 
-    assert "move_tackle" in candidates
-    assert "move_tackle_2" in candidates
-    assert "switch_rotom" in candidates
-    assert "switch_rotom_2" in candidates
+def test_candidate_registry_preserves_every_legal_order_message_in_order():
+    move = Move("earthquake", 9)
+    switch = Pokemon(9, species="Rotom-Wash", name="rotomwash")
+    tera_move = Move("earthquake", 9)
+    orders = [
+        SingleBattleOrder(move),
+        SingleBattleOrder(switch),
+        SingleBattleOrder(tera_move, terastallize=True),
+    ]
+
+    candidates = build_candidate_actions(_battle(orders))
+
+    assert [candidate.order_ref.message for candidate in candidates.values()] == [
+        order.message for order in orders
+    ]
+    assert list(candidates) == [
+        "move_earthquake",
+        "switch_rotomwash",
+        "move_earthquake_tera",
+    ]
+    assert candidates["move_earthquake_tera"].kind == "move_tera"
+
+
+def test_forced_switch_registry_contains_only_the_current_switch_orders():
+    switch = Pokemon(9, species="Rotom-Wash", name="rotomwash")
+    order = SingleBattleOrder(switch)
+
+    candidates = build_candidate_actions(_battle([order], force_switch=True))
+
+    assert list(candidates) == ["switch_rotomwash"]
+    assert candidates["switch_rotomwash"].order_ref is order
+
+
+def test_wait_registry_represents_the_default_order():
+    order = DefaultBattleOrder()
+
+    candidates = build_candidate_actions(_battle([order], wait=True))
+
+    assert list(candidates) == ["default"]
+    assert candidates["default"].kind == "default"
+    assert candidates["default"].order_ref is order
+    assert candidates["default"].order_ref.message == "/choose default"
+
+
+def test_duplicate_move_and_switch_ids_are_disambiguated_without_losing_orders():
+    first_move = Move("tackle", 9)
+    second_move = Move("tackle", 9)
+    first_switch = Pokemon(9, species="Rotom", name="rotom")
+    second_switch = Pokemon(9, species="Rotom", name="rotom")
+    orders = [
+        SingleBattleOrder(first_move),
+        SingleBattleOrder(second_move),
+        SingleBattleOrder(first_switch),
+        SingleBattleOrder(second_switch),
+    ]
+
+    candidates = build_candidate_actions(_battle(orders))
+
+    assert list(candidates) == [
+        "move_tackle",
+        "move_tackle_2",
+        "switch_rotom",
+        "switch_rotom_2",
+    ]
+    assert [candidate.order_ref for candidate in candidates.values()] == orders
+
+
+def test_tera_action_is_not_invented_when_only_the_normal_order_is_legal():
+    move = Move("earthquake", 9)
+    order = SingleBattleOrder(move)
+
+    candidates = build_candidate_actions(_battle([order]))
+
+    assert list(candidates) == ["move_earthquake"]
+    assert all(not candidate.kind.endswith("tera") for candidate in candidates.values())

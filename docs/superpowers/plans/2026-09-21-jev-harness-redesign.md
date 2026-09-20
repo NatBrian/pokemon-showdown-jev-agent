@@ -743,4 +743,3 @@ The shared names are stable across tasks: Fact, BattleRequestMetadata, DecisionF
 ### Review-focus coverage
 
 All five review-focus cases have explicit tests: forced/wait requests in Task 2, fog-of-war in Task 4, Tera and duplicate order mapping in Task 2, stale/malformed responses in Tasks 6–7, and incomplete mechanics in Tasks 3 and 9.
-

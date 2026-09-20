@@ -13,6 +13,10 @@ def _read_app() -> str:
     return (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
 
 
+def _read_style() -> str:
+    return (STATIC_ROOT / "style.css").read_text(encoding="utf-8")
+
+
 def test_dashboard_shell_has_one_official_scene_and_jev_console():
     html = _read_index()
     required = [
@@ -71,3 +75,25 @@ def test_dashboard_app_exposes_injected_event_state_machine():
         assert marker in app
 
     assert "innerHTML =" not in app
+
+
+def test_dashboard_css_keeps_battle_and_telemetry_visible_on_landscape_desktop():
+    css = _read_style()
+
+    for marker in (
+        "aspect-ratio: 16 / 9",
+        "grid-template-columns",
+        "overflow-x: hidden",
+        "@media",
+        ".decision-rail",
+        ".inspect-drawer",
+    ):
+        assert marker in css
+
+
+def test_showdown_renderer_owns_scene_and_protocol_log_nodes_only():
+    renderer = (STATIC_ROOT / "showdown-renderer.js").read_text(encoding="utf-8")
+
+    assert "window.JevShowdownRenderer" in renderer
+    assert "battle.add" in renderer
+    assert "window.JevDashboard" not in renderer

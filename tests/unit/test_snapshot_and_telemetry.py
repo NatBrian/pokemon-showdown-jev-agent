@@ -24,7 +24,7 @@ def test_fog_of_war_opponent_team_tracking():
     serializer = BattleSnapshotSerializer()
     state = serializer.build_snapshot(mock_battle, {})
     
-    assert state["state_schema"] == 1
+    assert state["state_schema"] == 2
     assert state["self"]["active_pokemon"]["species"] == "Garchomp"
     assert len(state["self"]["team"]) == 6
     
@@ -68,6 +68,98 @@ def test_snapshot_includes_observable_boosts_effects_and_side_conditions():
     assert state["weather"] == "SUNNYDAY"
     assert state["self"]["active_pokemon"]["boosts"] == {"atk": 2, "spe": -1}
     assert state["self"]["active_pokemon"]["effects"] == ["protect"]
+
+
+def test_snapshot_v2_contains_request_history_beliefs_responses_and_safe_actions():
+    from jev_showdown.battle.contracts import BattleRequestMetadata
+    from jev_showdown.battle.candidates import CandidateAction
+
+    battle = MagicMock()
+    battle.turn = 4
+    battle.battle_tag = "battle-gen9randombattle-1"
+    battle.format = "gen9randombattle"
+    battle.last_request = {
+        "rqid": "req-4",
+        "active": [{
+            "moves": [{"id": "earthquake", "pp": 8, "maxpp": 16, "disabled": False}],
+        }],
+    }
+    battle.force_switch = False
+    battle.wait = False
+    battle.trapped = False
+    battle.maybe_trapped = False
+    battle.can_tera = True
+    battle.weather = None
+    battle.fields = []
+    battle.side_conditions = {}
+    battle.opponent_side_conditions = {}
+    battle.active_pokemon = MagicMock(spec=[])
+    battle.active_pokemon.species = "Garchomp"
+    battle.active_pokemon.moves = {
+        "earthquake": MagicMock(
+            id="earthquake", current_pp=8, max_pp=16, disabled=False
+        )
+    }
+    battle.team = {"garchomp": battle.active_pokemon}
+    battle.opponent_active_pokemon = None
+    battle.opponent_team = {}
+
+    candidate = CandidateAction(
+        id="move_a",
+        kind="move",
+        label="Move A",
+        order_ref=MagicMock(name="hidden-order"),
+        facts={
+            "damage": {
+                "value": [40, 50],
+                "source": "calculated",
+                "unit": "percent_of_target_max_hp",
+            }
+        },
+    )
+    metadata = BattleRequestMetadata(
+        battle_id="battle-gen9randombattle-1",
+        request_id="req-4",
+        state_version=4,
+        turn=4,
+        request_type="move",
+        force_switch=False,
+        wait=False,
+        trapped=False,
+        maybe_trapped=False,
+        deadline_monotonic=123.0,
+    )
+    beliefs = {"opponent_slots": [{"visibility": "unknown_slot"}] * 6}
+    consequences = {"move_a": {"opponent_stays": {"source": "unknown"}}}
+
+    state = BattleSnapshotSerializer().build_snapshot(
+        battle,
+        {candidate.id: candidate},
+        metadata=metadata,
+        criteria={"move_a": "Move A; legal action."},
+        recent_history=[{"turn": 4, "action": "Earthquake"}],
+        beliefs=beliefs,
+        consequences=consequences,
+    )
+
+    import json
+
+    assert state["state_schema"] == 2
+    assert state["request"]["rqid"] == "req-4"
+    assert state["request"]["force_switch"] is False
+    assert state["request"]["state_version"] == 4
+    assert state["request"]["deadline_monotonic"] == 123.0
+    assert state["history"][-1]["action"] == "Earthquake"
+    assert "beliefs" in state
+    assert "opponent_responses" in state
+    assert state["glossary"]["switch"]
+    assert state["legal_actions"][0]["id"] == "move_a"
+    assert state["criteria"]["move_a"].startswith("Move A")
+    assert state["self"]["active_pokemon"]["moves"][0]["pp"] == 8
+    assert state["self"]["active_pokemon"]["moves"][0]["disabled"] is False
+    assert len(state["beliefs"]["opponent_slots"]) == 6
+    assert "hidden-order" not in json.dumps(state, default=str)
+    json.dumps(state)
 
 def test_turn_history_tracker():
     tracker = TurnHistoryTracker()

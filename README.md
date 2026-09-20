@@ -149,8 +149,10 @@ docs/                   # Alignment record, design docs, research logs, plan
 
 - **Pokémon Showdown** battle protocol and ladder: [pokemonshowdown.com](https://pokemonshowdown.com/),
   [poke-env](https://github.com/PokeEngines/poke-env) (MIT).
-- **Pokémon sprite art**: animated Gen 4 (Black & White) sprites from
-  [pokemondb.net](https://www.pokemondb.net/), used for identification in the dashboard.
+- **Pokémon sprite art**: animated front/back battle sprites served from the official
+  [Pokémon Showdown sprite directory](https://play.pokemonshowdown.com/sprites/xyani/) and
+  [Smogon sprite repository](https://github.com/smogon/sprites), used by the custom dashboard
+  renderer without embedding the full Showdown client UI.
   Pokémon and Pokémon character names are trademarks of Nintendo / The Pokémon Company; this
   project is a fan-made research tool and is not affiliated with or endorsed by them.
 - **Fonts**: [Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) and

@@ -71,15 +71,50 @@ const TYPE_CLASS = {
 function speciesSlug(species) {
   return String(species || "")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/[’']/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]+/g, "")
     .replace(/^-+|-+$/g, "");
 }
 
-function frontSpriteUrl(species) {
-  const slug = speciesSlug(species);
+const SHOWDOWN_SPRITE_BASE = "https://play.pokemonshowdown.com/sprites/";
+
+function showdownSpriteSlug(species) {
+  let slug = speciesSlug(species);
+  const hyphenatedForm = slug.match(
+    /^(.+?)(alola|galar|hisui|paldea|east|west|north|south|pompom|pau|sensu)$/i
+  );
+  if (hyphenatedForm && !hyphenatedForm[1].endsWith("-")) {
+    slug = hyphenatedForm[1] + "-" + hyphenatedForm[2];
+  }
+  // Showdown's sprite filenames use compact forme suffixes for these common
+  // random-battle forms rather than the full species display name.
   return slug
-    ? "https://img.pokemondb.net/sprites/black-white/anim/normal/" + slug + ".gif"
-    : "";
+    .replace(/-rapid-strike$/i, "-rapidstrike")
+    .replace(/-single-strike$/i, "-singlestrike")
+    .replace(/-school-form$/i, "-school")
+    .replace(/-schooling-form$/i, "-school")
+    .replace(/-10-percent-form$/i, "-10")
+    .replace(/-complete-form$/i, "-complete");
+}
+
+function spriteUrls(species, perspective = "front") {
+  const slug = showdownSpriteSlug(species);
+  if (!slug) return [];
+  const folder = perspective === "back" ? "xyani-back" : "xyani";
+  const fallbackFolder = perspective === "back" ? "xyani" : "gen5";
+  return [
+    SHOWDOWN_SPRITE_BASE + folder + "/" + slug + ".gif",
+    SHOWDOWN_SPRITE_BASE + fallbackFolder + "/" + slug + ".png",
+  ];
+}
+
+function frontSpriteUrl(species) {
+  return spriteUrls(species, "front")[0] || "";
+}
+
+function backSpriteUrls(species) {
+  return spriteUrls(species, "back");
 }
 
 function initials(species) {
@@ -87,22 +122,31 @@ function initials(species) {
   return s.length <= 2 ? s.toUpperCase() : s.slice(0, 2).toUpperCase();
 }
 
-function showSprite(imgEl, avatarEl, url, species) {
-  if (url) {
-    avatarEl.style.display = "none";
-    imgEl.style.display = "";
-    imgEl.src = url;
-    // If the sprite 404s, hide it and reveal the initials avatar fallback.
-    imgEl.onerror = () => {
-      imgEl.style.display = "none";
-      avatarEl.style.display = "";
-      avatarEl.textContent = initials(species);
-    };
-  } else {
+function showSprite(imgEl, avatarEl, urls, species) {
+  const candidates = Array.isArray(urls) ? urls : (urls ? [urls] : []);
+  let candidateIndex = 0;
+
+  const showFallback = () => {
     imgEl.style.display = "none";
     avatarEl.style.display = "";
     avatarEl.textContent = initials(species);
-  }
+  };
+
+  const loadNext = () => {
+    if (candidateIndex >= candidates.length) {
+      showFallback();
+      return;
+    }
+    avatarEl.style.display = "none";
+    imgEl.style.display = "";
+    imgEl.onerror = () => {
+      candidateIndex += 1;
+      loadNext();
+    };
+    imgEl.src = candidates[candidateIndex];
+  };
+
+  loadNext();
 }
 
 function humanizeFormat(format) {
@@ -399,7 +443,7 @@ function renderActiveMons(snapshot) {
     fillTypeTags($("self-types"), selfMon.types);
     renderMonStatus("self-status", selfMon.status);
     if (selfMon.level != null) setText("self-level", "Lv. " + selfMon.level);
-    showSprite($("self-sprite"), $("self-avatar"), frontSpriteUrl(selfMon.species), selfMon.species);
+    showSprite($("self-sprite"), $("self-avatar"), backSpriteUrls(selfMon.species), selfMon.species);
   }
 
   if (oppMon) {
@@ -408,7 +452,7 @@ function renderActiveMons(snapshot) {
     fillTypeTags($("opp-types"), oppMon.types);
     renderMonStatus("opp-status", oppMon.status);
     if (oppMon.level != null) setText("opp-level", "Lv. " + oppMon.level);
-    showSprite($("opp-sprite"), $("opp-avatar"), frontSpriteUrl(oppMon.species), oppMon.species);
+    showSprite($("opp-sprite"), $("opp-avatar"), spriteUrls(oppMon.species), oppMon.species);
   }
 }
 
@@ -822,6 +866,8 @@ function renderActionStrip(chosenId, snapshot, criteria, latency, validation, su
   const label = chosen ? (chosen.label || chosen.id) : (chosenId ? String(chosenId) : "ACTION");
   const facts = (chosen && chosen.facts) || {};
   const crit = criteria && criteria[chosenId] ? criteria[chosenId] : "";
+  const resultPanel = $("result-panel");
+  if (resultPanel) resultPanel.classList.remove("result-victory");
 
   setText("validate-status", chosenId ? (validation && validation.is_fallback ? "FALLBACK VALIDATED" : "LEGAL ACTION") : "PENDING");
   setText(
@@ -1055,6 +1101,20 @@ function handleBattleEnd(data) {
   if (data.summary) stats.push(String(data.summary).toUpperCase());
   if (data.score != null) stats.push("RECORD: " + data.score);
   setText("end-stats", stats.length ? stats.join(" \u2022 ") : "BATTLE COMPLETED");
+
+  // The turn card is a prediction until Showdown resolves it. Once the
+  // battle-end event arrives, replace that prediction with the observed match
+  // outcome so the bottom strip remains truthful after the overlay is closed.
+  const resultStatus = won === true ? "VICTORY" : won === false ? "DEFEAT" : "BATTLE OVER";
+  const resultTurns = data.total_turns != null ? " AFTER " + data.total_turns + " TURNS" : "";
+  setText("result-status", resultStatus);
+  setText("result-desc", "BATTLE ENDED" + resultTurns + " • RESULT OBSERVED FROM SHOWDOWN");
+  setText("result-time", "MATCH END");
+  const resultPanel = $("result-panel");
+  if (resultPanel) resultPanel.classList.toggle("result-victory", won === true);
+  const resultHpWrap = $("result-hp-wrap");
+  if (resultHpWrap) resultHpWrap.classList.add("hidden");
+  clearEl($("result-sprite"));
 
   $("end-overlay").classList.remove("hidden");
 

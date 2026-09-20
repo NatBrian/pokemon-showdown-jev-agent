@@ -994,6 +994,7 @@ body.arcade-theme {
 .strip-validate { border-color: var(--green); box-shadow: 0 0 14px rgba(0, 255, 102, 0.25); }
 .strip-act { border-color: var(--cyan); box-shadow: 0 0 14px rgba(0, 243, 255, 0.25); }
 .strip-result { border-color: var(--red); box-shadow: 0 0 14px rgba(255, 51, 51, 0.25); }
+.strip-result.result-victory { border-color: var(--green); box-shadow: 0 0 14px rgba(0, 255, 102, 0.25); }
 
 .strip-head {
   display: flex;
@@ -1011,6 +1012,7 @@ body.arcade-theme {
 .strip-validate .strip-title { color: var(--green); text-shadow: 0 0 8px rgba(0, 255, 102, 0.5); }
 .strip-act .strip-title { color: var(--cyan); text-shadow: 0 0 8px rgba(0, 243, 255, 0.5); }
 .strip-result .strip-title { color: var(--red); text-shadow: 0 0 8px rgba(255, 51, 51, 0.5); }
+.strip-result.result-victory .strip-title { color: var(--green); text-shadow: 0 0 8px rgba(0, 255, 102, 0.5); }
 .strip-source { font-size: 10px; color: var(--text-dim); }
 .strip-time {
   margin-left: auto;
@@ -1033,6 +1035,7 @@ body.arcade-theme {
 .strip-validate .strip-big-icon { color: var(--green); text-shadow: 0 0 10px rgba(0, 255, 102, 0.6); }
 .strip-act .strip-big-icon { color: var(--cyan); text-shadow: 0 0 10px rgba(0, 243, 255, 0.6); }
 .strip-result .strip-big-icon { color: var(--red); text-shadow: 0 0 10px rgba(255, 51, 51, 0.6); }
+.strip-result.result-victory .strip-big-icon { color: var(--green); text-shadow: 0 0 10px rgba(0, 255, 102, 0.6); }
 .strip-copy { min-width: 0; }
 .strip-status {
   font-family: var(--font-pixel);

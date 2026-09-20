@@ -72,3 +72,24 @@ def test_frontend_client_handles_lifecycle_states():
     assert "submitted_order" in js
     assert "calculation_mode" in js
     assert "initShowdownFrame();" not in js
+
+
+def test_frontend_uses_official_showdown_sprites_without_iframe():
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    js = _read(os.path.join(base_dir, "src", "jev_showdown", "web", "static", "app.js"))
+
+    assert 'https://play.pokemonshowdown.com/sprites/' in js
+    assert '"xyani"' in js
+    assert '"xyani-back"' in js
+    assert "hyphenatedForm" in js
+    assert "exeggutor-alola" not in js  # resolved generically from compact IDs
+
+
+def test_frontend_surfaces_observed_match_result_after_overlay():
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    js = _read(os.path.join(base_dir, "src", "jev_showdown", "web", "static", "app.js"))
+    html = _read(os.path.join(base_dir, "src", "jev_showdown", "web", "static", "index.html"))
+
+    assert "BATTLE ENDED" in js
+    assert "OBSERVED RESULT" in html
+    assert "img.pokemondb.net" not in js

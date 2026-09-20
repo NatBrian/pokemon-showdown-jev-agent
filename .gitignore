@@ -13,4 +13,5 @@ build/
 *.egg-info/
 .DS_Store
 .playwright-mcp/
+.worktrees/
 /live-*.png

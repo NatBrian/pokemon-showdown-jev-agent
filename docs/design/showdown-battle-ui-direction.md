@@ -1,8 +1,13 @@
 # Final Pokémon Battle UI Visual Direction
 
-Status: `FINAL RENDERER DIRECTION / RASTER MOCKUP REMOVED`
+Status: `OFFICIAL RENDERER REFERENCE / DASHBOARD RULES IN CANONICAL SPEC`
 
 Date: `2026-09-20`
+
+Current dashboard ownership and composition rules are defined in
+[dashboard-canonical-spec.md](dashboard-canonical-spec.md). This document
+defines the official Showdown renderer and asset boundary; it does not permit
+custom duplicate game UI around that renderer.
 
 ## Final decision
 

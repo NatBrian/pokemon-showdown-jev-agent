@@ -1,6 +1,7 @@
 # Dashboard Redesign Guardrails
 
-Status: binding implementation guidance
+Status: reference guardrails; current binding specification is
+[dashboard-canonical-spec.md](dashboard-canonical-spec.md)
 
 Date: 2026-09-20
 

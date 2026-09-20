@@ -473,6 +473,13 @@ For the MVP, Jev returns a typed action choice, confidence, and probabilities. T
 
 ## 19. Refined dashboard pipeline
 
+> Current correction: the binding dashboard specification is
+> [dashboard-canonical-spec.md](design/dashboard-canonical-spec.md). The
+> official Showdown renderer owns the complete game UI. Custom history means
+> Jev decision history only. The later canonical specification supersedes any
+> older custom team-row, battle-log, battle-message, or battle-history ideas in
+> this document.
+
 The dashboard should show more than Pokémon input and Jev output. It should visualize the observable project pipeline:
 
 ~~~
@@ -516,10 +523,9 @@ The owner also requested that the cleaner visual retain the previously discussed
 - an `INSPECT DATA` section inside the Jev Output area with `STATE`, `QUESTION`, and `RESPONSE` tabs;
 - the fast bottom `VALIDATE`, `ACT`, and `RESULT` sequence.
 
-The updated reference is the textual design documentation:
+The current reference is the canonical dashboard specification:
 
-- [Dashboard redesign guardrails](design/dashboard-redesign-guardrails.md)
-- [Dashboard UI elements](design/dashboard-ui-elements.md)
+- [Dashboard canonical specification](design/dashboard-canonical-spec.md)
 
 The live battle panel must also show both team rows explicitly. `YOUR TEAM` can display the player's known six Pokémon from the start. `OPPONENT TEAM` must begin with unknown Poké Ball slots in the standard Gen 9 Random Battle flow, because the protocol provides the opponent's team size without revealing the identities of unrevealed Pokémon when Team Preview is not used. Each enemy slot becomes a revealed species only after Showdown exposes it; the dashboard must not guess hidden species, moves, items, abilities, or Tera types. If a future format emits Team Preview, the row should adapt to the information actually provided by the protocol.
 

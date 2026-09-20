@@ -1,18 +1,17 @@
 # Dashboard UI Elements
 
-Status: Historical visual specification; superseded by dashboard-redesign-guardrails.md.
+Status: Historical archive; not an implementation specification.
 This document does not define application logic, data models, APIs, or implementation details.
 
-Visual guidance: [dashboard-redesign-guardrails.md](dashboard-redesign-guardrails.md)
+Visual guidance: [dashboard-canonical-spec.md](dashboard-canonical-spec.md)
 
 Current redesign rules supersede older illustrative component lists in this
-document. See [dashboard-redesign-guardrails.md](dashboard-redesign-guardrails.md)
-for the binding decisions: the generated image is a composition reference
-only, the official Showdown renderer owns game visuals, Jev panels must use
-actual data, and duplicate game-state widgets must not be rebuilt.
+document. See [dashboard-canonical-spec.md](dashboard-canonical-spec.md) for
+the binding decisions: the official Showdown renderer owns game visuals, Jev
+panels must use actual data, and custom history means Jev decision history only.
 
 The illustrative values in this historical document are not implementation
-requirements. Follow the binding guardrails document for current work.
+requirements. Follow the canonical specification for current work.
 
 ## 1. Overall visual direction
 

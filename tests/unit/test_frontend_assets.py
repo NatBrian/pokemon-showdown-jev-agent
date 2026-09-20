@@ -96,4 +96,5 @@ def test_showdown_renderer_owns_scene_and_protocol_log_nodes_only():
 
     assert "window.JevShowdownRenderer" in renderer
     assert "battle.add" in renderer
+    assert "SHOWDOWN RENDERER READY" in renderer
     assert "window.JevDashboard" not in renderer

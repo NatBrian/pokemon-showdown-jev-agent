@@ -11,7 +11,7 @@
   const LOCAL = "/static/showdown";
   const CDN_HOST = "play.pokemonshowdown.com";
   const BASE_WIDTH = 640;
-  const BASE_HEIGHT = 380;
+  const BASE_HEIGHT = 360;
   const SCRIPTS = [
     "js/lib/ps-polyfill.js",
     "js/lib/jquery-1.11.0.min.js",
@@ -113,7 +113,7 @@
     const canvas = frameElement.parentElement;
     if (!canvas) return;
     const width = canvas.clientWidth || BASE_WIDTH;
-    const scale = Math.min(2.25, width / BASE_WIDTH);
+    const scale = width / BASE_WIDTH;
     frameElement.style.width = BASE_WIDTH + "px";
     frameElement.style.height = BASE_HEIGHT + "px";
     frameElement.style.transformOrigin = "top left";

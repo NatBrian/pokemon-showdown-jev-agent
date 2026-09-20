@@ -9,6 +9,10 @@ def _read_index() -> str:
     return (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
 
 
+def _read_app() -> str:
+    return (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
+
+
 def test_dashboard_shell_has_one_official_scene_and_jev_console():
     html = _read_index()
     required = [
@@ -49,3 +53,21 @@ def test_dashboard_does_not_embed_or_duplicate_showdown_ui():
     assert "battle-log-card" not in html
     assert "observable data" not in html
     assert "same game. deeper insight." not in html
+
+
+def test_dashboard_app_exposes_injected_event_state_machine():
+    app = _read_app()
+
+    for marker in (
+        "window.JevDashboard",
+        "createDashboardApp",
+        "summarizeProtocolLines",
+        "DECISION_PHASE",
+        "BATTLE_REPLAY",
+        "RESULT OBSERVED",
+        "FALLBACK USED",
+        "textContent",
+    ):
+        assert marker in app
+
+    assert "innerHTML =" not in app

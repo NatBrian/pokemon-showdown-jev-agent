@@ -49,6 +49,8 @@ def test_frontend_assets_exist_and_use_the_battle_first_shell():
     assert "JEV DECISION" in html
     assert "VALIDATE" in html
     assert "OBSERVED RESULT" in html
+    assert 'id="arena-fallback" class="arena-fallback"' in html
+    assert "PRESS START TO LOAD SHOWDOWN SCENE" in html
     assert '<iframe' not in html.lower()
 
 
@@ -144,5 +146,6 @@ def test_dashboard_uses_a_single_desktop_grid_and_stacks_on_small_screens():
     assert ".dashboard-main" in css
     assert ".decision-rail" in css
     assert "grid-template-columns: minmax(0, 7fr) minmax(320px, 3fr)" in css
+    assert "max-width: 1800px" not in css
     assert "@media (max-width: 900px)" in css
     assert "grid-template-columns: 1fr" in css

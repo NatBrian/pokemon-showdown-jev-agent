@@ -217,10 +217,10 @@ class ConnectionManager:
                 await websocket.send_json(replay)
             except Exception:
                 self.disconnect(websocket)
-            try:
-                await websocket.send_json(self._dashboard.snapshot_message())
-            except Exception:
-                self.disconnect(websocket)
+        try:
+            await websocket.send_json(self._dashboard.snapshot_message())
+        except Exception:
+            self.disconnect(websocket)
 
     def disconnect(self, websocket: WebSocket) -> None:
         """Remove a client from the active set (idempotent)."""

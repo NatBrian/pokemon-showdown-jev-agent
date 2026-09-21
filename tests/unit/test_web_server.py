@@ -28,8 +28,12 @@ def test_http_index(test_app):
     client = TestClient(test_app)
     response = client.get("/")
     assert response.status_code == 200
-    assert "<html><body>" in response.text
-    assert "AUTONOMOUS" in response.text
+    assert "<html" in response.text
+    assert "JEV SHOWDOWN" in response.text
+    assert 'id="showdown-arena"' in response.text
+    assert 'id="system-harness"' in response.text
+    assert 'id="jev-panel"' in response.text
+    assert "dashboard-ui-ux-mockup.png" not in response.text
 
 
 def test_websocket_receives_threadsafe_publish(test_app):

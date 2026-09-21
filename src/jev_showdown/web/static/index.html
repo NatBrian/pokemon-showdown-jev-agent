@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b9b9b3">
+  <title>Jev Showdown | Autonomous Battle Observability</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <header class="topbar" aria-label="Jev Showdown status bar">
+      <div class="brand-lockup">
+        <span class="brand-pokeball" aria-hidden="true"><span></span></span>
+        <div>
+          <p class="eyebrow">AUTONOMOUS OBSERVATORY</p>
+          <h1>JEV SHOWDOWN</h1>
+        </div>
+      </div>
+      <div class="format-lockup">
+        <span class="format-label">GEN 9</span>
+        <span class="format-name" id="battle-format">RANDOM BATTLE</span>
+        <span class="format-separator" aria-hidden="true">/</span>
+        <span class="mono" id="battle-tag">NO ACTIVE BATTLE</span>
+      </div>
+      <div class="topbar-status">
+        <div class="connection-state" id="connection-state">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span data-connection-label>READY</span>
+        </div>
+        <div class="turn-marker"><span class="muted-label">TURN</span><strong id="current-turn-number">--</strong></div>
+        <button class="button button-primary" id="start-battle" type="button">START JEV BATTLE</button>
+        <button class="button button-quiet" id="open-inspector" type="button" aria-controls="inspection-drawer" aria-expanded="false">INSPECT</button>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+      <section class="primary-grid" aria-label="Live battle and decision observability">
+        <section class="panel battle-panel" id="battle-panel" aria-labelledby="battle-title">
+          <div class="panel-heading battle-heading">
+            <div class="heading-left">
+              <span class="origin-mark origin-showdown" aria-hidden="true">S</span>
+              <div>
+                <p class="panel-kicker">OFFICIAL RENDERER</p>
+                <h2 id="battle-title">LIVE SHOWDOWN</h2>
+              </div>
+            </div>
+            <div class="heading-state"><span class="state-led" aria-hidden="true"></span><span id="battle-state-label">WAITING FOR BATTLE</span></div>
+          </div>
+          <div class="battle-stage" id="showdown-arena" aria-label="Official Pokémon Showdown battle surface">
+            <div class="battle-stage-grid" aria-hidden="true"></div>
+            <div class="showdown-canvas" id="showdown-canvas">
+              <div id="showdown-frame" class="showdown-frame"></div>
+              <div id="showdown-log" class="showdown-log" aria-label="Showdown battle messages"></div>
+            </div>
+            <div class="battle-empty" id="battle-empty-state">
+              <span class="empty-seal" aria-hidden="true">S</span>
+              <p class="eyebrow">SHOWDOWN BATTLE SURFACE</p>
+              <h3>Ready to observe an autonomous battle</h3>
+              <p>The official battle renderer will appear here when a real room is connected.</p>
+            </div>
+          </div>
+          <div class="battle-footline">
+            <span class="source-chip source-showdown">SHOWDOWN</span>
+            <span id="showdown-status">Waiting for public battle protocol</span>
+            <span class="mono subtle" id="last-observed">--</span>
+          </div>
+        </section>
+
+        <aside class="panel evidence-panel harness-panel" id="system-harness" aria-labelledby="harness-title">
+          <div class="panel-heading origin-heading harness-heading">
+            <div class="heading-left">
+              <span class="origin-mark origin-harness" aria-hidden="true">H</span>
+              <div><p class="panel-kicker">DETERMINISTIC EVIDENCE</p><h2 id="harness-title">SYSTEM HARNESS</h2></div>
+            </div>
+            <span class="state-badge state-neutral" id="harness-state">WAITING</span>
+          </div>
+          <div class="panel-scroll">
+            <section class="evidence-section" id="harness-observed-section" aria-labelledby="observed-title">
+              <div class="section-heading"><h3 id="observed-title">PUBLIC STATE OBSERVED</h3><span class="source-chip source-showdown">SHOWDOWN</span></div>
+              <div class="fact-grid" id="harness-observed-facts"><div class="empty-row">Waiting for public battle state</div></div>
+            </section>
+            <section class="evidence-section" id="harness-calculated-section" aria-labelledby="calculated-title">
+              <div class="section-heading"><h3 id="calculated-title">CALCULATED FACTS</h3><span class="source-chip source-harness">HARNESS</span></div>
+              <div id="harness-calculated-facts" class="calculation-stack"><div class="empty-row">No calculations yet</div></div>
+            </section>
+            <section class="evidence-section legal-section" id="harness-legal-section" aria-labelledby="legal-title">
+              <div class="section-heading"><h3 id="legal-title">LEGAL ACTION SET</h3><span class="count-badge" id="legal-count">--</span></div>
+              <div id="legal-actions" class="legal-actions"><div class="empty-row">No legal candidates yet</div></div>
+            </section>
+            <section class="handoff-card" id="jev-handoff" aria-labelledby="handoff-title">
+              <div class="handoff-title"><span class="origin-mark origin-harness" aria-hidden="true">H</span><h3 id="handoff-title">JEV INPUT READY</h3><span class="handoff-led" aria-hidden="true"></span></div>
+              <div id="handoff-summary" class="handoff-summary"><span>Awaiting a validated request</span></div>
+              <button class="text-button" type="button" data-inspect-tab="jev-input">VIEW STRUCTURED INPUT <span aria-hidden="true">↗</span></button>
+            </section>
+          </div>
+        </aside>
+
+        <aside class="panel evidence-panel jev-panel" id="jev-panel" aria-labelledby="jev-title">
+          <div class="panel-heading origin-heading jev-heading">
+            <div class="heading-left">
+              <span class="origin-mark origin-jev" aria-hidden="true">J</span>
+              <div><p class="panel-kicker">RETURNED DECISION</p><h2 id="jev-title">JEV</h2></div>
+            </div>
+            <span class="state-badge state-jev" id="jev-state">READY</span>
+          </div>
+          <div class="panel-scroll">
+            <section class="decision-hero" id="decision-hero">
+              <div class="hero-rivet" aria-hidden="true"></div>
+              <p class="panel-kicker">JEV SELECTED</p>
+              <h3 id="selected-action">No decision yet</h3>
+              <p class="mono action-id" id="selected-action-id">--</p>
+              <div class="hero-meta"><span id="selected-confidence">Returned confidence unavailable</span><span class="source-chip source-jev">JEV OUTPUT</span></div>
+            </section>
+            <section class="result-stack" id="adapter-result" aria-label="Adapter result">
+              <div class="result-row result-success" id="validation-result"><span class="result-icon" aria-hidden="true">✓</span><div><strong>VALIDATION</strong><span id="validation-label">Waiting for a decision</span></div></div>
+              <div class="result-row result-neutral" id="submission-result"><span class="result-icon" aria-hidden="true">→</span><div><strong>SUBMITTED ORDER</strong><span class="mono" id="submitted-order">Waiting for Adapter</span></div></div>
+            </section>
+            <section class="evidence-section probability-section" aria-labelledby="probability-title">
+              <div class="section-heading"><h3 id="probability-title">RETURNED PROBABILITIES</h3><span class="source-chip source-jev">JEV</span></div>
+              <div id="probability-chart" class="probability-chart"><div class="empty-row">No probability map returned</div></div>
+            </section>
+            <section class="evidence-section metadata-section" aria-labelledby="metadata-title">
+              <div class="section-heading"><h3 id="metadata-title">RESPONSE METADATA</h3><span class="source-chip source-jev">RECORDED</span></div>
+              <div id="jev-metadata" class="fact-grid"><div class="empty-row">No response metadata yet</div></div>
+            </section>
+            <section class="reliability-card" aria-labelledby="reliability-title">
+              <div class="section-heading"><h3 id="reliability-title">RUN RELIABILITY</h3><button class="text-button" type="button" data-inspect-tab="run-metrics">DETAILS</button></div>
+              <div id="reliability-tiles" class="reliability-tiles"><div class="metric-tile"><strong>--</strong><span>JEV CALLS</span></div><div class="metric-tile"><strong>--</strong><span>FALLBACKS</span></div><div class="metric-tile"><strong>--</strong><span>ILLEGAL</span></div></div>
+            </section>
+          </div>
+        </aside>
+      </section>
+
+      <section class="turn-strip panel" id="current-turn-strip" aria-labelledby="turn-strip-title">
+        <div class="turn-strip-title"><span class="turn-icon" aria-hidden="true">+</span><div><p class="panel-kicker">PROCESSING PATH</p><h2 id="turn-strip-title">CURRENT TURN <span id="turn-strip-number">--</span></h2></div></div>
+        <div class="lifecycle-track" id="lifecycle-track" aria-label="Current turn processing stages">
+          <div class="lifecycle-stage" data-stage="observe"><span class="stage-marker">1</span><strong>OBSERVE</strong><small>Waiting</small></div><span class="stage-connector"></span>
+          <div class="lifecycle-stage" data-stage="calculate"><span class="stage-marker">2</span><strong>CALCULATE</strong><small>Waiting</small></div><span class="stage-connector"></span>
+          <div class="lifecycle-stage" data-stage="options"><span class="stage-marker">3</span><strong>OPTIONS</strong><small>Waiting</small></div><span class="stage-connector"></span>
+          <div class="lifecycle-stage" data-stage="jev"><span class="stage-marker">4</span><strong>JEV DECIDES</strong><small>Waiting</small></div><span class="stage-connector"></span>
+          <div class="lifecycle-stage" data-stage="validate"><span class="stage-marker">5</span><strong>VALIDATE</strong><small>Waiting</small></div><span class="stage-connector"></span>
+          <div class="lifecycle-stage" data-stage="act"><span class="stage-marker">6</span><strong>ACT</strong><small>Waiting</small></div><span class="stage-connector"></span>
+          <div class="lifecycle-stage" data-stage="result"><span class="stage-marker">7</span><strong>RESULT</strong><small>Waiting</small></div>
+        </div>
+        <div class="turn-summary" id="turn-summary"><span class="summary-led" aria-hidden="true"></span><span>Awaiting a battle turn</span></div>
+      </section>
+
+      <section class="history-panel panel" id="decision-history" aria-labelledby="history-title">
+        <div class="history-heading"><div class="heading-left"><span class="origin-mark origin-history" aria-hidden="true">≋</span><div><p class="panel-kicker">OBSERVABLE DECISIONS</p><h2 id="history-title">DECISION HISTORY</h2></div></div><div class="history-controls"><span class="muted-label">SHOW</span><button class="history-filter is-active" type="button" data-history-limit="5">5</button><button class="history-filter" type="button" data-history-limit="10">10</button><button class="history-filter" type="button" data-history-limit="all">ALL</button></div></div>
+        <div id="history-list" class="history-list"><div class="history-empty"><span class="empty-seal" aria-hidden="true">≋</span><span>Decision records will appear here after the first Jev turn.</span></div></div>
+      </section>
+    </main>
+
+    <aside class="inspection-drawer" id="inspection-drawer" aria-labelledby="inspection-title" aria-hidden="true">
+      <div class="drawer-heading"><div><p class="panel-kicker">TECHNICAL INSPECTION</p><h2 id="inspection-title">DECISION EVIDENCE</h2></div><button class="icon-button" id="close-inspector" type="button" aria-label="Close technical inspection">×</button></div>
+      <div class="drawer-selection" id="drawer-selection">No decision selected</div>
+      <div class="drawer-tabs" role="tablist" aria-label="Decision evidence views">
+        <button role="tab" aria-selected="true" class="drawer-tab is-active" data-inspect-tab="overview">Overview</button>
+        <button role="tab" aria-selected="false" class="drawer-tab" data-inspect-tab="showdown-request">Request</button>
+        <button role="tab" aria-selected="false" class="drawer-tab" data-inspect-tab="harness-state">Harness</button>
+        <button role="tab" aria-selected="false" class="drawer-tab" data-inspect-tab="calculated-facts">Facts</button>
+        <button role="tab" aria-selected="false" class="drawer-tab" data-inspect-tab="jev-input">Jev input</button>
+        <button role="tab" aria-selected="false" class="drawer-tab" data-inspect-tab="jev-response">Jev response</button>
+        <button role="tab" aria-selected="false" class="drawer-tab" data-inspect-tab="validation">Validation</button>
+        <button role="tab" aria-selected="false" class="drawer-tab" data-inspect-tab="submitted-order">Order</button>
+        <button role="tab" aria-selected="false" class="drawer-tab" data-inspect-tab="protocol-evidence">Protocol</button>
+        <button role="tab" aria-selected="false" class="drawer-tab" data-inspect-tab="run-metrics">Run</button>
+      </div>
+      <div class="drawer-content" id="drawer-content" role="tabpanel"><div class="drawer-empty">Select a decision card or open inspection after a real response.</div></div>
+    </aside>
+    <div class="drawer-scrim" id="drawer-scrim" aria-hidden="true"></div>
+    <div class="live-announcer" id="live-announcer" aria-live="polite" aria-atomic="true"></div>
+  </div>
+  <script src="/static/showdown-renderer.js"></script>
+  <script type="module" src="/static/dashboard/app.js"></script>
+</body>
+</html>

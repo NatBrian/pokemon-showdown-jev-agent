@@ -162,3 +162,12 @@ def test_dashboard_css_contains_reduced_motion_equivalent():
     css = read_static("style.css")
     assert "prefers-reduced-motion: reduce" in css
     assert "animation-duration" in css
+
+
+def test_probability_bars_render_distinct_fill_and_selected_state():
+    css = read_static("style.css")
+    charts = read_static(Path("dashboard") / "charts.js")
+    assert ".probability-fill { display: block;" in css
+    assert 'style="width:${safeValue}%"' in charts
+    assert 'data-selected="${id === selected}"' in charts
+    assert ".probability-row[data-selected=\"true\"] .probability-fill" in css

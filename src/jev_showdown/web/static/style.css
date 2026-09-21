@@ -153,7 +153,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--orchid
 .probability-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(65px, 1fr) 35px; align-items: center; gap: 7px; font-size: .65rem; }
 .probability-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .probability-track { height: 13px; background: #d4d2ca; border: 1px solid #c3c1b8; overflow: hidden; }
-.probability-fill { height: 100%; min-width: 2px; background: repeating-linear-gradient(90deg, var(--orchid) 0 8px, #be89c2 8px 10px); }
+.probability-fill { display: block; height: 100%; min-width: 2px; background: repeating-linear-gradient(90deg, var(--orchid) 0 8px, #be89c2 8px 10px); transition: width .28s ease, background .2s ease; }
 .probability-row[data-selected="true"] .probability-fill { background: repeating-linear-gradient(90deg, var(--ochre) 0 8px, #deb95c 8px 10px); }
 .probability-value { text-align: right; font: 800 .68rem var(--mono); }
 .metadata-section .fact-grid { grid-template-columns: 1fr; }

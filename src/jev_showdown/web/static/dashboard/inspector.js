@@ -130,7 +130,7 @@ function tabMarkup(tab, decision, state) {
   }
 }
 
-export function installInspector({ getState, getSelected }) {
+export function installInspector({ getState, getSelected, setMode = () => {} }) {
   const drawer = $("#inspection-drawer");
   const content = $("#drawer-content");
   const selection = $("#drawer-selection");
@@ -145,6 +145,9 @@ export function installInspector({ getState, getSelected }) {
       const active = button.dataset.inspectTab === activeTab;
       button.classList.toggle("is-active", active);
       button.setAttribute("aria-selected", String(active));
+      if (!button.id) button.id = `drawer-tab-${button.dataset.inspectTab}`;
+      if (active) button.setAttribute("aria-controls", "inspection-panel");
+      else button.removeAttribute("aria-controls");
       button.tabIndex = active ? 0 : -1;
     });
   }
@@ -156,6 +159,9 @@ export function installInspector({ getState, getSelected }) {
     setTab(activeTab);
     copyPayloads.clear();
     content.innerHTML = tabMarkup(activeTab, currentDecision, state);
+    content.id = "inspection-panel";
+    const activeTabButton = document.querySelector(`.drawer-tab[data-inspect-tab="${activeTab}"]`);
+    content.setAttribute("aria-labelledby", activeTabButton?.id || "");
     content.querySelectorAll("[data-json-key]").forEach((node) => {
       const key = node.dataset.jsonKey;
       copyPayloads.set(key, node.textContent);
@@ -179,6 +185,8 @@ export function installInspector({ getState, getSelected }) {
   document.addEventListener("click", (event) => {
     const tab = event.target.closest?.(".drawer-tab");
     if (tab) { activeTab = tab.dataset.inspectTab; render(); return; }
+    const contextual = event.target.closest?.("[data-inspect-tab]");
+    if (contextual) { setMode("inspect"); activeTab = contextual.dataset.inspectTab; render(); return; }
     const copy = event.target.closest?.("[data-copy-key]");
     if (!copy) return;
     const payload = copyPayloads.get(copy.dataset.copyKey);

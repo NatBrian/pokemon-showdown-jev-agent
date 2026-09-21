@@ -97,27 +97,34 @@ function startBattle() {
   announce("Autonomous battle requested");
 }
 
-function openInspector(tab = "overview") {
+function setDashboardMode(mode) {
+  const next = mode === "inspect" ? "inspect" : "live";
+  const shell = query("#app-shell");
   const drawer = query("#inspection-drawer");
-  drawer.classList.add("is-open");
-  drawer.setAttribute("aria-hidden", "false");
-  query("#drawer-scrim").classList.add("is-visible");
-  query("#open-inspector").setAttribute("aria-expanded", "true");
+  shell.dataset.viewMode = next;
+  shell.setAttribute("data-view-mode", next);
+  query("#live-view-tab").setAttribute("aria-selected", String(next === "live"));
+  query("#open-inspector").setAttribute("aria-selected", String(next === "inspect"));
+  query("#open-inspector").setAttribute("aria-expanded", String(next === "inspect"));
+  drawer.setAttribute("aria-hidden", String(next !== "inspect"));
+  drawer.classList.toggle("is-open", next === "inspect");
+  query("#drawer-scrim").classList.toggle("is-visible", next === "inspect");
+}
+
+function openInspector(tab = "overview") {
+  setDashboardMode("inspect");
   window.dispatchEvent(new CustomEvent("jev:inspect", { detail: { tab, decision: selected || selectedDecision(clientState.dashboard) } }));
 }
 
 function closeInspector() {
-  const drawer = query("#inspection-drawer");
-  drawer.classList.remove("is-open");
-  drawer.setAttribute("aria-hidden", "true");
-  query("#drawer-scrim").classList.remove("is-visible");
-  query("#open-inspector").setAttribute("aria-expanded", "false");
-  query("#open-inspector").focus();
+  setDashboardMode("live");
+  query("#live-view-tab").focus();
 }
 
 function bind() {
   query("#start-battle").addEventListener("click", startBattle);
   query("#open-inspector").addEventListener("click", () => openInspector());
+  query("#live-view-tab").addEventListener("click", closeInspector);
   query("#close-inspector").addEventListener("click", closeInspector);
   query("#drawer-scrim").addEventListener("click", closeInspector);
   document.addEventListener("keydown", (event) => { if (event.key === "Escape" && query("#inspection-drawer").classList.contains("is-open")) closeInspector(); });
@@ -144,7 +151,9 @@ window.JevShowdownDashboard = {
 inspector = installInspector({
   getState: () => clientState,
   getSelected: () => selected || selectedDecision(clientState.dashboard),
+  setMode: setDashboardMode,
 });
 bind();
+setDashboardMode("live");
 update();
 connect();

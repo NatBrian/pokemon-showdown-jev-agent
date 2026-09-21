@@ -65,6 +65,21 @@ function renderObserved(turn) {
   $("#harness-observed-facts").innerHTML = rows.join("");
 }
 
+function renderObservedCompact(turn) {
+  const snapshot = turn?.harness?.snapshot || {};
+  const request = turn?.harness?.request_metadata || {};
+  const actions = turn?.harness?.legal_actions || [];
+  const rows = [
+    factRow("Request", request.request_type || "Unknown"),
+    factRow("Self active", activePokemon(snapshot, "self")),
+    factRow("Opponent active", activePokemon(snapshot, "opponent")),
+    factRow("Field", snapshot.weather || "No weather observed"),
+    factRow("Legal actions", actions.length ? `${actions.length} available` : "Unavailable"),
+    factRow("Unknown markers", turn?.harness?.unknowns?.length ?? 0),
+  ];
+  $("#harness-observed-facts").innerHTML = rows.join("");
+}
+
 function renderCalculations(turn) {
   const target = $("#harness-calculated-facts");
   const facts = turn?.harness?.calculated_facts || [];
@@ -106,7 +121,7 @@ function renderHandoff(turn) {
 }
 
 function renderHarness(turn) {
-  renderObserved(turn);
+  renderObservedCompact(turn);
   renderCalculations(turn);
   renderLegalActions(turn);
   renderHandoff(turn);

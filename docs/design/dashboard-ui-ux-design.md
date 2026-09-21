@@ -74,13 +74,14 @@ Charts and effects must explain a real relationship in the live data. The UI sho
 
 ## 3. Overall composition
 
-The primary layout is a desktop observatory with three major zones:
+The primary layout is a desktop observatory with two live regions:
 
 1. Official live battle surface.
-2. System harness evidence panel.
-3. Jev decision and output panel.
+2. A decision rail containing the Jev decision panel above the System Harness evidence panel.
 
 Decision history and current-turn flow occupy horizontal bands beneath those zones. Technical inspection opens as a non-blocking drawer above the right side of the layout.
+
+Implementation note: the current live shell supersedes the earlier three-column sketch below with a bounded two-column desktop layout. The live battle occupies the primary column; the decision rail owns the secondary column and scrolls its Jev and Harness cards independently. Inspect is a full-viewport technical workbench selected from the top-bar view switcher.
 
 ### 3.1 Target viewport
 
@@ -113,11 +114,10 @@ The main experience should not require excessive scrolling at any of these deskt
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Recommended proportional widths:
+Recommended live-region proportions:
 
-- Battle surface: 55%.
-- Harness panel: 22%.
-- Jev panel: 23%.
+- Battle surface: approximately 64% at the primary desktop target.
+- Decision rail: approximately 36%, with Jev above Harness.
 
 The battle width should remain large enough for the official renderer to retain its visual clarity. The evidence panels should be narrow enough to feel like instrumentation but wide enough to render structured data without constant truncation.
 
@@ -629,7 +629,7 @@ For multi-battle runs, include the `battle_tag` on the card or in its expanded s
 
 ## 10. Technical inspection drawer
 
-The inspection drawer opens from the right and overlays only the evidence side of the layout where possible. It should not hide the entire battle unless the viewport is too narrow.
+The Inspect control opens a full-viewport technical workbench so the evidence surface can use the available width for readable raw records and comparison tables. The Live control is the explicit route back to the battle layout; the underlying live surface is kept mounted but hidden while inspection is active.
 
 Recommended width: 420–520px on desktop.
 

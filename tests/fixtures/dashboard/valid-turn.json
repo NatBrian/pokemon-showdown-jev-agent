@@ -1,0 +1,76 @@
+{
+  "type": "TURN_DECISION",
+  "battle_tag": "battle-gen9randombattle-56",
+  "battle_format": "gen9randombattle",
+  "turn": 1,
+  "chosen_id": "move_dracometeor_tera",
+  "label": "Dracometeor (Terastallize)",
+  "kind": "move",
+  "is_fallback": false,
+  "fallback_reason": null,
+  "state_schema": 2,
+  "request": {
+    "battle_id": "battle-gen9randombattle-56",
+    "rqid": 3,
+    "request_type": "move",
+    "turn": 1,
+    "state_version": 1,
+    "force_switch": false,
+    "maybe_trapped": false,
+    "trapped": false,
+    "wait": false
+  },
+  "snapshot": {
+    "battle_format": "gen9randombattle",
+    "state_schema": 2,
+    "turn": 1,
+    "weather": null,
+    "can_tera": true,
+    "fields": [],
+    "side_conditions": {"self": {}, "opponent": {}},
+    "history": [{"turn": 1, "actor": "Opponent", "action": "Switch"}],
+    "beliefs": {"opponent_slots": [{"visibility": "revealed_active"}]},
+    "strategic_hypotheses": {},
+    "opponent_responses": {},
+    "glossary": {"switch": "Change active Pokémon"},
+    "self": {
+      "active_pokemon": {"species": "dragalge", "level": 88, "hp_fraction": 1.0, "status": null},
+      "team": [{"species": "dragalge", "revealed": true, "hp_fraction": 1.0}]
+    },
+    "opponent": {
+      "active_pokemon": {"species": "swampert", "level": 83, "hp_fraction": 1.0, "status": null},
+      "team_slots": [
+        {"species": "swampert", "revealed": true},
+        {"species": null, "revealed": false},
+        {"species": null, "revealed": false},
+        {"species": null, "revealed": false},
+        {"species": null, "revealed": false},
+        {"species": null, "revealed": false}
+      ]
+    },
+    "legal_actions": [
+      {"id": "move_dracometeor", "kind": "move", "label": "Dracometeor", "facts": {"base_power": 130, "category": "SPECIAL", "type": "DRAGON", "type_multiplier": 1.0, "accuracy": 90, "pp": 8, "priority": 0, "tera": false, "utility_estimate": [44, 52], "damage": null, "ko": null}},
+      {"id": "move_dracometeor_tera", "kind": "move", "label": "Dracometeor (Terastallize)", "facts": {"base_power": 130, "category": "SPECIAL", "type": "DRAGON", "type_multiplier": 1.0, "accuracy": 90, "pp": 8, "priority": 0, "tera": true, "utility_estimate": [66, 78], "damage": null, "ko": null}},
+      {"id": "move_dragontail", "kind": "move", "label": "Dragontail", "facts": {}},
+      {"id": "move_dragontail_tera", "kind": "move", "label": "Dragontail (Terastallize)", "facts": {}},
+      {"id": "move_focusblast", "kind": "move", "label": "Focus Blast", "facts": {}},
+      {"id": "move_focusblast_tera", "kind": "move", "label": "Focus Blast (Terastallize)", "facts": {}},
+      {"id": "move_sludgewave", "kind": "move", "label": "Sludge Wave", "facts": {}},
+      {"id": "move_sludgewave_tera", "kind": "move", "label": "Sludge Wave (Terastallize)", "facts": {}},
+      {"id": "move_thunderbolt", "kind": "move", "label": "Thunderbolt", "facts": {}},
+      {"id": "move_thunderbolt_tera", "kind": "move", "label": "Thunderbolt (Terastallize)", "facts": {}},
+      {"id": "switch_emboar", "kind": "switch", "label": "Switch to Emboar", "facts": {"hp_fraction": 1.0, "status": null, "entry_hazard_damage": null}},
+      {"id": "switch_rotom", "kind": "switch", "label": "Switch to Rotom", "facts": {"hp_fraction": 1.0, "status": null, "entry_hazard_damage": null}},
+      {"id": "switch_zamazenta", "kind": "switch", "label": "Switch to Zamazenta", "facts": {"hp_fraction": 1.0, "status": null, "entry_hazard_damage": null}}
+    ],
+    "criteria": {"move_dracometeor_tera": "Dracometeor (Terastallize); legal action; damage=unknown; KO=unknown."}
+  },
+  "criteria": {"move_dracometeor_tera": "Dracometeor (Terastallize); legal action; damage=unknown; KO=unknown."},
+  "question": {"type": "choice", "instructions": "Choose the strongest legal action that maximizes win probability.", "criteria": {"move_dracometeor_tera": "legal"}},
+  "jev_request": {"model": "jev-1.13-free", "questions": {"action": {"type": "choice", "instructions": "Choose the strongest legal action that maximizes win probability.", "criteria": {"move_dracometeor_tera": "legal"}}}, "state": {"state_schema": 2}},
+  "jev": {"model": "jev-1.13-free", "choice": "move_dracometeor_tera", "confidence": 0.94, "probabilities": {"move_dracometeor_tera": 0.96, "move_dracometeor": 0.01, "move_focusblast": 0.01, "switch_emboar": 0.02}, "latency_ms": 1723.4, "input_tokens": 22728, "output_tokens": 171, "cost": "0", "error": null},
+  "jev_response": {"model": "jev-1.13-free", "choice": "move_dracometeor_tera", "confidence": 0.94, "probabilities": {"move_dracometeor_tera": 0.96, "move_dracometeor": 0.01, "move_focusblast": 0.01, "switch_emboar": 0.02}, "latency_ms": 1723.4, "input_tokens": 22728, "output_tokens": 171, "cost": "0", "error": null, "raw_response": null},
+  "validation": {"chosen_id": "move_dracometeor_tera", "is_fallback": false, "fallback_reason": null, "legal_candidates": 13, "latency_ms": 1754.0, "submitted_order": "/choose move dracometeor terastallize"},
+  "submitted_order": {"chosen_id": "move_dracometeor_tera", "message": "/choose move dracometeor terastallize", "is_fallback": false},
+  "recent_history": [{"turn": 1, "actor": "Dragalge", "action": "Dracometeor (Terastallize)"}]
+}

@@ -1,0 +1,22 @@
+{
+  "type": "TURN_DECISION",
+  "battle_tag": "battle-gen9randombattle-57",
+  "battle_format": "gen9randombattle",
+  "turn": 4,
+  "chosen_id": "move_closecombat",
+  "label": "Close Combat",
+  "kind": "move",
+  "is_fallback": true,
+  "fallback_reason": "Invalid Jev Choice response: probability sum must equal 1.0; First legal candidate",
+  "state_schema": 2,
+  "request": {"battle_id": "battle-gen9randombattle-57", "rqid": 11, "request_type": "move", "turn": 4, "state_version": 4, "force_switch": false, "maybe_trapped": false, "trapped": false, "wait": false},
+  "snapshot": {"battle_format": "gen9randombattle", "state_schema": 2, "turn": 4, "weather": null, "can_tera": false, "fields": [], "side_conditions": {"self": {}, "opponent": {}}, "history": [], "beliefs": {}, "strategic_hypotheses": {}, "opponent_responses": {}, "glossary": {}, "self": {"active_pokemon": {"species": "scizor", "level": 79, "hp_fraction": 0.0458}, "team": []}, "opponent": {"active_pokemon": {"species": "bruxish", "level": 84, "hp_fraction": 1.0}, "team_slots": []}, "legal_actions": [{"id": "move_closecombat", "kind": "move", "label": "Close Combat", "facts": {}}], "criteria": {}},
+  "criteria": {},
+  "question": {"type": "choice", "instructions": "Choose the strongest legal action that maximizes win probability.", "criteria": {}},
+  "jev_request": {"model": "jev-1.13-free", "questions": {"action": {"type": "choice"}}, "state": {"state_schema": 2}},
+  "jev": {"model": "jev-1.13-free", "choice": null, "confidence": 0.0, "probabilities": {}, "latency_ms": 1330.9, "input_tokens": 0, "output_tokens": 0, "cost": "0", "error": "Invalid Jev Choice response: probability sum must equal 1.0"},
+  "jev_response": {"model": "jev-1.13-free", "choice": null, "confidence": 0.0, "probabilities": {}, "latency_ms": 1330.9, "input_tokens": 0, "output_tokens": 0, "cost": "0", "error": "Invalid Jev Choice response: probability sum must equal 1.0", "raw_response": {"answers": {"action": {"choice": "move_closecombat", "confidence": 0.64, "probabilities": {"move_closecombat": 0.68, "switch_ariados": 0.07, "switch_uxie": 0.03, "switch_wyrdeer": 0.02, "switch_zamazenta": 0.17}}}}},
+  "validation": {"chosen_id": "move_closecombat", "is_fallback": true, "fallback_reason": "Invalid Jev Choice response: probability sum must equal 1.0; First legal candidate", "legal_candidates": 1, "latency_ms": 20.0, "submitted_order": "/choose move closecombat"},
+  "submitted_order": {"chosen_id": "move_closecombat", "message": "/choose move closecombat", "is_fallback": true},
+  "recent_history": []
+}

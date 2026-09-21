@@ -1,0 +1,22 @@
+{
+  "type": "TURN_DECISION",
+  "battle_tag": "battle-gen9randombattle-56",
+  "battle_format": "gen9randombattle",
+  "turn": 2,
+  "chosen_id": "move_dracometeor",
+  "label": "Dracometeor",
+  "kind": "move",
+  "is_fallback": true,
+  "fallback_reason": "Provider HTTP 503; First legal candidate",
+  "state_schema": 2,
+  "request": {"battle_id": "battle-gen9randombattle-56", "rqid": 4, "request_type": "move", "turn": 2, "state_version": 2, "force_switch": false, "maybe_trapped": false, "trapped": false, "wait": false},
+  "snapshot": {"battle_format": "gen9randombattle", "state_schema": 2, "turn": 2, "weather": null, "can_tera": true, "fields": [], "side_conditions": {"self": {}, "opponent": {}}, "history": [], "beliefs": {}, "strategic_hypotheses": {}, "opponent_responses": {}, "glossary": {}, "self": {"active_pokemon": {"species": "dragalge", "level": 88, "hp_fraction": 1.0}, "team": []}, "opponent": {"active_pokemon": {"species": "swampert", "level": 83, "hp_fraction": 1.0}, "team_slots": []}, "legal_actions": [{"id": "move_dracometeor", "kind": "move", "label": "Dracometeor", "facts": {}}, {"id": "switch_emboar", "kind": "switch", "label": "Switch to Emboar", "facts": {"hp_fraction": 1.0, "entry_hazard_damage": null}}], "criteria": {}},
+  "criteria": {},
+  "question": {"type": "choice", "instructions": "Choose the strongest legal action that maximizes win probability.", "criteria": {}},
+  "jev_request": {"model": "jev-1.13-free", "questions": {"action": {"type": "choice"}}, "state": {"state_schema": 2}},
+  "jev": {"model": "jev-1.13-free", "choice": null, "confidence": 0.0, "probabilities": {}, "latency_ms": 9850.0, "input_tokens": 0, "output_tokens": 0, "cost": "0", "error": "HTTP 503"},
+  "jev_response": {"model": "jev-1.13-free", "choice": null, "confidence": 0.0, "probabilities": {}, "latency_ms": 9850.0, "input_tokens": 0, "output_tokens": 0, "cost": "0", "error": "HTTP 503", "raw_response": null},
+  "validation": {"chosen_id": "move_dracometeor", "is_fallback": true, "fallback_reason": "Provider HTTP 503; First legal candidate", "legal_candidates": 2, "latency_ms": 30.0, "submitted_order": "/choose move dracometeor"},
+  "submitted_order": {"chosen_id": "move_dracometeor", "message": "/choose move dracometeor", "is_fallback": true},
+  "recent_history": []
+}

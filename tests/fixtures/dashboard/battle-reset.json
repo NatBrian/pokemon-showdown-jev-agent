@@ -1,0 +1,6 @@
+[
+  {"type": "BATTLE_START", "battle_tag": "battle-gen9randombattle-56", "battle_format": "gen9randombattle"},
+  {"type": "TURN_DECISION", "battle_tag": "battle-gen9randombattle-56", "turn": 1, "chosen_id": "move_dracometeor", "label": "Dracometeor", "kind": "move", "is_fallback": false, "fallback_reason": null, "snapshot": {"legal_actions": []}, "jev_response": {"choice": "move_dracometeor", "probabilities": {"move_dracometeor": 1.0}, "error": null}, "validation": {"chosen_id": "move_dracometeor", "is_fallback": false}, "submitted_order": {"chosen_id": "move_dracometeor", "message": "/choose move dracometeor", "is_fallback": false}},
+  {"type": "BATTLE_END", "battle_tag": "battle-gen9randombattle-56", "winner": "FoulPostFix", "won": false, "total_turns": 1},
+  {"type": "BATTLE_START", "battle_tag": "battle-gen9randombattle-57", "battle_format": "gen9randombattle"}
+]

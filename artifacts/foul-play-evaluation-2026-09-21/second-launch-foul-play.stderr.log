@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\artifacts\foul-play-evaluation-2026-09-21\run_foul_play_local.py", line 14, in <module>
+    from fp.main import run_foul_play
+ModuleNotFoundError: No module named 'fp'

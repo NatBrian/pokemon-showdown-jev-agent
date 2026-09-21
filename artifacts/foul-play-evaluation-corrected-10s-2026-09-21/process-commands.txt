@@ -1,0 +1,13 @@
+Showdown server:
+  node pokemon-showdown start --skip-build 8001
+
+Jev agent (project .venv; credentials supplied by environment and never printed or persisted):
+  python artifacts/foul-play-evaluation-2026-09-21/run_jev_agent.py
+  JEV_EVAL_ARTIFACT_DIR=artifacts/foul-play-evaluation-corrected-10s-2026-09-21
+  JEV_EVAL_SHOWDOWN_SERVER_URL=ws://localhost:8001/showdown/websocket
+
+Foul Play (isolated .venv; evaluation-only local-login launcher):
+  python C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\artifacts\foul-play-evaluation-2026-09-21\run_foul_play_local.py --websocket-uri ws://localhost:8001/showdown/websocket --ps-username Foul10s --bot-mode search_ladder --pokemon-format gen9randombattle --search-time-ms 10000 --search-parallelism 4 --team-preview-search-parallelism 4 --team-preview-search-time-ms 10000 --search-threads 1 --run-count 3 --save-replay always --log-level DEBUG --log-to-file
+  FOUL_PLAY_ROOT=C:\Users\Admin\Documents\Github\_bot-research\foul-play
+
+No setup retry, Jev call retry, search-budget escalation, dashboard startup, shadow battle, PokeChamp run, or fourth battle is allowed after these commands start.

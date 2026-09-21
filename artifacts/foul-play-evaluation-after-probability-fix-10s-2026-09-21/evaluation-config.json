@@ -1,0 +1,32 @@
+﻿{
+    "type":  "FOUL_PLAY_CORRECTED_EVALUATION_CONFIG",
+    "series_policy":  "exactly_one_final_series_of_three_battles",
+    "calibration_reference":  "../foul-play-calibration-2026-09-21/calibration-summary.json",
+    "format":  "gen9randombattle",
+    "showdown_server_url":  "ws://localhost:8001/showdown/websocket",
+    "showdown_server_port":  8001,
+    "showdown_server_reason":  "port 8000 remains occupied by the existing project dashboard process",
+    "showdown_local_development_overrides":  {
+                                                 "noguestsecurity":  true,
+                                                 "noipchecks":  true,
+                                                 "scope":  "offline evaluation checkout only"
+                                             },
+    "foul_play_commit":  "6c467c081e862fb321adb405355beb41aba8e226",
+    "showdown_commit":  "9e317a666d9fd250f36f494778e843141f09bdba",
+    "showdown_package_version":  "0.11.11",
+    "foul_play_search_time_ms":  10000,
+    "foul_play_search_parallelism":  4,
+    "foul_play_team_preview_search_time_ms":  10000,
+    "foul_play_team_preview_search_parallelism":  4,
+    "foul_play_search_threads":  1,
+    "foul_play_run_count":  3,
+    "foul_play_save_replay":  "always",
+    "foul_play_log_to_file":  true,
+    "jev_decision_policy":  "one_provider_request_per_decision_no_retry",
+    "jev_model":  "jev-1.13-free",
+    "jev_timeout_seconds":  10.0,
+    "credentials_persisted":  false,
+    "paid_call_policy":  "No Jev call during setup; no retries or additional series after this run.",
+    "evaluation_artifact":  "C:\\Users\\Admin\\Documents\\Github\\autonomous-pokemon-showdown-jev-agent\\artifacts\\foul-play-evaluation-after-probability-fix-10s-2026-09-21",
+    "protocol_fix":  "PROBABILITY_SUM_TOLERANCE=0.01 with normalization"
+}

@@ -1,0 +1,29 @@
+{
+  "type": "FOUL_PLAY_POST_HISTORY_FIX_EVALUATION_CONFIG",
+  "series_policy": "exactly_one_final_series_of_three_battles",
+  "format": "gen9randombattle",
+  "showdown_server_url": "ws://localhost:8001/showdown/websocket",
+  "showdown_server_port": 8001,
+  "showdown_local_development_overrides": {
+    "noguestsecurity": true,
+    "noipchecks": true,
+    "scope": "offline evaluation checkout only"
+  },
+  "foul_play_commit": "6c467c081e862fb321adb405355beb41aba8e226",
+  "showdown_commit": "9e317a666d9fd250f36f494778e843141f09bdba",
+  "showdown_package_version": "0.11.11",
+  "foul_play_search_time_ms": 10000,
+  "foul_play_search_parallelism": 4,
+  "foul_play_team_preview_search_time_ms": 10000,
+  "foul_play_team_preview_search_parallelism": 4,
+  "foul_play_search_threads": 1,
+  "foul_play_run_count": 3,
+  "foul_play_save_replay": "always",
+  "jev_decision_policy": "one_provider_request_per_decision_no_retry",
+  "jev_model": "jev-1.13-free",
+  "jev_timeout_seconds": 10.0,
+  "credentials_persisted": false,
+  "paid_call_policy": "one fresh series only; no retries, tuning, escalation, shadow battles, dashboard run, or PokeChamp",
+  "source_runner": "artifacts/foul-play-evaluation-2026-09-21/run_jev_agent.py",
+  "foul_play_runner": "artifacts/foul-play-evaluation-2026-09-21/run_foul_play_local.py"
+}

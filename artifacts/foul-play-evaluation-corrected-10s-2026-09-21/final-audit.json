@@ -1,0 +1,109 @@
+{
+  "type": "FOUL_PLAY_EVALUATION_FINAL_AUDIT",
+  "status": "invalid_stop_condition",
+  "started_at": "2026-09-20T20:30:42.381384+00:00",
+  "stopped_at": "2026-09-20T20:43:12+00:00",
+  "requested_battles": 3,
+  "battles_started": 3,
+  "battles_completed": 2,
+  "valid_strategic_battles": 0,
+  "configuration": {
+    "format": "gen9randombattle",
+    "foul_play_commit": "6c467c081e862fb321adb405355beb41aba8e226",
+    "showdown_commit": "9e317a666d9fd250f36f494778e843141f09bdba",
+    "showdown_package": "0.11.11",
+    "foul_play_search_ms": 10000,
+    "foul_play_parallelism": 4,
+    "team_preview_search_ms": 10000,
+    "team_preview_parallelism": 4,
+    "search_threads": 1,
+    "jev_model": "jev-1.13-free",
+    "jev_timeout_seconds": 10,
+    "provider_request_policy": "one request per decision; no retry or escalation"
+  },
+  "battles": [
+    {
+      "battle_tag": "battle-gen9randombattle-23",
+      "replay": "showdown-replays/gen9randombattle-23.log.json",
+      "end_type": "forfeit",
+      "winner": "Foul10s",
+      "turns": 3,
+      "inactivity_loser": "JevPlayer 1",
+      "valid_for_strategy_comparison": false
+    },
+    {
+      "battle_tag": "battle-gen9randombattle-24",
+      "replay": "showdown-replays/gen9randombattle-24.log.json",
+      "end_type": "forfeit",
+      "winner": "Foul10s",
+      "turns": 13,
+      "inactivity_loser": "JevPlayer 1",
+      "valid_for_strategy_comparison": false
+    },
+    {
+      "battle_tag": "battle-gen9randombattle-25",
+      "replay": null,
+      "end_type": "aborted_by_evaluator",
+      "winner": null,
+      "turns": null,
+      "inactivity_loser": null,
+      "valid_for_strategy_comparison": false
+    }
+  ],
+  "jev_calls": {
+    "request_response_records": 20,
+    "responses_with_choice": 19,
+    "response_errors": 1,
+    "response_error_call_ids": [14],
+    "response_error": "Invalid Jev Choice response: probability sum must equal 1.0",
+    "latency_ms": {
+      "p50": 1131.031,
+      "p95": 1391.331,
+      "p99": 1435.283
+    },
+    "wrapper_latency_ms": {
+      "p50": 1131.213,
+      "p95": 1391.456,
+      "p99": 1435.469
+    },
+    "response_cost_field_total": 0,
+    "cost_note": "The provider response cost field was zero; this is not a price estimate."
+  },
+  "failure_analysis": {
+    "primary_failure": "Jev event recorder exception",
+    "exception": "TypeError: Object of type PokemonType is not JSON serializable",
+    "location": "artifacts/foul-play-evaluation-2026-09-21/run_jev_agent.py:166 -> append_jsonl:77",
+    "effect": "The exception escaped choose_move after a turn event was recorded, so poke-env did not receive a move and Showdown eventually forfeited JevPlayer 1 for inactivity.",
+    "evidence": [
+      "jev-run.stderr.log",
+      "showdown-replays/gen9randombattle-23.log.json",
+      "showdown-replays/gen9randombattle-24.log.json",
+      "foul-play-logs/battle-gen9randombattle-23_JevPlayer 1.log",
+      "foul-play-logs/battle-gen9randombattle-24_JevPlayer 1.log"
+    ],
+    "event_log_integrity": "jev-events.jsonl is preserved but contains partial JSON records because the recorder failed during json.dump; jev-run.stderr.log is the authoritative exception record."
+  },
+  "process_cleanup": {
+    "evaluation_process_tree_stopped": true,
+    "root_pids": {
+      "jev_runner": 23744,
+      "foul_play_runner": 8976,
+      "showdown_server": 9576
+    },
+    "local_test_port_8001_stopped": true,
+    "dashboard_port_8000_touched": false
+  },
+  "artifact_paths": {
+    "jev_requests_and_responses": "jev-request-response.jsonl",
+    "jev_events": "jev-events.jsonl",
+    "jev_metadata": "jev-run-metadata.json",
+    "jev_stderr": "jev-run.stderr.log",
+    "foul_play_stdout": "foul-play.stdout.log",
+    "foul_play_stderr": "foul-play.stderr.log",
+    "foul_play_battle_logs": "foul-play-logs/",
+    "showdown_replays": "showdown-replays/",
+    "showdown_server_stdout": "showdown-server.stdout.log",
+    "showdown_server_stderr": "showdown-server.stderr.log"
+  },
+  "interpretation": "This run provides no evidence that Jev can or cannot compete strategically with Foul Play. The observed Foul Play wins were Jev inactivity forfeits caused by the harness recording exception, and the third battle was stopped after the same timer-risk condition. No additional paid run is authorized by the current plan."
+}

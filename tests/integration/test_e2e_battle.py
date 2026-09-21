@@ -17,7 +17,7 @@ import pytest
 from websockets.asyncio.server import serve
 
 from poke_env.data import to_id_str
-from poke_env.player import RandomPlayer
+from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 
 from jev_showdown.agent import JevPlayer
 from jev_showdown.config import Settings
@@ -275,8 +275,9 @@ def _make_settings() -> Settings:
     )
 
 
+@pytest.mark.parametrize("opponent_cls", [RandomPlayer, SimpleHeuristicsPlayer])
 @pytest.mark.asyncio
-async def test_full_simulated_battle_against_random():
+async def test_full_simulated_battle_against_provider_free_opponents(opponent_cls):
     settings = _make_settings()
 
     # Mock the Jev decision client so no real provider call is made. The
@@ -315,7 +316,7 @@ async def test_full_simulated_battle_against_random():
             on_turn_event=events_received.append,
             battle_format=BATTLE_FORMAT,
         )
-        random_opponent = RandomPlayer(battle_format=BATTLE_FORMAT)
+        random_opponent = opponent_cls(battle_format=BATTLE_FORMAT)
 
         await asyncio.wait_for(
             jev_player.battle_against(random_opponent, n_battles=1),
@@ -329,6 +330,7 @@ async def test_full_simulated_battle_against_random():
 
     # Telemetry was dispatched for at least one turn.
     assert len(events_received) > 0
+    json.dumps(events_received, allow_nan=False)
 
     first_evt = events_received[0]
     # The payload is a typed TURN_DECISION event carrying the snapshot and

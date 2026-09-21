@@ -1,0 +1,91 @@
+DEBUG    Received message from websocket: |challstr|4|77afef21da488b9a1ee2dd7bcbe694ec7758225aec035e7b9604f35ecdba3735245255fd38084d044b4ebffd68acf0f0e5134b44ddfee717cbec1788c70c777c5cd2f4d10d1ee38aa667ca55267baa287a4fb286b688ba70efa35add10975fe9a350cce0a84eb8d52f0142e7b9c16e5b845e2e17c831db932fadf408b426b410
+DEBUG    Sending message to websocket: |/trn FoulPlayEval,0,
+INFO     Logged in to local Showdown as %s
+DEBUG    Sending message to websocket: |/utm None
+INFO     Searching for ranked gen9randombattle match
+DEBUG    Sending message to websocket: |/search gen9randombattle
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updateuser| FoulPlayEval|1|265|{"blockChallenges":false,"blockPMs":false,"ignoreTickets":false,"hideBattlesFromTrainerCard":false,"blockInvites":false,"doNotDisturb":false,"blockFriendRequests":false,"allowFriendNotifications":false,"displayBattlesToFriends":false,"hideLogins":false,"hiddenNextBattle":false,"inviteOnlyNextBattle":false,"language":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":["gen9randombattle"],"games":null}
+DEBUG    Received message from websocket: |challstr|4|d72d36bbc29758f0ef34090335454cc631a6d65e5a35dce67e32284e3038ec2359817743c348b1d8e71ff930710caf8c338a310b359d82b4aac330e6fec26de358aeded011234a97c0de61a0cd73ed6d4879cf217f6592f8f48cdd6172e9ac8e473e65d9c548db9677298d25274891e498ad8e275a7c545176ae17c485039fa9
+DEBUG    Sending message to websocket: |/trn FoulPlayEval,0,
+INFO     Logged in to local Showdown as %s
+DEBUG    Sending message to websocket: |/utm None
+INFO     Searching for ranked gen9randombattle match
+DEBUG    Sending message to websocket: |/search gen9randombattle
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updateuser| FoulPlayEval|1|265|{"blockChallenges":false,"blockPMs":false,"ignoreTickets":false,"hideBattlesFromTrainerCard":false,"blockInvites":false,"doNotDisturb":false,"blockFriendRequests":false,"allowFriendNotifications":false,"displayBattlesToFriends":false,"hideLogins":false,"hiddenNextBattle":false,"inviteOnlyNextBattle":false,"language":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":["gen9randombattle"],"games":null}
+DEBUG    Received message from websocket: |challstr|4|adb04982993f7d6ad35dab91f71ee9ddff6a3641cbf6b5fa6a16c0210f83b68318831047f5a45d6973c45924960d333f1d93b0ab9838acbd8cf619b746844ce220efd899f1f819906e0080ef43389b0dd3cf66ef71efdbfd308045bc4acba75dd9f388ceda99b633d11908c309a89608dc9d5c1feb67b7c00b18598b0b0864cf
+DEBUG    Sending message to websocket: |/trn FoulPlayEval,0,
+INFO     Logged in to local Showdown as %s
+DEBUG    Sending message to websocket: |/utm None
+INFO     Searching for ranked gen9randombattle match
+DEBUG    Sending message to websocket: |/search gen9randombattle
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updateuser| FoulPlayEval|1|2|{"blockChallenges":false,"blockPMs":false,"ignoreTickets":false,"hideBattlesFromTrainerCard":false,"blockInvites":false,"doNotDisturb":false,"blockFriendRequests":false,"allowFriendNotifications":false,"displayBattlesToFriends":false,"hideLogins":false,"hiddenNextBattle":false,"inviteOnlyNextBattle":false,"language":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":{"battle-gen9randombattle-1":"[Gen 9] Random Battle*"}}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":{"battle-gen9randombattle-1":"[Gen 9] Random Battle*"}}
+INFO     Initialized battle-gen9randombattle-1 against: JevPlayer 1
+DEBUG    Received message from websocket: |challstr|4|f2b56c78c88b0c1d7d452fe4b277070b95b0e8b3b81e48fd05af176f5d5b0edfe839d3daec95d75c22993938faf178df812f0eb1bfb71f6846d424182fd34f0eba6cbe32d019e6c54918e7abd7452ac87a7468510105358027d1aacb02aa85b85f58f45434242b954a5cb282607cb82e6fa49c38d68218eabf235946aa229a68
+DEBUG    Sending message to websocket: |/trn FoulPlayCalibration,0,
+INFO     Logged in to local Showdown as %s
+DEBUG    Sending message to websocket: |/utm None
+INFO     Searching for ranked gen9randombattle match
+DEBUG    Sending message to websocket: |/search gen9randombattle
+DEBUG    Received message from websocket: |nametaken||Your name must be 18 characters or shorter.
+DEBUG    Received message from websocket: |updatesearch|{"searching":["gen9randombattle"],"games":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":{"battle-gen9randombattle-12":"[Gen 9] Random Battle*"}}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":{"battle-gen9randombattle-12":"[Gen 9] Random Battle*"}}
+INFO     Initialized battle-gen9randombattle-12 against: RandomCalibration  Guest 1
+DEBUG    Received message from websocket: |challstr|4|2e4d59195901a31ed1fa48c4ef7cb052ebfba35f91e56d5f895be8f50d1c4ab85e4fb77f2524d3db93f6b8ca20f4d0a94ceba90a8dbaa5a7d9932a416ab0558951b74f785886ca64e7ae43b1991901325891ecb4c9576a7653fd63f3c7a16d30845cf8db6a9eedaf2f1c34c70f32417157a5d7b7aab696f93e205542a4289f0b
+DEBUG    Sending message to websocket: |/trn FoulCalib,0,
+INFO     Logged in to local Showdown as %s
+DEBUG    Sending message to websocket: |/utm None
+INFO     Searching for ranked gen9randombattle match
+DEBUG    Sending message to websocket: |/search gen9randombattle
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updateuser| FoulCalib|1|101|{"blockChallenges":false,"blockPMs":false,"ignoreTickets":false,"hideBattlesFromTrainerCard":false,"blockInvites":false,"doNotDisturb":false,"blockFriendRequests":false,"allowFriendNotifications":false,"displayBattlesToFriends":false,"hideLogins":false,"hiddenNextBattle":false,"inviteOnlyNextBattle":false,"language":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":{"battle-gen9randombattle-13":"[Gen 9] Random Battle*"}}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":{"battle-gen9randombattle-13":"[Gen 9] Random Battle*"}}
+INFO     Initialized battle-gen9randombattle-13 against: RandomCalibration
+DEBUG    Received message from websocket: |challstr|4|28a72086b46cfaa808449fbab09df5e431e6b5ddc728cb889ee7e7fb631afa65bfc9bfd4e05677e91d588b3f43a371049fdbc4037d44d8dc08ca5119ae0d97810031c05cf055afcb3fcf119fca5ca9bcb0168ce05d56dc1dcfdfece34d4e0856e32678ea3f5f062d286eeb8b1691de12fc33c2218d3bf627cf3d4d6c9c4e73cc
+DEBUG    Sending message to websocket: |/trn Foul10k,0,
+INFO     Logged in to local Showdown as %s
+DEBUG    Sending message to websocket: |/utm None
+INFO     Searching for ranked gen9randombattle match
+DEBUG    Sending message to websocket: |/search gen9randombattle
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updateuser| Foul10k|1|2|{"blockChallenges":false,"blockPMs":false,"ignoreTickets":false,"hideBattlesFromTrainerCard":false,"blockInvites":false,"doNotDisturb":false,"blockFriendRequests":false,"allowFriendNotifications":false,"displayBattlesToFriends":false,"hideLogins":false,"hiddenNextBattle":false,"inviteOnlyNextBattle":false,"language":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":{"battle-gen9randombattle-14":"[Gen 9] Random Battle*"}}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":{"battle-gen9randombattle-14":"[Gen 9] Random Battle*"}}
+INFO     Initialized battle-gen9randombattle-14 against: RandomCalibration
+DEBUG    Received message from websocket: |challstr|4|08aa3e2845e6f091550f3c5f8843f857c450c67933c05fbb4892172d3539e576bc34bdd91a7cb9eff8a73ebded4a5487cd949121a83c297551af7e33d25fb204aa35895ad911d1c3988a3cc52d16dabe917c3f72249b973b219f9bde93ef29b3852efa912167b412af3c1d5f18a1b1db24f95214de220a29f2639c1b3d3ee4a0
+DEBUG    Sending message to websocket: |/trn Foul10s,0,
+INFO     Logged in to local Showdown as %s
+DEBUG    Sending message to websocket: |/utm None
+INFO     Searching for ranked gen9randombattle match
+DEBUG    Sending message to websocket: |/search gen9randombattle
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updateuser| Foul10s|1|266|{"blockChallenges":false,"blockPMs":false,"ignoreTickets":false,"hideBattlesFromTrainerCard":false,"blockInvites":false,"doNotDisturb":false,"blockFriendRequests":false,"allowFriendNotifications":false,"displayBattlesToFriends":false,"hideLogins":false,"hiddenNextBattle":false,"inviteOnlyNextBattle":false,"language":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":{"battle-gen9randombattle-23":"[Gen 9] Random Battle*"}}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":{"battle-gen9randombattle-23":"[Gen 9] Random Battle*"}}
+INFO     Initialized battle-gen9randombattle-23 against: JevPlayer 1
+DEBUG    Received message from websocket: |challstr|4|caaf6684a9c98a3ae53d0b69a050c9f4c1509d8c2e3f79fe4c977b59f608a9418a80af62a1afb3c663392fd6f5ba00b030a1cab927b7a8fa000fdf6dd2e5811f8af49e9b5d3dc80b456dd4fc39643558a7fe30bf6ae486ede11bacf761ae02a0cfeebebd38fb6b305750d31ac2cd6d54bfe6da108601d2fe65b5a5705c8ece5a
+DEBUG    Sending message to websocket: |/trn Foul10s,0,
+INFO     Logged in to local Showdown as %s
+DEBUG    Sending message to websocket: |/utm None
+INFO     Searching for ranked gen9randombattle match
+DEBUG    Sending message to websocket: |/search gen9randombattle
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updateuser| Foul10s|1|266|{"blockChallenges":false,"blockPMs":false,"ignoreTickets":false,"hideBattlesFromTrainerCard":false,"blockInvites":false,"doNotDisturb":false,"blockFriendRequests":false,"allowFriendNotifications":false,"displayBattlesToFriends":false,"hideLogins":false,"hiddenNextBattle":false,"inviteOnlyNextBattle":false,"language":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":{"battle-gen9randombattle-34":"[Gen 9] Random Battle*"}}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":{"battle-gen9randombattle-34":"[Gen 9] Random Battle*"}}
+INFO     Initialized battle-gen9randombattle-34 against: JevPlayer 1

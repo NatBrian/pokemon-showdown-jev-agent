@@ -1,0 +1,13 @@
+[
+  {"pid": 17280, "parent_pid": 17220, "name": "node.exe", "command": "pokemon-showdown start --skip-build --no-security 8001"},
+  {"pid": 16476, "parent_pid": 17280, "name": "node.exe", "command": "dist/server/sockets.js start --skip-build --no-security 8001"},
+  {"pid": 20084, "parent_pid": 17280, "name": "node.exe", "command": "dist/server/room-battle.js"},
+  {"pid": 18208, "parent_pid": 17280, "name": "node.exe", "command": "dist/server/verifier.js"},
+  {"pid": 17268, "parent_pid": 17280, "name": "node.exe", "command": "dist/server/team-validator-async.js"},
+  {"pid": 21360, "parent_pid": 17280, "name": "node.exe", "command": "dist/server/friends.js"},
+  {"pid": 6700, "parent_pid": 17280, "name": "node.exe", "command": "dist/server/artemis/local.js"},
+  {"pid": 3352, "parent_pid": 17280, "name": "node.exe", "command": "dist/server/artemis/remote.js"},
+  {"pid": 2924, "parent_pid": 17280, "name": "node.exe", "command": "dist/server/chat-plugins/battlesearch.js"},
+  {"pid": 20048, "parent_pid": 17280, "name": "node.exe", "command": "dist/server/chat-plugins/datasearch.js"},
+  {"pid": 3416, "parent_pid": 17280, "name": "conhost.exe", "command": "conhost.exe"}
+]

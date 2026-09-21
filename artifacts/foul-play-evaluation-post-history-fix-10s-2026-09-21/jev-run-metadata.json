@@ -1,0 +1,11 @@
+{
+  "type": "JEV_RUN_METADATA",
+  "started_at": "2026-09-21T07:13:11.265317+00:00",
+  "pid": 22704,
+  "requested_battles": 3,
+  "battle_format": "gen9randombattle",
+  "showdown_server_url": "ws://localhost:8001/showdown/websocket",
+  "jev_endpoint": "https://opencode.ai/zen/v1/systemone",
+  "jev_model": "jev-1.13-free",
+  "jev_timeout_seconds": 10.0
+}

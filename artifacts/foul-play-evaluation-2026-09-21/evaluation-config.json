@@ -1,0 +1,37 @@
+{
+  "type": "FOUL_PLAY_EVALUATION_CONFIG",
+  "series_policy": "exactly_one_series_of_three_battles",
+  "format": "gen9randombattle",
+  "showdown_server_url": "ws://localhost:8001/showdown/websocket",
+  "showdown_server_port": 8001,
+  "showdown_server_reason": "port 8000 was already occupied by the existing project dashboard process",
+  "showdown_local_development_overrides": {
+    "noguestsecurity": true,
+    "noipchecks": true,
+    "reason": "allow two unregistered local clients from the same machine to match; these overrides are confined to the offline evaluation server"
+  },
+  "foul_play_commit": "6c467c081e862fb321adb405355beb41aba8e226",
+  "showdown_commit": "9e317a666d9fd250f36f494778e843141f09bdba",
+  "showdown_package_version": "0.11.11",
+  "foul_play_entrypoint": "run_foul_play_local.py",
+  "foul_play_bot_mode": "search_ladder",
+  "foul_play_search_time_ms": 30000,
+  "foul_play_search_parallelism": 4,
+  "foul_play_team_preview_search_time_ms": 30000,
+  "foul_play_team_preview_search_parallelism": 4,
+  "foul_play_search_threads": 1,
+  "foul_play_run_count": 3,
+  "foul_play_save_replay": "always",
+  "foul_play_log_to_file": true,
+  "jev_decision_policy": "one_provider_request_per_decision_no_retry",
+  "jev_model": "jev-1.13-free",
+  "jev_timeout_seconds": 10.0,
+  "credentials_persisted": false,
+  "connection_smoke": {
+    "battle_started": false,
+    "foul_play_login": true,
+    "jev_login": true,
+    "jev_api_calls": 0
+  },
+  "rationale": "Use four parallel search states on the four physical cores and one search thread per state. A 30-second bounded search is the highest practical fixed setting selected before battle 1; no budget escalation or repeat series is allowed."
+}

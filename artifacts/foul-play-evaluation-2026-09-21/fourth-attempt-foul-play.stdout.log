@@ -1,0 +1,10 @@
+DEBUG    Received message from websocket: |challstr|4|d72d36bbc29758f0ef34090335454cc631a6d65e5a35dce67e32284e3038ec2359817743c348b1d8e71ff930710caf8c338a310b359d82b4aac330e6fec26de358aeded011234a97c0de61a0cd73ed6d4879cf217f6592f8f48cdd6172e9ac8e473e65d9c548db9677298d25274891e498ad8e275a7c545176ae17c485039fa9
+DEBUG    Sending message to websocket: |/trn FoulPlayEval,0,
+INFO     Logged in to local Showdown as %s
+DEBUG    Sending message to websocket: |/utm None
+INFO     Searching for ranked gen9randombattle match
+DEBUG    Sending message to websocket: |/search gen9randombattle
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updateuser| FoulPlayEval|1|265|{"blockChallenges":false,"blockPMs":false,"ignoreTickets":false,"hideBattlesFromTrainerCard":false,"blockInvites":false,"doNotDisturb":false,"blockFriendRequests":false,"allowFriendNotifications":false,"displayBattlesToFriends":false,"hideLogins":false,"hiddenNextBattle":false,"inviteOnlyNextBattle":false,"language":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":[],"games":null}
+DEBUG    Received message from websocket: |updatesearch|{"searching":["gen9randombattle"],"games":null}

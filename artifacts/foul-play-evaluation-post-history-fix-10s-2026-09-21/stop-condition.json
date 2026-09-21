@@ -1,0 +1,11 @@
+{
+  "type": "EVALUATION_STOP_CONDITION",
+  "status": "completed_without_retry",
+  "reason": "The requested three battles completed, but 20 deterministic fallbacks occurred: 14 provider HTTP 503 errors, 5 request timeouts, and 1 probability validation error. No additional paid call was authorized by the run policy.",
+  "fallbacks": 20,
+  "provider_errors": 19,
+  "protocol_validation_errors": 1,
+  "retry_started": false,
+  "search_escalation_started": false,
+  "additional_jev_calls_started": false
+}

@@ -1,0 +1,11 @@
+{
+  "source_call_id": 2,
+  "accepted": true,
+  "choice": "move_sludgebomb",
+  "confidence": 0.79,
+  "raw_probability_sum": 0.99,
+  "normalized_probability_sum": 1.0,
+  "normalized_probability_count": 9,
+  "jev_api_calls": 0,
+  "credentials_persisted": false
+}

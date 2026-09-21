@@ -1,0 +1,89 @@
+{
+  "generated_at": "2026-09-21T05:23:51.5915408Z",
+  "files": [
+    {
+      "path": "final-audit.json",
+      "bytes": 4033
+    },
+    {
+      "path": "foul-play-logs\\battle-gen9randombattle-34_JevPlayer 1.log",
+      "bytes": 487881
+    },
+    {
+      "path": "foul-play-logs\\init.log",
+      "bytes": 11204
+    },
+    {
+      "path": "foul-play.pid",
+      "bytes": 10
+    },
+    {
+      "path": "foul-play.stderr.log",
+      "bytes": 36288
+    },
+    {
+      "path": "foul-play.stdout.log",
+      "bytes": 489379
+    },
+    {
+      "path": "jev-events.jsonl",
+      "bytes": 910547
+    },
+    {
+      "path": "jev-request-response.jsonl",
+      "bytes": 339182
+    },
+    {
+      "path": "jev-run-metadata.json",
+      "bytes": 365
+    },
+    {
+      "path": "jev-run.pid",
+      "bytes": 9
+    },
+    {
+      "path": "jev-run.stderr.log",
+      "bytes": 1918
+    },
+    {
+      "path": "jev-run.stdout.log",
+      "bytes": 44
+    },
+    {
+      "path": "process-commands.json",
+      "bytes": 1212
+    },
+    {
+      "path": "process-tree-after-stop.json",
+      "bytes": 1501
+    },
+    {
+      "path": "process-tree-before-stop.json",
+      "bytes": 6909
+    },
+    {
+      "path": "showdown-logs\\errors.txt",
+      "bytes": 6888
+    },
+    {
+      "path": "showdown-logs\\lastbattle.txt",
+      "bytes": 2
+    },
+    {
+      "path": "showdown-server.pid",
+      "bytes": 10
+    },
+    {
+      "path": "showdown-server.stderr.log",
+      "bytes": 5184
+    },
+    {
+      "path": "showdown-server.stdout.log",
+      "bytes": 129
+    },
+    {
+      "path": "stop-condition.json",
+      "bytes": 450
+    }
+  ]
+}

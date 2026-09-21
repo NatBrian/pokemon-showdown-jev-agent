@@ -1,0 +1,86 @@
+{
+  "type": "FOUL_PLAY_EVALUATION_FINAL_AUDIT",
+  "run_date": "2026-09-21",
+  "status": "completed_but_invalid_for_strength_comparison",
+  "series_policy": "exactly_one_three_battle_series",
+  "format": "gen9randombattle",
+  "outcomes": {
+    "requested_battles": 3,
+    "completed_battles": 3,
+    "wins": 3,
+    "losses": 0,
+    "draws": 0,
+    "sample_win_rate": "100% (3/3; not an Elo estimate)",
+    "battle_end_types": ["forfeit", "forfeit", "forfeit"],
+    "forfeit_reason": "FoulPlayEval lost due to inactivity",
+    "turns": [4, 5, 3],
+    "strategic_comparison_valid": false
+  },
+  "versions_and_configuration": {
+    "foul_play_commit": "6c467c081e862fb321adb405355beb41aba8e226",
+    "showdown_commit": "9e317a666d9fd250f36f494778e843141f09bdba",
+    "showdown_package_version": "0.11.11",
+    "showdown_port": 8001,
+    "showdown_local_overrides": ["noguestsecurity=true", "noipchecks=true"],
+    "foul_play_search_time_ms": 30000,
+    "foul_play_search_parallelism": 4,
+    "foul_play_team_preview_search_time_ms": 30000,
+    "foul_play_team_preview_search_parallelism": 4,
+    "foul_play_search_threads": 1,
+    "foul_play_run_count": 3,
+    "foul_play_save_replay": "always"
+  },
+  "jev": {
+    "model": "jev-1.13-free",
+    "endpoint": "https://opencode.ai/zen/v1/systemone",
+    "timeout_seconds": 10.0,
+    "calls": 12,
+    "decisions": 12,
+    "calls_per_decision": 1,
+    "provider_errors": 0,
+    "fallbacks": 0,
+    "illegal_actions": 0,
+    "stale_responses": 0,
+    "response_cost_field": "0",
+    "request_response_records_complete": true
+  },
+  "latency_ms": {
+    "p50": 1250.750,
+    "p95": 1368.744,
+    "p99": 1420.314,
+    "max": 1433.206,
+    "decision_count": 12
+  },
+  "timer_and_process_findings": {
+    "timer_failures": 3,
+    "foul_play_could_not_make_all_decisions_in_timer": true,
+    "evidence": "Foul Play logs show 30000 ms search sampling followed by Showdown inactivity countdowns and forfeits.",
+    "runner_stop_condition_issue": "The runner did not stop ladder(3) after the first Foul Play inactivity failure, so three invalid games were produced. No fourth battle or retry was started.",
+    "showdown_port_8001_stopped_after_run": true,
+    "existing_dashboard_port_8000_touched": false
+  },
+  "audit_artifacts": {
+    "jev_request_response": "jev-request-response.jsonl (12 records; each includes request payload, raw response/error, timestamps, and latency)",
+    "jev_events": "jev-events.jsonl (20 records: 2 setup, 3 battle start, 12 turn decisions, 3 battle end)",
+    "jev_summary": "jev-summary.json",
+    "showdown_replays": "showdown-logs/logs/2026-09/gen9randombattle/2026-09-21/*.log.json (3)",
+    "foul_play_logs": "foul-play-logs/logs (3 battle logs plus init.log)",
+    "showdown_logs": "showdown-logs/logs (11 files)",
+    "process_and_version_records": ["evaluation-config.json", "process-commands.txt", "jev-run-metadata.json"],
+    "setup_correction_logs": "initial-launch-*, second-launch-*, third-attempt-*, fourth-attempt-*",
+    "credential_redaction_check": "No authorization, bearer token, API key, or JEV auth token indicators found in persisted non-source artifacts."
+  },
+  "total_jev_calls_for_this_evaluation_work": {
+    "prior_limited_smoke_audit_calls": 4,
+    "foul_play_series_calls": 12,
+    "combined_calls": 16,
+    "extra_calls_during_setup_corrections": 0
+  },
+  "conclusion": "The Jev production path and audit recording behaved correctly for this run, but the run fails to establish that Jev can compete with Foul Play because Foul Play forfeited by inactivity in all three games.",
+  "limitations": [
+    "Three forfeits are not a meaningful strategic or Elo comparison.",
+    "The selected 30000 ms Foul Play configuration was not timer-safe in this machine/server setup despite being selected as the practical fixed setting before battle 1.",
+    "Foul Play stderr contains Windows CP1252 logging encoding errors; the complete Foul Play battle logs and Showdown replays were preserved.",
+    "No additional paid Jev calls, search-budget escalation, retry series, shadow battle, or PokeChamp run was performed."
+  ]
+}

@@ -43,6 +43,7 @@ from jev_showdown.strategy.fallback import (
     select_deterministic_fallback,
 )
 from jev_showdown.telemetry.events import BattleEventScanner, TurnHistoryTracker
+from jev_showdown.telemetry.serialization import json_safe
 
 _SENSITIVE_RESPONSE_KEYS = {
     "authorization",
@@ -84,6 +85,7 @@ class JevPlayer(Player):
         on_turn_event: Callable[[dict[str, Any]], Any] | None = None,
         on_battle_event: Callable[[dict[str, Any]], Any] | None = None,
         on_battle_frame: Callable[[dict[str, Any]], Any] | None = None,
+        on_telemetry_error: Callable[[dict[str, Any]], Any] | None = None,
         **player_kwargs: Any,
     ) -> None:
         """Initialize the Jev player.
@@ -101,6 +103,8 @@ class JevPlayer(Player):
             telemetry (``BATTLE_START`` / ``BATTLE_END``) dicts.
         :param on_battle_frame: Optional callback invoked with one raw
             protocol frame after it has been filtered to a battle room.
+        :param on_telemetry_error: Optional callback invoked when a telemetry
+            callback fails. This callback is isolated from battle processing.
         :param player_kwargs: Forwarded to poke_env's Player constructor
             (e.g. account_configuration, battle_format, start_listening).
         """
@@ -118,7 +122,11 @@ class JevPlayer(Player):
         self.on_turn_event = on_turn_event
         self.on_battle_event = on_battle_event
         self.on_battle_frame = on_battle_frame
+        self.on_telemetry_error = on_telemetry_error
+        self.telemetry_errors: list[dict[str, Any]] = []
         self._scanners: dict[str, BattleEventScanner] = {}
+        self._history_trackers: dict[str, TurnHistoryTracker] = {}
+        self._default_history_tracker_assigned = False
         self._state_versions: dict[str, int] = {}
 
     # ------------------------------------------------------------ choose_move
@@ -136,6 +144,7 @@ class JevPlayer(Player):
         opponent_responses: dict[str, Any] = {}
         metadata: BattleRequestMetadata | None = None
         expected_fingerprint: DecisionFingerprint | None = None
+        history_tracker = self._history_tracker_for(battle)
         deadline_monotonic = time.monotonic() + float(
             getattr(self.settings, "jev_timeout_seconds", 5.0)
         )
@@ -158,7 +167,7 @@ class JevPlayer(Player):
                 candidates,
                 metadata=metadata,
                 criteria=criteria,
-                recent_history=self.history_tracker.get_recent_events(limit=5),
+                recent_history=history_tracker.get_recent_events(limit=5),
                 beliefs=beliefs,
                 consequences=opponent_responses,
             )
@@ -234,23 +243,75 @@ class JevPlayer(Player):
             )
         val_latency_ms = (time.perf_counter() - t_val_start) * 1000.0
 
-        self._record_turn(
-            battle,
-            current_candidates if "current_candidates" in locals() else candidates,
-            criteria,
-            jev_res,
-            validated,
-            snapshot,
-            val_latency_ms,
-            metadata=metadata,
-            fingerprint=expected_fingerprint,
-            current_fingerprint=(
-                current_fingerprint if "current_fingerprint" in locals() else None
-            ),
-            beliefs=beliefs,
-            opponent_responses=opponent_responses,
-        )
+        try:
+            self._record_turn(
+                battle,
+                current_candidates if "current_candidates" in locals() else candidates,
+                criteria,
+                jev_res,
+                validated,
+                snapshot,
+                val_latency_ms,
+                metadata=metadata,
+                fingerprint=expected_fingerprint,
+                current_fingerprint=(
+                    current_fingerprint if "current_fingerprint" in locals() else None
+                ),
+                beliefs=beliefs,
+                opponent_responses=opponent_responses,
+            )
+        except Exception as exc:  # telemetry must never block action submission
+            self._record_telemetry_error(
+                "turn",
+                {
+                    "type": "TURN_DECISION",
+                    "battle_tag": getattr(battle, "battle_tag", None),
+                },
+                exc,
+            )
         return validated.order
+
+    def _record_telemetry_error(
+        self,
+        channel: str,
+        event: dict[str, Any],
+        error: Exception,
+    ) -> None:
+        normalized = json_safe(event)
+        diagnostic = json_safe(
+            {
+                "type": "TELEMETRY_ERROR",
+                "channel": channel,
+                "event_type": normalized.get("type")
+                if isinstance(normalized, dict)
+                else None,
+                "error": f"{type(error).__name__}: {error}",
+            }
+        )
+        self.telemetry_errors.append(diagnostic)
+        callback = self.on_telemetry_error
+        if callback is None:
+            return
+        try:
+            callback(diagnostic)
+        except Exception:
+            # The diagnostic sink is observability only; never recurse or
+            # interrupt the already-resolved legal action.
+            pass
+
+    def _emit_telemetry(
+        self,
+        callback: Callable[[dict[str, Any]], Any] | None,
+        event: dict[str, Any],
+        channel: str,
+    ) -> None:
+        normalized = json_safe(event)
+        if callback is None:
+            return
+        try:
+            callback(normalized)
+        except Exception as exc:  # telemetry must not affect battle flow
+            self._record_telemetry_error(channel, normalized, exc)
 
     def _record_turn(
         self,
@@ -270,6 +331,7 @@ class JevPlayer(Player):
     ) -> None:
         """Track the resolved turn and dispatch telemetry if a hook is set."""
         turn = self._safe_turn(battle)
+        history_tracker = self._history_tracker_for(battle)
 
         chosen = candidates.get(validated.chosen_id)
         label = chosen.label if chosen is not None else validated.chosen_id
@@ -289,7 +351,7 @@ class JevPlayer(Player):
         else:
             note = f"confidence={jev_res.confidence:.2f}"
 
-        self.history_tracker.add_event(
+        history_tracker.add_event(
             turn=turn,
             actor=actor,
             action=label,
@@ -374,27 +436,24 @@ class JevPlayer(Player):
                 "message": submitted_message,
                 "is_fallback": validated.is_fallback,
             },
-            "recent_history": self.history_tracker.get_recent_events(limit=5),
+            "recent_history": history_tracker.get_recent_events(limit=5),
         }
 
-        if self.on_turn_event is not None:
-            self.on_turn_event(event_data)
+        self._emit_telemetry(self.on_turn_event, event_data, "turn")
 
     # ------------------------------------------------------- battle lifecycle
 
     async def _create_battle(self, split_message: list[str]) -> AbstractBattle:
         battle = await super()._create_battle(split_message)
-        if self.on_battle_event is not None:
-            try:
-                self.on_battle_event(
-                    {
-                        "type": "BATTLE_START",
-                        "battle_tag": battle.battle_tag,
-                        "battle_format": self.settings.battle_format,
-                    }
-                )
-            except Exception:
-                pass
+        self._emit_telemetry(
+            self.on_battle_event,
+            {
+                "type": "BATTLE_START",
+                "battle_tag": battle.battle_tag,
+                "battle_format": self.settings.battle_format,
+            },
+            "battle",
+        )
         return battle
 
     def _battle_finished_callback(self, battle: AbstractBattle) -> None:
@@ -404,47 +463,45 @@ class JevPlayer(Player):
         if scanner is not None:
             for event in scanner.flush():
                 self._merge_scanner_event(tag, event)
-        if self.on_battle_event is not None:
-            try:
-                won = bool(battle.won)
-                players = tuple(battle.players or ())
-                username = battle.player_username
-                if won and username:
-                    winner = username
-                elif players:
-                    winner = next(
-                        (name for name in players if name and name != username), None
-                    )
-                else:
-                    winner = None
-                self.on_battle_event(
-                    {
-                        "type": "BATTLE_END",
-                        "battle_tag": tag,
-                        "battle_format": self.settings.battle_format,
-                        "won": won,
-                        "total_turns": self._safe_turn(battle),
-                        "winner": winner,
-                        "n_won": self.n_won_battles,
-                        "n_finished": self.n_finished_battles,
-                    }
-                )
-            except Exception:
-                pass
+        won = bool(battle.won)
+        players = tuple(battle.players or ())
+        username = battle.player_username
+        if won and username:
+            winner = username
+        elif players:
+            winner = next(
+                (name for name in players if name and name != username), None
+            )
+        else:
+            winner = None
+        self._emit_telemetry(
+            self.on_battle_event,
+            {
+                "type": "BATTLE_END",
+                "battle_tag": tag,
+                "battle_format": self.settings.battle_format,
+                "won": won,
+                "total_turns": self._safe_turn(battle),
+                "winner": winner,
+                "n_won": self.n_won_battles,
+                "n_finished": self.n_finished_battles,
+            },
+            "battle",
+        )
+        self._history_trackers.pop(tag, None)
 
     async def _handle_battle_message(self, split_messages: list[list[str]]) -> None:
         # Feed raw battle lines to the dashboard and event scanner (telemetry
         # only; neither must break battle processing), then hand off to
         # poke_env.
         frame = self._protocol_frame(split_messages)
-        if frame is not None and self.on_battle_frame is not None:
+        if frame is not None:
             tag, lines = frame
-            try:
-                self.on_battle_frame(
-                    {"type": "BATTLE_FRAME", "battle_tag": tag, "lines": lines}
-                )
-            except Exception:
-                pass
+            self._emit_telemetry(
+                self.on_battle_frame,
+                {"type": "BATTLE_FRAME", "battle_tag": tag, "lines": lines},
+                "frame",
+            )
         try:
             self._feed_scanner(split_messages)
         except Exception:
@@ -502,6 +559,7 @@ class JevPlayer(Player):
         ident = event["actor"]
         side = event.get("side", ident[:2])
         name = ident.split(":", 1)[1].strip() if ":" in ident else ident
+        history_tracker = self._history_tracker_for(tag)
 
         battle = self.battles.get(tag)
         role = getattr(battle, "player_role", None) if battle is not None else None
@@ -514,7 +572,7 @@ class JevPlayer(Player):
 
         # Merge into an existing decision card when this is our own action.
         if role == side:
-            for existing in reversed(self.history_tracker.events[-6:]):
+            for existing in reversed(history_tracker.events[-6:]):
                 same_turn = existing.get("turn") == event["turn"]
                 # Species ids are lowercased by poke_env while protocol
                 # idents are capitalized; compare case-insensitively.
@@ -536,7 +594,7 @@ class JevPlayer(Player):
                         existing["fainted"] = True
                     return
 
-        self.history_tracker.add_event(
+        history_tracker.add_event(
             turn=event["turn"],
             actor=actor,
             action=event["action"],
@@ -558,6 +616,22 @@ class JevPlayer(Player):
     def _battle_key(self, battle: AbstractBattle) -> str:
         tag = getattr(battle, "battle_tag", None)
         return tag if isinstance(tag, str) else f"object:{id(battle)}"
+
+    def _history_tracker_for(self, battle_or_tag: AbstractBattle | str) -> TurnHistoryTracker:
+        key = (
+            battle_or_tag
+            if isinstance(battle_or_tag, str)
+            else self._battle_key(battle_or_tag)
+        )
+        tracker = self._history_trackers.get(key)
+        if tracker is None:
+            if not self._default_history_tracker_assigned:
+                tracker = self.history_tracker
+                self._default_history_tracker_assigned = True
+            else:
+                tracker = TurnHistoryTracker()
+            self._history_trackers[key] = tracker
+        return tracker
 
     def _next_state_version(self, battle: AbstractBattle) -> int:
         key = self._battle_key(battle)

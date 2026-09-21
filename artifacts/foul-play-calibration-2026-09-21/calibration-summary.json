@@ -1,0 +1,58 @@
+{
+  "type": "FOUL_PLAY_TIMER_CALIBRATION",
+  "date": "2026-09-21",
+  "purpose": "Find a timer-safe local Foul Play setting before spending Jev calls.",
+  "jev_api_calls": 0,
+  "opponent": "poke-env RandomPlayer",
+  "format": "gen9randombattle",
+  "foul_play_commit": "6c467c081e862fb321adb405355beb41aba8e226",
+  "showdown_commit": "9e317a666d9fd250f36f494778e843141f09bdba",
+  "attempts": [
+    {
+      "attempt": 1,
+      "search_time_ms": 15000,
+      "username": "FoulPlayCalibration",
+      "result": "setup_failure",
+      "reason": "Showdown rejected the username because it exceeded the 18-character limit; Foul Play remained Guest 1 and waited for an unmatched identity.",
+      "battle_replay": "replay-12.log.json",
+      "outcome": "RandomCalibration won by Foul Play inactivity before a Foul decision"
+    },
+    {
+      "attempt": 2,
+      "search_time_ms": 15000,
+      "username": "FoulCalib",
+      "result": "timer_failure",
+      "battle_replay": "replay-13.log.json",
+      "outcome": "RandomCalibration won by Foul Play inactivity when the remaining timer reached 15 seconds",
+      "evidence": "Foul Play submitted many legal decisions, then its final 4-state 15000 ms search reached the timer boundary."
+    },
+    {
+      "attempt": 3,
+      "search_time_ms": 10000,
+      "username": "Foul10k",
+      "result": "pass",
+      "battle_replay": "replay-14.log.json",
+      "outcome": "Foul10k won normally 3-0 against RandomCalibration in 14 turns",
+      "timer_failures": 0,
+      "protocol_errors": 0
+    }
+  ],
+  "selected_local_benchmark_configuration": {
+    "search_time_ms": 10000,
+    "search_parallelism": 4,
+    "team_preview_search_time_ms": 10000,
+    "team_preview_search_parallelism": 4,
+    "search_threads": 1,
+    "run_count": 3,
+    "reason": "The 10000 ms setting completed a full normal battle with a timer margin; 15000 ms failed at the late-battle timer boundary."
+  },
+  "artifacts": {
+    "root": "artifacts/foul-play-calibration-2026-09-21",
+    "attempt_1": "attempt-1-username-too-long",
+    "attempt_2": "attempt-2-valid-username",
+    "attempt_3": "attempt-3-10-second",
+    "replays": ["replay-12.log.json", "replay-13.log.json", "replay-14.log.json"],
+    "summary": "calibration-summary.json"
+  },
+  "conclusion": "Use 10000 ms for the corrected three-battle Jev-versus-Foul-Play evaluation. The previous 30000 ms setting and the intermediate 15000 ms setting are not timer-safe on this local setup."
+}

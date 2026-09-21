@@ -1,0 +1,33 @@
+
+[1789936992433] CRASH: Error: IPC channel is already disconnected
+    at ChildProcess.target.disconnect (node:internal/child_process:926:26)
+    at QueryProcessWrapper.destroy (C:\Users\Admin\Documents\Github\_bot-research\pokemon-showdown\lib\process-manager.ts:205:16)
+    at QueryProcessWrapper.release (C:\Users\Admin\Documents\Github\_bot-research\pokemon-showdown\lib\process-manager.ts:191:9)
+    at QueryProcessManager.releaseCrashed (C:\Users\Admin\Documents\Github\_bot-research\pokemon-showdown\lib\process-manager.ts:457:16)
+    at ChildProcess.<anonymous> (C:\Users\Admin\Documents\Github\_bot-research\pokemon-showdown\lib\process-manager.ts:514:47)
+    at ChildProcess.emit (node:events:509:28)
+    at ChildProcess.emit (node:domain:489:12)
+    at finish (node:internal/child_process:956:14)
+    at processTicksAndRejections (node:internal/process/task_queues:85:11)
+
+
+[1789936992506] CRASH: Error: IPC channel is already disconnected
+    at ChildProcess.target.disconnect (node:internal/child_process:926:26)
+    at QueryProcessWrapper.destroy (C:\Users\Admin\Documents\Github\_bot-research\pokemon-showdown\lib\process-manager.ts:205:16)
+    at QueryProcessWrapper.release (C:\Users\Admin\Documents\Github\_bot-research\pokemon-showdown\lib\process-manager.ts:191:9)
+    at QueryProcessManager.releaseCrashed (C:\Users\Admin\Documents\Github\_bot-research\pokemon-showdown\lib\process-manager.ts:457:16)
+    at ChildProcess.<anonymous> (C:\Users\Admin\Documents\Github\_bot-research\pokemon-showdown\lib\process-manager.ts:514:47)
+    at ChildProcess.emit (node:events:509:28)
+    at ChildProcess.emit (node:domain:489:12)
+    at finish (node:internal/child_process:956:14)
+    at processTicksAndRejections (node:internal/process/task_queues:85:11)
+
+
+[1789936992546] CRASH: Error: Process room-battle.js 19292 crashed and had to be restarted
+    at StreamProcessManager.releaseCrashed (C:\Users\Admin\Documents\Github\_bot-research\pokemon-showdown\lib\process-manager.ts:473:4)
+    at ChildProcess.<anonymous> (C:\Users\Admin\Documents\Github\_bot-research\pokemon-showdown\lib\process-manager.ts:514:47)
+    at ChildProcess.emit (node:events:509:28)
+    at ChildProcess.emit (node:domain:489:12)
+    at finish (node:internal/child_process:956:14)
+    at processTicksAndRejections (node:internal/process/task_queues:85:11)
+

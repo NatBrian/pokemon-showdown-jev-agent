@@ -7,6 +7,7 @@ from jev_showdown.battle.beliefs import build_hidden_information_ledger
 from jev_showdown.battle.candidates import CandidateAction
 from jev_showdown.battle.contracts import BattleRequestMetadata, Fact
 from jev_showdown.battle.state import extract_request_metadata
+from jev_showdown.telemetry.serialization import json_safe as _json_safe
 
 
 def _enum_name(value: Any) -> str | None:
@@ -35,17 +36,6 @@ def _effect_names(values: Any) -> list[str]:
     if not isinstance(values, (list, set, tuple)):
         return []
     return [name for value in values if (name := (_enum_name(value) or str(value)))]
-
-
-def _json_safe(value: Any) -> Any:
-    if value is None or isinstance(value, (bool, int, float, str)):
-        return value
-    if isinstance(value, Mapping):
-        return {str(key): _json_safe(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple, set)):
-        return [_json_safe(item) for item in value]
-    name = _enum_name(value)
-    return name if name is not None else str(value)
 
 
 def _move_view(mon: Any) -> list[dict[str, Any]]:

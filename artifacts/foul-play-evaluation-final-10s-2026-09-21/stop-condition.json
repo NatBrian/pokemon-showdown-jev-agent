@@ -1,0 +1,10 @@
+﻿{
+    "type":  "EVALUATION_STOP_CONDITION",
+    "stopped_at":  "2026-09-21T05:23:51.5915408Z",
+    "reason":  "Jev response could not be validated: probability sum must equal 1.0; deterministic fallback was used.",
+    "battle_tag":  "battle-gen9randombattle-34",
+    "turn":  2,
+    "jev_api_call":  2,
+    "fallback_action":  "switch Mienshao",
+    "policy":  "stop immediately; no retry, no additional battle, no budget escalation"
+}

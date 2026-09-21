@@ -1,0 +1,178 @@
+2026-09-21 04:32:14,597 - JevPlayer 1 - ERROR - Unhandled exception raised while handling message:
+>battle-gen9randombattle-23
+|request|{"active":[{"moves":[{"move":"Icicle Crash","id":"iciclecrash","pp":16,"maxpp":16,"target":"normal","disabled":true},{"move":"Knock Off","id":"knockoff","pp":32,"maxpp":32,"target":"normal","disabled":true},{"move":"Earthquake","id":"earthquake","pp":14,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Ice Shard","id":"iceshard","pp":48,"maxpp":48,"target":"normal","disabled":true}]}],"side":{"name":"JevPlayer 1","id":"p2","pokemon":[{"ident":"p2: Mamoswine","details":"Mamoswine, L81, F","condition":"137/311","active":true,"stats":{"atk":257,"def":176,"spa":160,"spd":144,"spe":176},"moves":["iciclecrash","knockoff","earthquake","iceshard"],"baseAbility":"thickfat","item":"choiceband","pokeball":"pokeball","ability":"thickfat","commanding":false,"reviving":false,"teraType":"Ice","terastallized":"Ice"},{"ident":"p2: Sinistcha","details":"Sinistcha, L83","condition":"254/254","active":false,"stats":{"atk":104,"def":224,"spa":249,"spd":180,"spe":164},"moves":["matchagotcha","strengthsap","calmmind","shadowball"],"baseAbility":"heatproof","item":"leftovers","pokeball":"pokeball","ability":"heatproof","commanding":false,"reviving":false,"teraType":"Steel","terastallized":""},{"ident":"p2: Sawsbuck","details":"Sawsbuck-Autumn, L88, M","condition":"284/284","active":false,"stats":{"atk":226,"def":173,"spa":156,"spd":173,"spe":217},"moves":["doubleedge","swordsdance","hornleech","highhorsepower"],"baseAbility":"sapsipper","item":"lifeorb","pokeball":"pokeball","ability":"sapsipper","commanding":false,"reviving":false,"teraType":"Ground","terastallized":""},{"ident":"p2: Altaria","details":"Altaria, L89, F","condition":"278/278","active":false,"stats":{"atk":175,"def":211,"spa":175,"spd":238,"spe":193},"moves":["roost","bravebird","dragondance","earthquake"],"baseAbility":"naturalcure","item":"heavydutyboots","pokeball":"pokeball","ability":"naturalcure","commanding":false,"reviving":false,"teraType":"Ground","terastallized":""},{"ident":"p2: Tauros","details":"Tauros, L82, M","condition":"257/257","active":false,"stats":{"atk":211,"def":203,"spa":113,"spd":162,"spe":228},"moves":["closecombat","throatchop","bodyslam","earthquake"],"baseAbility":"sheerforce","item":"lifeorb","pokeball":"pokeball","ability":"sheerforce","commanding":false,"reviving":false,"teraType":"Fighting","terastallized":""},{"ident":"p2: Gengar","details":"Gengar, L81, M","condition":"230/230","active":false,"stats":{"atk":110,"def":144,"spa":257,"spd":168,"spe":225},"moves":["sludgewave","focusblast","shadowball","nastyplot"],"baseAbility":"cursedbody","item":"lifeorb","pokeball":"pokeball","ability":"cursedbody","commanding":false,"reviving":false,"teraType":"Ghost","terastallized":""}]},"rqid":9}
+Traceback (most recent call last):
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\ps_client\ps_client.py", line 174, in _handle_message
+    await self._handle_battle_message(split_messages)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\ps_client\ps_client.py", line 114, in _handle_battle_message
+    await self._on_battle_message(split_messages)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\src\jev_showdown\agent.py", line 452, in _handle_battle_message
+    await super()._handle_battle_message(split_messages)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\player\player.py", line 339, in _handle_battle_message
+    await self._handle_battle_request(battle)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\player\player.py", line 417, in _handle_battle_request
+    choice = await choice
+             ^^^^^^^^^^^^
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\src\jev_showdown\agent.py", line 237, in choose_move
+    self._record_turn(
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\src\jev_showdown\agent.py", line 381, in _record_turn
+    self.on_turn_event(event_data)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\artifacts\foul-play-evaluation-2026-09-21\run_jev_agent.py", line 166, in record_event
+    append_jsonl(EVENT_PATH, event)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\artifacts\foul-play-evaluation-2026-09-21\run_jev_agent.py", line 77, in append_jsonl
+    json.dump(redact(value), handle, ensure_ascii=False, sort_keys=True)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 179, in dump
+    for chunk in iterable:
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 326, in _iterencode_list
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type PokemonType is not JSON serializable
+Task exception was never retrieved
+future: <Task finished name='Task-35' coro=<PSClient._handle_message() done, defined at C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\ps_client\ps_client.py:156> exception=TypeError('Object of type PokemonType is not JSON serializable')>
+Traceback (most recent call last):
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\ps_client\ps_client.py", line 231, in _handle_message
+    raise exception
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\ps_client\ps_client.py", line 174, in _handle_message
+    await self._handle_battle_message(split_messages)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\ps_client\ps_client.py", line 114, in _handle_battle_message
+    await self._on_battle_message(split_messages)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\src\jev_showdown\agent.py", line 452, in _handle_battle_message
+    await super()._handle_battle_message(split_messages)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\player\player.py", line 339, in _handle_battle_message
+    await self._handle_battle_request(battle)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\player\player.py", line 417, in _handle_battle_request
+    choice = await choice
+             ^^^^^^^^^^^^
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\src\jev_showdown\agent.py", line 237, in choose_move
+    self._record_turn(
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\src\jev_showdown\agent.py", line 381, in _record_turn
+    self.on_turn_event(event_data)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\artifacts\foul-play-evaluation-2026-09-21\run_jev_agent.py", line 166, in record_event
+    append_jsonl(EVENT_PATH, event)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\artifacts\foul-play-evaluation-2026-09-21\run_jev_agent.py", line 77, in append_jsonl
+    json.dump(redact(value), handle, ensure_ascii=False, sort_keys=True)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 179, in dump
+    for chunk in iterable:
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 326, in _iterencode_list
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type PokemonType is not JSON serializable
+2026-09-21 04:40:19,572 - JevPlayer 1 - ERROR - Unhandled exception raised while handling message:
+>battle-gen9randombattle-24
+|request|{"forceSwitch":[true],"side":{"name":"JevPlayer 1","id":"p2","pokemon":[{"ident":"p2: Pecharunt","details":"Pecharunt, L77","condition":"0 fnt","active":true,"stats":{"atk":140,"def":291,"spa":180,"spd":180,"spe":180},"moves":["partingshot","recover","malignantchain","shadowball"],"baseAbility":"poisonpuppeteer","item":"","pokeball":"pokeball","ability":"poisonpuppeteer","commanding":false,"reviving":false,"teraType":"Dark","terastallized":""},{"ident":"p2: Sawsbuck","details":"Sawsbuck, L88, F","condition":"0 fnt","active":false,"stats":{"atk":226,"def":173,"spa":156,"spd":173,"spe":217},"moves":["highhorsepower","swordsdance","doubleedge","hornleech"],"baseAbility":"sapsipper","item":"lifeorb","pokeball":"pokeball","ability":"sapsipper","commanding":false,"reviving":false,"teraType":"Normal","terastallized":""},{"ident":"p2: Klefki","details":"Klefki, L84, M","condition":"233/233","active":false,"stats":{"atk":139,"def":201,"spa":183,"spd":194,"spe":174},"moves":["foulplay","spikes","thunderwave","dazzlinggleam"],"baseAbility":"prankster","item":"leftovers","pokeball":"pokeball","ability":"prankster","commanding":false,"reviving":false,"teraType":"Water","terastallized":""},{"ident":"p2: Gliscor","details":"Gliscor, L76, M","condition":"239/239","active":false,"stats":{"atk":188,"def":234,"spa":112,"spd":158,"spe":188},"moves":["protect","earthquake","knockoff","toxic"],"baseAbility":"poisonheal","item":"toxicorb","pokeball":"pokeball","ability":"poisonheal","commanding":false,"reviving":false,"teraType":"Water","terastallized":""},{"ident":"p2: Greedent","details":"Greedent, L86, M","condition":"347/347","active":false,"stats":{"atk":213,"def":213,"spa":144,"spd":178,"spe":84},"moves":["earthquake","bodyslam","swordsdance","knockoff"],"baseAbility":"cheekpouch","item":"sitrusberry","pokeball":"pokeball","ability":"cheekpouch","commanding":false,"reviving":false,"teraType":"Ghost","terastallized":""},{"ident":"p2: Piloswine","details":"Piloswine, L85, M","condition":"0 fnt","active":false,"stats":{"atk":219,"def":185,"spa":151,"spd":151,"spe":134},"moves":["iciclecrash","stealthrock","earthquake","iceshard"],"baseAbility":"thickfat","item":"","pokeball":"pokeball","ability":"thickfat","commanding":false,"reviving":false,"teraType":"Poison","terastallized":""}]},"noCancel":true,"rqid":39}
+Traceback (most recent call last):
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\ps_client\ps_client.py", line 174, in _handle_message
+    await self._handle_battle_message(split_messages)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\ps_client\ps_client.py", line 114, in _handle_battle_message
+    await self._on_battle_message(split_messages)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\src\jev_showdown\agent.py", line 452, in _handle_battle_message
+    await super()._handle_battle_message(split_messages)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\player\player.py", line 339, in _handle_battle_message
+    await self._handle_battle_request(battle)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\player\player.py", line 417, in _handle_battle_request
+    choice = await choice
+             ^^^^^^^^^^^^
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\src\jev_showdown\agent.py", line 237, in choose_move
+    self._record_turn(
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\src\jev_showdown\agent.py", line 381, in _record_turn
+    self.on_turn_event(event_data)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\artifacts\foul-play-evaluation-2026-09-21\run_jev_agent.py", line 166, in record_event
+    append_jsonl(EVENT_PATH, event)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\artifacts\foul-play-evaluation-2026-09-21\run_jev_agent.py", line 77, in append_jsonl
+    json.dump(redact(value), handle, ensure_ascii=False, sort_keys=True)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 179, in dump
+    for chunk in iterable:
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 326, in _iterencode_list
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type PokemonType is not JSON serializable
+Task exception was never retrieved
+future: <Task finished name='Task-114' coro=<PSClient._handle_message() done, defined at C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\ps_client\ps_client.py:156> exception=TypeError('Object of type PokemonType is not JSON serializable')>
+Traceback (most recent call last):
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\ps_client\ps_client.py", line 231, in _handle_message
+    raise exception
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\ps_client\ps_client.py", line 174, in _handle_message
+    await self._handle_battle_message(split_messages)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\ps_client\ps_client.py", line 114, in _handle_battle_message
+    await self._on_battle_message(split_messages)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\src\jev_showdown\agent.py", line 452, in _handle_battle_message
+    await super()._handle_battle_message(split_messages)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\player\player.py", line 339, in _handle_battle_message
+    await self._handle_battle_request(battle)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\player\player.py", line 417, in _handle_battle_request
+    choice = await choice
+             ^^^^^^^^^^^^
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\src\jev_showdown\agent.py", line 237, in choose_move
+    self._record_turn(
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\src\jev_showdown\agent.py", line 381, in _record_turn
+    self.on_turn_event(event_data)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\artifacts\foul-play-evaluation-2026-09-21\run_jev_agent.py", line 166, in record_event
+    append_jsonl(EVENT_PATH, event)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\artifacts\foul-play-evaluation-2026-09-21\run_jev_agent.py", line 77, in append_jsonl
+    json.dump(redact(value), handle, ensure_ascii=False, sort_keys=True)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 179, in dump
+    for chunk in iterable:
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 326, in _iterencode_list
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type PokemonType is not JSON serializable

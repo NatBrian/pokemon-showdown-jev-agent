@@ -1,0 +1,16 @@
+2026-09-21 03:22:35,609 - JevPlayer 1 - ERROR - server rejected WebSocket connection: HTTP 403
+Traceback (most recent call last):
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\poke_env\ps_client\ps_client.py", line 250, in listen
+    async with ws.connect(
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\websockets\asyncio\client.py", line 601, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\websockets\asyncio\client.py", line 557, in __await_impl__
+    await self.connection.handshake(
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\websockets\asyncio\client.py", line 115, in handshake
+    raise self.protocol.handshake_exc
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\websockets\client.py", line 327, in parse
+    self.process_response(response)
+  File "C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\.venv\Lib\site-packages\websockets\client.py", line 144, in process_response
+    raise InvalidStatus(response)
+websockets.exceptions.InvalidStatus: server rejected WebSocket connection: HTTP 403

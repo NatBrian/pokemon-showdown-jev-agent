@@ -2,13 +2,14 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from poke_env.battle import Move, Pokemon
+from poke_env.battle import Move, Pokemon, PokemonType
 from poke_env.player import Player
 from poke_env.player.battle_order import BattleOrder, SingleBattleOrder
 
 from jev_showdown.agent import JevPlayer
 from jev_showdown.config import Settings
 from jev_showdown.decision.protocol import JevDecisionResponse
+from jev_showdown.telemetry.serialization import json_safe
 
 
 def _type_obj(name: str):
@@ -142,7 +143,7 @@ async def test_choose_move_orchestrates_jev_turn_loop():
     assert event["jev"]["confidence"] == 0.91
     assert event["jev"]["error"] is None
     assert event["jev_request"]["model"] == "jev-1.13-free"
-    assert event["jev_request"]["state"] == state
+    assert event["jev_request"]["state"] == json_safe(state)
     assert event["jev_request"]["questions"]["action"]["criteria"] == criteria
     assert event["jev_response"]["choice"] == "move_earthquake"
     assert "secret-token" not in str(event["jev_response"])
@@ -173,6 +174,76 @@ async def test_choose_move_orchestrates_jev_turn_loop():
     # Three turns tracked end-to-end
     assert len(player.history_tracker.events) == 3
     assert mock_client.evaluate_decision.await_count == 3
+
+
+@pytest.mark.asyncio
+async def test_turn_telemetry_is_safe_and_recorder_failure_cannot_block_action():
+    response = JevDecisionResponse(
+        model="jev-1.13-free",
+        choice="move_earthquake",
+        confidence=0.9,
+        probabilities={"move_earthquake": 1.0},
+    )
+    mock_client = MagicMock()
+    mock_client.evaluate_decision = AsyncMock(return_value=response)
+
+    received: list[dict] = []
+    telemetry_errors: list[dict] = []
+
+    def failing_recorder(event: dict) -> None:
+        received.append(event)
+        import json
+
+        json.dumps(event, allow_nan=False)
+        raise OSError("audit sink unavailable")
+
+    player = JevPlayer(
+        settings=_make_settings(),
+        jev_client=mock_client,
+        on_turn_event=failing_recorder,
+        on_telemetry_error=telemetry_errors.append,
+        start_listening=False,
+    )
+    battle = _make_battle(turn=3)
+    battle.active_pokemon.type_1 = PokemonType.FIRE
+    battle.opponent_active_pokemon.type_1 = PokemonType.WATER
+    battle.opponent_active_pokemon.tera_type = PokemonType.GRASS
+
+    order = await player.choose_move(battle)
+
+    assert isinstance(order, BattleOrder)
+    assert received[0]["beliefs"]["opponent_slots"][0]["tera_type"]["value"] == "GRASS"
+    assert telemetry_errors[0]["type"] == "TELEMETRY_ERROR"
+    assert telemetry_errors[0]["channel"] == "turn"
+    assert "audit sink unavailable" in telemetry_errors[0]["error"]
+    assert player.telemetry_errors == telemetry_errors
+
+
+@pytest.mark.asyncio
+async def test_invalid_probability_response_uses_legal_fallback_and_is_recorded():
+    response = JevDecisionResponse(
+        model="jev-1.13-free",
+        choice=None,
+        confidence=0.0,
+        error="Invalid Jev Choice response: probability sum must equal 1.0",
+    )
+    mock_client = MagicMock()
+    mock_client.evaluate_decision = AsyncMock(return_value=response)
+    events: list[dict] = []
+    player = JevPlayer(
+        settings=_make_settings(),
+        jev_client=mock_client,
+        on_turn_event=events.append,
+        start_listening=False,
+    )
+
+    order = await player.choose_move(_make_battle(turn=4))
+
+    assert isinstance(order, BattleOrder)
+    assert events[0]["is_fallback"] is True
+    assert events[0]["chosen_id"] == "move_earthquake"
+    assert "probability sum" in events[0]["fallback_reason"]
+    assert events[0]["jev"]["error"] == response.error
 
 
 @pytest.mark.asyncio
@@ -262,6 +333,41 @@ async def test_battle_finished_loses_reports_lose():
     assert battle_events[0]["type"] == "BATTLE_END"
     assert battle_events[0]["won"] is False
     assert battle_events[0]["winner"] == "Opponent 9"
+
+
+@pytest.mark.asyncio
+async def test_recent_history_isolated_between_battles():
+    response = JevDecisionResponse(
+        model="jev-1.13-free",
+        choice="move_earthquake",
+        confidence=1.0,
+        probabilities={"move_earthquake": 1.0},
+    )
+    mock_client = MagicMock()
+    mock_client.evaluate_decision = AsyncMock(return_value=response)
+    player = JevPlayer(
+        settings=_make_settings(),
+        jev_client=mock_client,
+        start_listening=False,
+    )
+
+    battle_a = _make_battle(turn=1)
+    battle_a.battle_tag = "battle-gen9randombattle-a"
+    battle_a.won = False
+    battle_a.players = ("JevPlayer 1", "Opponent A")
+    battle_a.player_username = "JevPlayer 1"
+    player._battles[battle_a.battle_tag] = battle_a
+    await player.choose_move(battle_a)
+    player._battle_finished_callback(battle_a)
+    assert battle_a.battle_tag not in player._history_trackers
+
+    battle_b = _make_battle(turn=1)
+    battle_b.battle_tag = "battle-gen9randombattle-b"
+    player._battles[battle_b.battle_tag] = battle_b
+    await player.choose_move(battle_b)
+
+    second_state = mock_client.evaluate_decision.await_args_list[1].kwargs["state"]
+    assert second_state["history"] == []
 
 
 @pytest.mark.asyncio

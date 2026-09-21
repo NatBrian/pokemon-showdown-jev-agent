@@ -40,6 +40,27 @@ def _statuses(published: list[dict]) -> list[str]:
     return [m["status"] for m in published if m.get("type") == "STATUS_UPDATE"]
 
 
+def test_orchestrator_publishes_telemetry_errors():
+    manager, published = _capturing_manager()
+    orchestrator = BattleOrchestrator(_make_settings(), manager=manager)
+
+    orchestrator._on_telemetry_error(
+        {
+            "type": "TELEMETRY_ERROR",
+            "channel": "turn",
+            "error": "audit sink unavailable",
+        }
+    )
+
+    assert published == [
+        {
+            "type": "TELEMETRY_ERROR",
+            "channel": "turn",
+            "error": "audit sink unavailable",
+        }
+    ]
+
+
 class _TrueFlag:
     def is_set(self) -> bool:
         return True

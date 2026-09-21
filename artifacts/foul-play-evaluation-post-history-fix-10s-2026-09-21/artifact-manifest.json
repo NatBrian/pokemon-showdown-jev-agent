@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-09-21T07:35:12.180688Z",
+  "files": [
+    "evaluation-config.json",
+    "process-commands.json",
+    "jev-run-metadata.json",
+    "jev-run.stdout.log",
+    "jev-run.stderr.log",
+    "jev-summary.json",
+    "jev-request-response.jsonl",
+    "jev-events.jsonl",
+    "foul-play.stdout.log",
+    "foul-play.stderr.log",
+    "showdown-server.stdout.log",
+    "showdown-server.stderr.log",
+    "process-tree-before-stop.json",
+    "process-tree-after-stop.json",
+    "stop-condition.json",
+    "final-audit.json",
+    "artifact-manifest.json"
+  ],
+  "credential_redaction_scan": {"leaks_found": 0},
+  "jsonl_records": {"jev_request_response": 77, "jev_events": 84}
+}

@@ -3,6 +3,10 @@ import math
 from collections.abc import Mapping
 from typing import Any
 
+
+PROBABILITY_SUM_TOLERANCE = 0.01
+PROBABILITY_SUM_NUMERIC_EPSILON = 1e-12
+
 @dataclass(frozen=True)
 class JevDecisionResponse:
     model: str
@@ -73,7 +77,18 @@ def validate_jev_choice(
             raise JevChoiceValidationError(
                 "probability map contains unknown criteria IDs: " + ", ".join(extra)
             )
-        if abs(sum(probabilities.values()) - 1.0) > 1e-6:
+        total = sum(probabilities.values())
+        if total <= 0.0:
+            raise JevChoiceValidationError("probability sum must be positive")
+        # Jev can round a valid probability vector to two decimals, as in the
+        # observed 0.99 total. Keep the tolerance narrow and normalize only
+        # that small rounding discrepancy.
+        if abs(total - 1.0) > (
+            PROBABILITY_SUM_TOLERANCE + PROBABILITY_SUM_NUMERIC_EPSILON
+        ):
             raise JevChoiceValidationError("probability sum must equal 1.0")
+        probabilities = {
+            key: value / total for key, value in probabilities.items()
+        }
 
     return choice, float(confidence), probabilities

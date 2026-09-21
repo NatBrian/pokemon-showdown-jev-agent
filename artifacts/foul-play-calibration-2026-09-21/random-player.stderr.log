@@ -1,0 +1,3 @@
+C:\Users\Admin\Documents\Github\autonomous-pokemon-showdown-jev-agent\artifacts\foul-play-calibration-2026-09-21\run_random_player_local.py:33: RuntimeWarning: coroutine 'PSClient.stop_listening' was never awaited
+  player.ps_client.stop_listening()
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback

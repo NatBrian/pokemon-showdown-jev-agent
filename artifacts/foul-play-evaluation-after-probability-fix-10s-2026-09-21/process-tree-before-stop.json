@@ -1,0 +1,68 @@
+﻿[
+    {
+        "ProcessId":  10004,
+        "ParentProcessId":  10420,
+        "Name":  "node.exe",
+        "CommandLine":  "\"C:\\Program Files\\nodejs\\node.exe\" pokemon-showdown start --skip-build --no-security 8001 "
+    },
+    {
+        "ProcessId":  22228,
+        "ParentProcessId":  10004,
+        "Name":  "conhost.exe",
+        "CommandLine":  "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4"
+    },
+    {
+        "ProcessId":  6992,
+        "ParentProcessId":  10004,
+        "Name":  "node.exe",
+        "CommandLine":  "\"C:\\Program Files\\nodejs\\node.exe\" C:\\Users\\Admin\\Documents\\Github\\_bot-research\\pokemon-showdown\\dist\\server\\sockets.js start --skip-build --no-security 8001"
+    },
+    {
+        "ProcessId":  5080,
+        "ParentProcessId":  10004,
+        "Name":  "node.exe",
+        "CommandLine":  "\"C:\\Program Files\\nodejs\\node.exe\" C:\\Users\\Admin\\Documents\\Github\\_bot-research\\pokemon-showdown\\dist\\server\\room-battle.js"
+    },
+    {
+        "ProcessId":  6952,
+        "ParentProcessId":  10004,
+        "Name":  "node.exe",
+        "CommandLine":  "\"C:\\Program Files\\nodejs\\node.exe\" C:\\Users\\Admin\\Documents\\Github\\_bot-research\\pokemon-showdown\\dist\\server\\verifier.js"
+    },
+    {
+        "ProcessId":  16576,
+        "ParentProcessId":  10004,
+        "Name":  "node.exe",
+        "CommandLine":  "\"C:\\Program Files\\nodejs\\node.exe\" C:\\Users\\Admin\\Documents\\Github\\_bot-research\\pokemon-showdown\\dist\\server\\team-validator-async.js"
+    },
+    {
+        "ProcessId":  24424,
+        "ParentProcessId":  10004,
+        "Name":  "node.exe",
+        "CommandLine":  "\"C:\\Program Files\\nodejs\\node.exe\" C:\\Users\\Admin\\Documents\\Github\\_bot-research\\pokemon-showdown\\dist\\server\\friends.js"
+    },
+    {
+        "ProcessId":  15792,
+        "ParentProcessId":  10004,
+        "Name":  "node.exe",
+        "CommandLine":  "\"C:\\Program Files\\nodejs\\node.exe\" C:\\Users\\Admin\\Documents\\Github\\_bot-research\\pokemon-showdown\\dist\\server\\artemis\\local.js"
+    },
+    {
+        "ProcessId":  13928,
+        "ParentProcessId":  10004,
+        "Name":  "node.exe",
+        "CommandLine":  "\"C:\\Program Files\\nodejs\\node.exe\" C:\\Users\\Admin\\Documents\\Github\\_bot-research\\pokemon-showdown\\dist\\server\\artemis\\remote.js"
+    },
+    {
+        "ProcessId":  2072,
+        "ParentProcessId":  10004,
+        "Name":  "node.exe",
+        "CommandLine":  "\"C:\\Program Files\\nodejs\\node.exe\" C:\\Users\\Admin\\Documents\\Github\\_bot-research\\pokemon-showdown\\dist\\server\\chat-plugins\\battlesearch.js"
+    },
+    {
+        "ProcessId":  20744,
+        "ParentProcessId":  10004,
+        "Name":  "node.exe",
+        "CommandLine":  "\"C:\\Program Files\\nodejs\\node.exe\" C:\\Users\\Admin\\Documents\\Github\\_bot-research\\pokemon-showdown\\dist\\server\\chat-plugins\\datasearch.js"
+    }
+]

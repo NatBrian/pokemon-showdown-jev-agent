@@ -1,0 +1,1 @@
+﻿{"battle_started": false, "duration_ms": 14931.04549999407, "errors": [], "finished_at": "2026-09-20T19:18:40.722722+00:00", "foul_play_login": true, "jev_api_calls": 0, "jev_login": true, "showdown_server_url": "ws://localhost:8001/showdown/websocket", "started_at": "2026-09-20T19:18:25.793447+00:00", "type": "CONNECTION_SMOKE"}

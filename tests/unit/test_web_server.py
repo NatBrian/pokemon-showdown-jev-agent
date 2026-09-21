@@ -94,13 +94,37 @@ def test_websocket_replays_battle_frames_to_new_client(test_app):
         )
 
         with client.websocket_connect("/ws") as ws:
+            initial = ws.receive_json()
             replay = ws.receive_json()
 
+    assert initial["type"] == "DASHBOARD_STATE"
     assert replay == {
         "type": "BATTLE_REPLAY",
         "battle_tag": "battle-gen9randombattle-1",
         "frames": [["|turn|1"]],
     }
+
+
+@pytest.mark.asyncio
+async def test_connection_manager_does_not_replay_frames_without_matching_dashboard_battle(test_app):
+    class FakeWebSocket:
+        def __init__(self):
+            self.messages = []
+
+        async def accept(self):
+            return None
+
+        async def send_json(self, message):
+            self.messages.append(message)
+
+    manager = test_app.state.manager
+    manager._battle_frames.start("stale-battle")
+    manager._battle_frames.append("stale-battle", ["|turn|9"])
+    websocket = FakeWebSocket()
+
+    await manager.connect(websocket)
+
+    assert [message["type"] for message in websocket.messages] == ["DASHBOARD_STATE"]
 
 
 def test_connection_manager_normalizes_empty_and_malformed_frame_lines(test_app):

@@ -211,16 +211,35 @@ class ConnectionManager:
         """Accept the connection and register it as active."""
         await websocket.accept()
         self.active_connections.append(websocket)
-        replay = self._battle_frames.replay()
-        if replay is not None:
-            try:
-                await websocket.send_json(replay)
-            except Exception:
-                self.disconnect(websocket)
+        snapshot = self._dashboard.snapshot_message()
         try:
-            await websocket.send_json(self._dashboard.snapshot_message())
+            # Establish the authoritative dashboard state before replaying
+            # raw battle frames. A stale frame buffer must never paint an old
+            # battle over the idle dashboard after a reconnect.
+            await websocket.send_json(snapshot)
+            replay = self._battle_frames.replay()
+            if self._replay_matches_snapshot(replay, snapshot):
+                await websocket.send_json(replay)
         except Exception:
             self.disconnect(websocket)
+
+    @staticmethod
+    def _replay_matches_snapshot(
+        replay: dict[str, Any] | None, snapshot: dict[str, Any]
+    ) -> bool:
+        """Only replay frames belonging to the dashboard's current battle."""
+        if replay is None:
+            return False
+        state = snapshot.get("state")
+        if not isinstance(state, dict):
+            return False
+        battle = state.get("battle")
+        if not isinstance(battle, dict):
+            return False
+        return (
+            battle.get("battle_tag") == replay.get("battle_tag")
+            and battle.get("state") in {"active", "complete"}
+        )
 
     def disconnect(self, websocket: WebSocket) -> None:
         """Remove a client from the active set (idempotent)."""

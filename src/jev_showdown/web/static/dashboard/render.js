@@ -68,11 +68,25 @@ function renderObserved(turn) {
 function renderObservedCompact(turn) {
   const snapshot = turn?.harness?.snapshot || {};
   const request = turn?.harness?.request_metadata || {};
+  const selfSlots = snapshot.self?.team?.length;
+  const opponentSlots = snapshot.opponent?.team_slots || [];
+  const revealed = opponentSlots.filter((slot) => slot && slot.revealed !== false && slot.species).length;
+  const unknown = opponentSlots.filter((slot) => slot && slot.revealed === false).length;
+  const opponentSlotsText = opponentSlots.length ? `${revealed} revealed / ${unknown} unknown` : "Unavailable";
   const actions = turn?.harness?.legal_actions || [];
   const rows = [
+    factRow("Format", snapshot.battle_format || "Unknown", true),
+    factRow("Battle", turn?.battle_tag || "Unknown", true),
+    factRow("Turn", turn?.turn ?? snapshot.turn ?? "Unknown", true),
     factRow("Request", request.request_type || "Unknown"),
+    factRow("Showdown rqid", request.rqid ?? "Unknown", true),
+    factRow("State version", request.state_version ?? "Unknown", true),
+    factRow("Harness schema", snapshot.state_schema ?? "Unknown", true),
     factRow("Self active", activePokemon(snapshot, "self")),
     factRow("Opponent active", activePokemon(snapshot, "opponent")),
+    factRow("Self team slots", selfSlots ? `${selfSlots} observed` : "Unavailable"),
+    factRow("Opponent slots", opponentSlotsText),
+    factRow("Tera available", snapshot.can_tera == null ? "Unknown" : snapshot.can_tera ? "Yes" : "No"),
     factRow("Field", snapshot.weather || "No weather observed"),
     factRow("Legal actions", actions.length ? `${actions.length} available` : "Unavailable"),
     factRow("Unknown markers", turn?.harness?.unknowns?.length ?? 0),

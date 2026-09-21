@@ -66,6 +66,19 @@ def test_calculated_facts_are_not_truncated_in_the_live_disclosure():
     assert ".slice(0, 5)" not in render
 
 
+def test_desktop_live_layout_keeps_three_primary_columns():
+    css = read_static("style.css")
+    assert "minmax(0, 1.6fr)" in css
+    assert "display: contents" in css
+
+
+def test_harness_primary_summary_retains_context_fields():
+    render = read_static(Path("dashboard") / "render.js")
+    assert 'factRow("Format"' in render
+    assert 'factRow("Showdown rqid"' in render
+    assert 'factRow("Tera available"' in render
+
+
 def test_dashboard_css_is_viewport_aware_and_responsive():
     css = read_static("style.css")
     assert "100dvh" in css

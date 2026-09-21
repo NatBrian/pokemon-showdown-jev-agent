@@ -450,3 +450,22 @@ body { background: radial-gradient(circle at 14% 0%, rgba(88, 121, 153, .18), tr
 .workbench-live-button { display: none; position: absolute; z-index: 2; top: 18px; right: 72px; min-height: 30px; padding: 0 10px; border: 1px solid rgba(239, 184, 79, .7); border-radius: 5px; background: rgba(239, 184, 79, .1); color: #f4d087; font-size: .6rem; font-weight: 900; letter-spacing: .08em; cursor: pointer; }
 .workbench-live-button:hover { background: rgba(239, 184, 79, .2); }
 .app-shell[data-view-mode="inspect"] .workbench-live-button { display: inline-flex; align-items: center; }
+
+@media (min-width: 1200px) {
+  .primary-grid { grid-template-columns: minmax(0, 1.6fr) minmax(300px, .95fr) minmax(300px, .95fr); }
+  .decision-rail, #decision-rail { display: contents; }
+  .primary-grid { align-items: start; height: auto; }
+  .primary-grid > #battle-panel { grid-column: 1; }
+  .primary-grid > #decision-rail > #jev-panel { grid-column: 2; }
+  .primary-grid > #decision-rail > #system-harness { grid-column: 3; }
+  .primary-grid > #battle-panel,
+  .primary-grid > #decision-rail > #jev-panel,
+  .primary-grid > #decision-rail > #system-harness { align-self: start; height: fit-content; max-height: calc(100dvh - 300px); }
+  .primary-grid > #battle-panel .battle-stage { height: auto; aspect-ratio: 16 / 10; }
+  .primary-grid > #decision-rail > .evidence-panel .panel-scroll { max-height: calc(100dvh - 390px); }
+}
+
+@media (min-width: 900px) and (max-width: 1199px) {
+  .primary-grid { grid-template-columns: minmax(0, 1.45fr) minmax(300px, .9fr); }
+  .decision-rail, #decision-rail { display: grid; }
+}

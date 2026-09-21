@@ -264,6 +264,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--orchid
 .showdown-canvas, .showdown-frame { width: min(100%, 920px); min-height: 0; height: 100%; }
 .showdown-canvas { grid-template-rows: minmax(0, 1fr) auto; }
 .panel-scroll { min-height: 0; overflow: auto; }
+#showdown-log:empty { display: none; }
 
 .view-switcher { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid #77776b; background: rgba(0, 0, 0, .08); }
 .view-tab { min-height: 28px; padding: 0 9px; border: 0; background: transparent; color: var(--cream); font-size: .62rem; font-weight: 900; letter-spacing: .08em; cursor: pointer; }
@@ -468,4 +469,178 @@ body { background: radial-gradient(circle at 14% 0%, rgba(88, 121, 153, .18), tr
 @media (min-width: 900px) and (max-width: 1199px) {
   .primary-grid { grid-template-columns: minmax(0, 1.45fr) minmax(300px, .9fr); }
   .decision-rail, #decision-rail { display: grid; }
+}
+
+/* Fluid landscape geometry: let the available viewport, not a device label, set the proportions. */
+:root {
+  --shell-pad: clamp(10px, 1.25vw, 18px);
+  --layout-gap: clamp(10px, 1.15vw, 16px);
+}
+
+.app-shell {
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  padding: var(--shell-pad);
+}
+
+.dashboard-main {
+  width: min(100%, 1920px);
+  margin-top: clamp(8px, 1vw, 12px);
+}
+
+.primary-grid {
+  width: 100%;
+  min-width: 0;
+  gap: var(--layout-gap);
+}
+
+.primary-grid > *,
+.decision-rail > * {
+  min-width: 0;
+}
+
+.format-lockup {
+  max-width: min(100%, 48vw);
+  overflow: hidden;
+}
+
+.format-name,
+#battle-tag {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.format-name {
+  max-width: clamp(120px, 24vw, 420px);
+}
+
+#battle-tag {
+  display: block;
+  max-width: clamp(120px, 16vw, 320px);
+}
+
+.button-primary {
+  white-space: nowrap;
+}
+
+@media (min-width: 1280px) and (max-width: 1399px) {
+  .topbar {
+    grid-template-columns: minmax(240px, 1fr) minmax(230px, .9fr) max-content;
+    gap: 12px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .format-lockup {
+    max-width: 100%;
+  }
+
+  .format-name {
+    max-width: clamp(100px, 12vw, 160px);
+  }
+
+  #battle-tag {
+    max-width: clamp(90px, 11vw, 150px);
+  }
+
+  .topbar-status {
+    gap: 8px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .primary-grid {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(clamp(250px, 20vw, 340px), min(340px, 24vw))
+      minmax(clamp(250px, 20vw, 340px), min(340px, 24vw));
+    column-gap: var(--layout-gap);
+  }
+
+  .primary-grid > #battle-panel,
+  .primary-grid > #decision-rail > #jev-panel,
+  .primary-grid > #decision-rail > #system-harness {
+    max-height: calc(100svh - 270px);
+  }
+
+  .primary-grid > #battle-panel .battle-stage {
+    height: clamp(320px, min(62.5vw, calc(100svh - 430px)), 680px);
+    aspect-ratio: auto;
+  }
+
+  .primary-grid > #battle-panel .showdown-canvas,
+  .primary-grid > #battle-panel .showdown-frame {
+    height: auto;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1199px) {
+  .primary-grid {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(clamp(280px, 27vw, 340px), min(360px, 32vw));
+    height: clamp(430px, calc(100svh - 280px), 620px);
+  }
+
+  .primary-grid > #battle-panel,
+  .primary-grid > #decision-rail > #jev-panel,
+  .primary-grid > #decision-rail > #system-harness {
+    max-height: 100%;
+  }
+
+  .decision-rail,
+  #decision-rail {
+    height: 100%;
+  }
+}
+
+@media (min-width: 900px) and (max-height: 800px) {
+  .app-shell {
+    padding: clamp(8px, 1vw, 12px);
+  }
+
+  .topbar {
+    min-height: 60px;
+    padding: 9px 12px;
+  }
+
+  .dashboard-main {
+    margin-top: 8px;
+  }
+
+  .primary-grid {
+    gap: var(--layout-gap);
+  }
+
+  .primary-grid > #battle-panel,
+  .primary-grid > #decision-rail > #jev-panel,
+  .primary-grid > #decision-rail > #system-harness {
+    max-height: calc(100svh - 250px);
+  }
+
+  .panel-heading {
+    min-height: 54px;
+    padding: 9px 12px;
+  }
+
+  .decision-rail .panel-heading {
+    min-height: 48px;
+  }
+
+  .turn-strip {
+    min-height: 72px;
+    padding: 9px 12px;
+  }
+
+  .history-panel {
+    min-height: 112px;
+  }
+
+  .history-heading {
+    min-height: 50px;
+    padding: 9px 12px;
+  }
 }

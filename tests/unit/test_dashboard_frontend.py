@@ -88,6 +88,15 @@ def test_dashboard_css_is_viewport_aware_and_responsive():
     assert "@media (max-width: 899px)" in css
 
 
+def test_dashboard_css_uses_fluid_landscape_geometry():
+    css = read_static("style.css")
+    assert "100svh" in css
+    assert "--layout-gap" in css
+    assert "minmax(clamp(250px" in css
+    assert "max-height: 800px" in css
+    assert "max-height: calc(100svh" in css
+
+
 def test_dashboard_css_contains_reduced_motion_equivalent():
     css = read_static("style.css")
     assert "prefers-reduced-motion: reduce" in css

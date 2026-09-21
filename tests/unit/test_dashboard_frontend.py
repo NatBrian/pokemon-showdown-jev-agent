@@ -49,3 +49,18 @@ def test_dashboard_mode_controls_are_wired():
     assert "data-view-mode" in app
     assert "setMode" in inspector
     assert "aria-selected" in inspector
+
+
+def test_dashboard_css_is_viewport_aware_and_responsive():
+    css = read_static("style.css")
+    assert "100dvh" in css
+    assert "aspect-ratio" in css
+    assert "#decision-rail" in css
+    assert ".evidence-disclosure" in css
+    assert "@media (max-width: 899px)" in css
+
+
+def test_dashboard_css_contains_reduced_motion_equivalent():
+    css = read_static("style.css")
+    assert "prefers-reduced-motion: reduce" in css
+    assert "animation-duration" in css

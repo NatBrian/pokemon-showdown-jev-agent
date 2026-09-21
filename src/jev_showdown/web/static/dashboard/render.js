@@ -237,6 +237,13 @@ function animateEvent(clientState, state) {
     element.classList.add(fallback ? "event-fallback" : "event-pulse");
     window.setTimeout(() => element.classList.remove("event-pulse", "event-fallback"), 850);
   });
+  if (eventType === "TURN_DECISION") {
+    const newestCard = $("#history-list .history-card");
+    if (newestCard) {
+      newestCard.classList.add("is-new");
+      window.setTimeout(() => newestCard.classList.remove("is-new"), 500);
+    }
+  }
 }
 
 export function renderDashboard(clientState, selected = null) {

@@ -251,3 +251,75 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--orchid
 @media (max-width: 1250px) { .topbar { grid-template-columns: 1fr auto; } .format-lockup { display: none; } .topbar-status { grid-column: 2; grid-row: 1; } .primary-grid { grid-template-columns: minmax(0, 52fr) minmax(270px, 24fr) minmax(280px, 24fr); } .turn-strip { grid-template-columns: 145px 1fr; } .turn-summary { grid-column: 2; justify-content: flex-start; text-align: left; } }
 @media (max-width: 1024px) { .app-shell { padding: 8px; } .topbar { gap: 10px; padding: 9px 10px; } .topbar-status { gap: 8px; } .topbar-status .button-quiet { display: none; } .primary-grid { grid-template-columns: minmax(0, 1.45fr) minmax(260px, .9fr); min-height: 0; } .battle-panel { grid-row: span 1; min-height: 535px; } .jev-panel { grid-column: 2; } .harness-panel { grid-column: 2; max-height: 570px; } .turn-strip { grid-template-columns: 1fr; gap: 10px; } .turn-summary { grid-column: auto; } .lifecycle-track { justify-content: flex-start; overflow-x: auto; padding-bottom: 3px; } .history-card { flex-basis: 270px; } }
 @media (max-width: 760px) { .topbar { grid-template-columns: 1fr; } .topbar-status { grid-column: auto; grid-row: auto; justify-content: space-between; } .primary-grid { grid-template-columns: 1fr; } .battle-panel, .harness-panel, .jev-panel { grid-column: auto; } .harness-panel, .jev-panel { max-height: none; } .battle-panel { min-height: 450px; } .showdown-canvas, .showdown-frame { min-height: 260px; } .history-heading { align-items: flex-start; gap: 8px; flex-direction: column; } }
+
+/* Dashboard polish: the live view is a bounded battle surface with a scrollable evidence rail. */
+.app-shell { min-height: 100dvh; }
+.dashboard-main { width: min(100%, 1920px); max-width: none; margin: 12px auto 0; }
+.primary-grid { grid-template-columns: minmax(0, 1.75fr) minmax(320px, .95fr); gap: 12px; align-items: stretch; min-height: 0; height: clamp(500px, calc(100dvh - 250px), 700px); }
+.decision-rail, #decision-rail { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+#jev-panel { order: 1; }
+#system-harness { order: 2; }
+.battle-panel, .evidence-panel { min-height: 0; }
+.battle-stage { min-height: 0; height: 100%; aspect-ratio: 16 / 10; }
+.showdown-canvas, .showdown-frame { width: min(100%, 920px); min-height: 0; height: 100%; }
+.showdown-canvas { grid-template-rows: minmax(0, 1fr) auto; }
+.panel-scroll { min-height: 0; overflow: auto; }
+
+.view-switcher { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid #77776b; background: rgba(0, 0, 0, .08); }
+.view-tab { min-height: 28px; padding: 0 9px; border: 0; background: transparent; color: var(--cream); font-size: .62rem; font-weight: 900; letter-spacing: .08em; cursor: pointer; }
+.view-tab:hover { background: rgba(246, 240, 216, .12); }
+.view-tab[aria-selected="true"] { background: var(--ochre); color: #2a2110; }
+
+.evidence-disclosure { border-bottom: 1px solid var(--line-soft); }
+.evidence-disclosure > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 10px 12px; cursor: pointer; list-style: none; font: 800 .67rem var(--display); letter-spacing: .11em; }
+.evidence-disclosure > summary::-webkit-details-marker { display: none; }
+.evidence-disclosure > summary::before { content: "+"; display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: auto; border: 1px solid var(--line-soft); color: var(--ochre-dark); font: 800 .8rem var(--mono); }
+.evidence-disclosure[open] > summary::before { content: "-"; }
+.evidence-disclosure > summary > span:first-of-type { margin-right: auto; }
+.evidence-disclosure > .fact-grid, .evidence-disclosure > .calculation-stack, .evidence-disclosure > .legal-actions { padding: 0 12px 12px; }
+.evidence-disclosure[open] > summary { background: rgba(255, 255, 255, .18); }
+.decision-rail .evidence-section { padding: 11px 12px; }
+.decision-rail .panel-heading { min-height: 53px; }
+.decision-rail .decision-hero { margin: 10px; padding: 13px; }
+.decision-rail .result-stack { padding: 0 10px 10px; }
+.decision-rail .reliability-card { margin: 10px; }
+.decision-rail .handoff-card { margin: 10px; }
+
+.inspection-drawer { inset: 0; width: auto; border: 0; box-shadow: none; grid-template-rows: auto auto auto 1fr; transform: translateX(102%); transition: transform .22s ease; }
+.app-shell[data-view-mode="inspect"] .inspection-drawer { transform: translateX(0); }
+.app-shell[data-view-mode="inspect"] #live-view { visibility: hidden; pointer-events: none; }
+.drawer-content { min-height: 0; overflow: auto; padding: clamp(14px, 3vw, 28px); }
+.drawer-heading, .drawer-selection, .drawer-tabs, .drawer-content { max-width: 1200px; width: 100%; margin-left: auto; margin-right: auto; }
+.drawer-heading { width: 100%; max-width: none; padding-left: clamp(14px, 3vw, 28px); padding-right: clamp(14px, 3vw, 28px); }
+.drawer-selection { max-width: 1200px; }
+.drawer-tabs { max-width: 1200px; }
+.drawer-section { max-width: 1050px; }
+
+.event-pulse, .event-fallback { will-change: box-shadow; }
+.history-card.is-new { animation: history-enter .42s ease-out both; }
+@keyframes history-enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 1279px) {
+  .topbar { gap: 10px; }
+  .format-lockup { display: none; }
+  .primary-grid { grid-template-columns: minmax(0, 1.35fr) minmax(300px, .9fr); }
+}
+
+@media (max-width: 899px) {
+  .app-shell { padding: 8px; }
+  .primary-grid, .decision-rail { height: auto; grid-template-columns: 1fr; grid-template-rows: none; }
+  .primary-grid { display: grid; }
+  .decision-rail { display: grid; }
+  .battle-stage { height: auto; aspect-ratio: 4 / 3; min-height: 280px; }
+  .showdown-canvas, .showdown-frame { min-height: 0; }
+  .inspection-drawer .drawer-tabs { padding-left: 10px; padding-right: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

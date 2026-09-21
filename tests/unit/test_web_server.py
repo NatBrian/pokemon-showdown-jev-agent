@@ -41,13 +41,18 @@ def test_websocket_receives_threadsafe_publish(test_app):
     another thread (battle telemetry runs on poke_env's background loop)."""
     with TestClient(test_app) as client:
         with client.websocket_connect("/ws") as ws:
+            initial = ws.receive_json()
+            assert initial["type"] == "DASHBOARD_STATE"
             test_app.state.manager.publish(
                 {"type": "STATUS_UPDATE", "status": "READY", "busy": False}
             )
             message = ws.receive_json()
+            normalized = ws.receive_json()
             assert message["type"] == "STATUS_UPDATE"
             assert message["status"] == "READY"
             assert message["busy"] is False
+            assert normalized["type"] == "DASHBOARD_STATE"
+            assert normalized["event_type"] == "STATUS_UPDATE"
 
 
 def test_websocket_keeps_raw_event_and_adds_dashboard_state(test_app):
@@ -58,6 +63,8 @@ def test_websocket_keeps_raw_event_and_adds_dashboard_state(test_app):
     event = json.loads(fixture.read_text(encoding="utf-8"))
     with TestClient(test_app) as client:
         with client.websocket_connect("/ws") as ws:
+            initial = ws.receive_json()
+            assert initial["type"] == "DASHBOARD_STATE"
             test_app.state.manager.publish(event)
             raw = ws.receive_json()
             dashboard = ws.receive_json()

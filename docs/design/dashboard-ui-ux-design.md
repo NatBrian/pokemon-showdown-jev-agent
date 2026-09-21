@@ -79,7 +79,7 @@ The primary layout is a desktop observatory with two live regions:
 1. Official live battle surface.
 2. A decision rail containing the Jev decision panel above the System Harness evidence panel.
 
-Decision history and current-turn flow occupy horizontal bands beneath those zones. Technical inspection opens as a non-blocking drawer above the right side of the layout.
+Decision history and current-turn flow occupy horizontal bands beneath those zones. Technical inspection opens as a full-viewport workbench from the top-bar view switcher.
 
 Implementation note: the current live shell supersedes the earlier three-column sketch below with a bounded two-column desktop layout. The live battle occupies the primary column; the decision rail owns the secondary column and scrolls its Jev and Harness cards independently. Inspect is a full-viewport technical workbench selected from the top-bar view switcher.
 
@@ -631,7 +631,7 @@ For multi-battle runs, include the `battle_tag` on the card or in its expanded s
 
 The Inspect control opens a full-viewport technical workbench so the evidence surface can use the available width for readable raw records and comparison tables. The Live control is the explicit route back to the battle layout; the underlying live surface is kept mounted but hidden while inspection is active.
 
-Recommended width: 420–520px on desktop.
+The workbench uses the full viewport on desktop and narrow screens so raw records and comparison tables remain readable; the Live tab provides the explicit return path.
 
 ### 10.1 Tabs
 

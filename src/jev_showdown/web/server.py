@@ -23,6 +23,7 @@ from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from jev_showdown.config import Settings
+from jev_showdown.web.dashboard_stream import DashboardEventStream
 from jev_showdown.telemetry.frames import BattleFrameBuffer
 
 # Served at "/" when the full dashboard frontend is not yet deployed.
@@ -200,6 +201,7 @@ class ConnectionManager:
         self.active_connections: list[WebSocket] = []
         self._loop: asyncio.AbstractEventLoop | None = None
         self._battle_frames = BattleFrameBuffer()
+        self._dashboard = DashboardEventStream()
 
     def set_loop(self, loop: asyncio.AbstractEventLoop) -> None:
         """Remember the dashboard's event loop (set at app startup)."""
@@ -213,6 +215,10 @@ class ConnectionManager:
         if replay is not None:
             try:
                 await websocket.send_json(replay)
+            except Exception:
+                self.disconnect(websocket)
+            try:
+                await websocket.send_json(self._dashboard.snapshot_message())
             except Exception:
                 self.disconnect(websocket)
 
@@ -234,6 +240,13 @@ class ConnectionManager:
             except Exception:
                 self.disconnect(connection)
 
+    async def _broadcast_with_dashboard_state(
+        self, message: dict[str, Any], dashboard_message: dict[str, Any] | None
+    ) -> None:
+        await self.broadcast(message)
+        if dashboard_message is not None:
+            await self.broadcast(dashboard_message)
+
     def publish(self, message: dict[str, Any]) -> None:
         """Thread-safe broadcast, callable from any thread or event loop.
 
@@ -244,13 +257,20 @@ class ConnectionManager:
         """
         message = self._normalize_battle_message(message)
         self._remember_battle_message(message)
+        dashboard_message = self._dashboard.publish(message)
         loop = self._loop
         if loop is None or loop.is_closed():
             return
         try:
-            asyncio.run_coroutine_threadsafe(self.broadcast(message), loop)
+            asyncio.run_coroutine_threadsafe(
+                self._broadcast_with_dashboard_state(message, dashboard_message), loop
+            )
         except RuntimeError:
             pass
+
+    def dashboard_snapshot(self) -> dict[str, Any]:
+        """Return the current redacted dashboard state for tests and tooling."""
+        return self._dashboard.snapshot()
 
     def _remember_battle_message(self, message: dict[str, Any]) -> None:
         message_type = message.get("type")

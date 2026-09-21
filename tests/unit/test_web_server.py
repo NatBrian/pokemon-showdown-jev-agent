@@ -46,6 +46,24 @@ def test_websocket_receives_threadsafe_publish(test_app):
             assert message["busy"] is False
 
 
+def test_websocket_keeps_raw_event_and_adds_dashboard_state(test_app):
+    from pathlib import Path
+    import json
+
+    fixture = Path(__file__).parents[1] / "fixtures" / "dashboard" / "valid-turn.json"
+    event = json.loads(fixture.read_text(encoding="utf-8"))
+    with TestClient(test_app) as client:
+        with client.websocket_connect("/ws") as ws:
+            test_app.state.manager.publish(event)
+            raw = ws.receive_json()
+            dashboard = ws.receive_json()
+
+    assert raw["type"] == "TURN_DECISION"
+    assert dashboard["type"] == "DASHBOARD_STATE"
+    assert dashboard["event_type"] == "TURN_DECISION"
+    assert dashboard["state"]["current_turn"]["turn"] == 1
+
+
 def test_websocket_replays_battle_frames_to_new_client(test_app):
     with TestClient(test_app) as client:
         manager = test_app.state.manager

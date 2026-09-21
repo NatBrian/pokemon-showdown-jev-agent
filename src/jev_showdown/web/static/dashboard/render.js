@@ -24,6 +24,12 @@ function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
 }
 
+function displayFact(value) {
+  if (value == null) return null;
+  if (typeof value === "object") return "structured data recorded";
+  return String(value);
+}
+
 function activePokemon(snapshot, side) {
   const active = snapshot?.[side]?.active_pokemon;
   if (!active) return "Unknown";
@@ -66,7 +72,7 @@ function renderCalculations(turn) {
   target.innerHTML = facts.slice(0, 5).map((fact) => {
     const data = fact.facts || {};
     const range = Array.isArray(data.utility_estimate) ? `${data.utility_estimate[0]}–${data.utility_estimate[1]} relative` : "Not recorded";
-    const detail = [data.base_power ? `Power ${data.base_power}` : null, data.category, data.type, data.type_multiplier != null ? `${data.type_multiplier}×` : null].filter(Boolean).join(" · ");
+    const detail = [data.base_power ? `Power ${data.base_power}` : null, data.category, data.type, data.type_multiplier != null ? `Matchup ${displayFact(data.type_multiplier)}` : null].filter(Boolean).join(" · ");
     return `<article class="calculation-card"><h4>${escapeHtml(fact.label || fact.candidate_id)}</h4><span class="mono">${escapeHtml(fact.candidate_id || "unknown")}</span><p>${escapeHtml(detail || "Facts available")}</p><p>Heuristic relative estimate: ${escapeHtml(range)} · Damage/KO: unknown</p></article>`;
   }).join("");
 }

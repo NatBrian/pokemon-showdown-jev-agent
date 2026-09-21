@@ -147,6 +147,8 @@ async def test_orchestrator_publishes_full_lifecycle(monkeypatch):
     assert PHASE_SEARCHING in statuses
     assert statuses[-1] == PHASE_READY
     assert orchestrator.busy is False
+    start_events = [m for m in published if m.get("type") == "BATTLE_START"]
+    assert len(start_events) == 1
     # The battle end result is forwarded to the dashboard.
     end_events = [m for m in published if m.get("type") == "BATTLE_END"]
     assert len(end_events) == 1

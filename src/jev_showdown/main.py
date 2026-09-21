@@ -98,6 +98,7 @@ class BattleOrchestrator:
         if event.get("type") == "BATTLE_START":
             self._signal_match_found()
             self._publish_status("MATCH FOUND — INITIALIZING BATTLE")
+            self._publish_event(event)
         elif event.get("type") == "BATTLE_END":
             self._publish_event(event)
 

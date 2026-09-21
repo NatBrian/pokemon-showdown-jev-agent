@@ -84,7 +84,7 @@ function renderCalculations(turn) {
   const target = $("#harness-calculated-facts");
   const facts = turn?.harness?.calculated_facts || [];
   if (!facts.length) { target.innerHTML = emptyRow("No calculations yet"); return; }
-  target.innerHTML = facts.slice(0, 5).map((fact) => {
+  target.innerHTML = facts.map((fact) => {
     const data = fact.facts || {};
     const range = Array.isArray(data.utility_estimate) ? `${data.utility_estimate[0]}–${data.utility_estimate[1]} relative` : "Not recorded";
     const detail = [data.base_power ? `Power ${data.base_power}` : null, data.category, data.type, data.type_multiplier != null ? `Matchup ${displayFact(data.type_multiplier)}` : null].filter(Boolean).join(" · ");

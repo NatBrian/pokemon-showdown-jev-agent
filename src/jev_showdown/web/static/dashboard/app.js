@@ -126,6 +126,7 @@ function bind() {
   query("#open-inspector").addEventListener("click", () => openInspector());
   query("#live-view-tab").addEventListener("click", closeInspector);
   query("#close-inspector").addEventListener("click", closeInspector);
+  query("[data-close-inspector]").addEventListener("click", closeInspector);
   query("#drawer-scrim").addEventListener("click", closeInspector);
   document.addEventListener("keydown", (event) => { if (event.key === "Escape" && query("#inspection-drawer").classList.contains("is-open")) closeInspector(); });
   document.addEventListener("click", (event) => {

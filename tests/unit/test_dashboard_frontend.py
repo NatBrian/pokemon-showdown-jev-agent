@@ -42,6 +42,16 @@ def test_live_view_contains_only_compact_harness_targets():
     assert 'data-inspect-tab="jev-input"' in html
 
 
+def test_live_rail_exposes_complete_evidence_entry_points():
+    html = read_static("index.html")
+    assert 'data-inspect-tab="harness-state"' in html
+    assert 'data-inspect-tab="calculated-facts"' in html
+    assert 'data-inspect-tab="jev-response"' in html
+    assert "FULL STATE" in html
+    assert "FULL RESPONSE" in html
+    assert "BACK TO LIVE" in html
+
+
 def test_dashboard_mode_controls_are_wired():
     app = read_static(Path("dashboard") / "app.js")
     inspector = read_static(Path("dashboard") / "inspector.js")
@@ -49,6 +59,11 @@ def test_dashboard_mode_controls_are_wired():
     assert "data-view-mode" in app
     assert "setMode" in inspector
     assert "aria-selected" in inspector
+
+
+def test_calculated_facts_are_not_truncated_in_the_live_disclosure():
+    render = read_static(Path("dashboard") / "render.js")
+    assert ".slice(0, 5)" not in render
 
 
 def test_dashboard_css_is_viewport_aware_and_responsive():

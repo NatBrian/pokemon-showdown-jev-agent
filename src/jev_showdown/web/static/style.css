@@ -452,6 +452,37 @@ body { background: radial-gradient(circle at 14% 0%, rgba(88, 121, 153, .18), tr
 .workbench-live-button:hover { background: rgba(239, 184, 79, .2); }
 .app-shell[data-view-mode="inspect"] .workbench-live-button { display: inline-flex; align-items: center; }
 
+/* Keep the official battle, its message history, and the lower telemetry rows in separate tracks. */
+.battle-panel {
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+}
+
+#showdown-log {
+  position: relative;
+  z-index: 3;
+  min-height: clamp(84px, 10vh, 108px);
+  max-height: clamp(128px, 17vh, 184px);
+  overflow: auto;
+  border-top: 1px solid #304252;
+  background: rgba(7, 14, 20, .94);
+}
+
+/* The evidence cards are equal-height shells; their own grid track owns the scroller height. */
+.evidence-panel > .panel-scroll {
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  align-self: stretch;
+}
+
+.turn-strip {
+  min-height: clamp(72px, 10vh, 93px);
+}
+
+.history-panel {
+  min-height: clamp(112px, 18vh, 196px);
+}
+
 @media (min-width: 1200px) {
   .primary-grid { grid-template-columns: minmax(0, 1.6fr) minmax(300px, .95fr) minmax(300px, .95fr); }
   .decision-rail, #decision-rail { display: contents; }
@@ -463,7 +494,6 @@ body { background: radial-gradient(circle at 14% 0%, rgba(88, 121, 153, .18), tr
   .primary-grid > #decision-rail > #jev-panel,
   .primary-grid > #decision-rail > #system-harness { align-self: start; height: fit-content; max-height: calc(100dvh - 300px); }
   .primary-grid > #battle-panel .battle-stage { height: auto; aspect-ratio: 16 / 10; }
-  .primary-grid > #decision-rail > .evidence-panel .panel-scroll { max-height: calc(100dvh - 390px); }
 }
 
 @media (min-width: 900px) and (max-width: 1199px) {
@@ -558,6 +588,7 @@ body { background: radial-gradient(circle at 14% 0%, rgba(88, 121, 153, .18), tr
       minmax(clamp(250px, 20vw, 340px), min(340px, 24vw))
       minmax(clamp(250px, 20vw, 340px), min(340px, 24vw));
     column-gap: var(--layout-gap);
+    height: clamp(554px, calc(100svh - 220px), 900px);
   }
 
   .primary-grid > #battle-panel,
@@ -566,8 +597,25 @@ body { background: radial-gradient(circle at 14% 0%, rgba(88, 121, 153, .18), tr
     max-height: calc(100svh - 270px);
   }
 
+  .primary-grid {
+    align-items: stretch;
+  }
+
+  .primary-grid > #battle-panel {
+    align-self: stretch;
+    height: auto;
+    max-height: none;
+  }
+
+  .primary-grid > #decision-rail > #jev-panel,
+  .primary-grid > #decision-rail > #system-harness {
+    align-self: stretch;
+    height: auto;
+    max-height: none;
+  }
+
   .primary-grid > #battle-panel .battle-stage {
-    height: clamp(320px, min(62.5vw, calc(100svh - 430px)), 680px);
+    height: clamp(320px, min(62.5vw, calc(100svh - 485px)), 680px);
     aspect-ratio: auto;
   }
 
@@ -582,7 +630,12 @@ body { background: radial-gradient(circle at 14% 0%, rgba(88, 121, 153, .18), tr
     grid-template-columns:
       minmax(0, 1fr)
       minmax(clamp(280px, 27vw, 340px), min(360px, 32vw));
-    height: clamp(430px, calc(100svh - 280px), 620px);
+    height: clamp(535px, calc(100svh - 235px), 640px);
+  }
+
+  .primary-grid > #battle-panel .battle-stage {
+    width: 100%;
+    aspect-ratio: auto;
   }
 
   .primary-grid > #battle-panel,
@@ -619,6 +672,15 @@ body { background: radial-gradient(circle at 14% 0%, rgba(88, 121, 153, .18), tr
   .primary-grid > #decision-rail > #jev-panel,
   .primary-grid > #decision-rail > #system-harness {
     max-height: calc(100svh - 250px);
+  }
+
+  .primary-grid > #battle-panel {
+    max-height: none;
+  }
+
+  .primary-grid > #decision-rail > #jev-panel,
+  .primary-grid > #decision-rail > #system-harness {
+    max-height: 100%;
   }
 
   .panel-heading {

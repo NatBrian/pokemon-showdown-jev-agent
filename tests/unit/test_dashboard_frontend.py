@@ -1,4 +1,28 @@
 from pathlib import Path
+from html.parser import HTMLParser
+
+
+class _IdParentParser(HTMLParser):
+    _void_elements = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
+
+    def __init__(self):
+        super().__init__()
+        self.stack = []
+        self.parents = {}
+
+    def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+        element_id = attributes.get("id")
+        if element_id:
+            self.parents[element_id] = self.stack[-1][1] if self.stack else None
+        if tag not in self._void_elements:
+            self.stack.append((tag, element_id))
+
+    def handle_endtag(self, tag):
+        for index in range(len(self.stack) - 1, -1, -1):
+            if self.stack[index][0] == tag:
+                del self.stack[index:]
+                return
 
 
 ROOT = Path(__file__).parents[2]
@@ -24,6 +48,14 @@ def test_official_battle_surface_remains_unique():
     assert html.count('id="showdown-frame"') == 1
     assert html.count('id="showdown-log"') == 1
     assert 'id="showdown-arena"' in html
+
+
+def test_showdown_message_log_is_outside_the_clipped_battle_stage():
+    html = read_static("index.html")
+    parser = _IdParentParser()
+    parser.feed(html)
+    assert parser.parents["showdown-arena"] == "battle-panel"
+    assert parser.parents["showdown-log"] == "battle-panel"
 
 
 def test_inspection_tabs_remain_semantic_controls():
@@ -95,6 +127,35 @@ def test_dashboard_css_uses_fluid_landscape_geometry():
     assert "minmax(clamp(250px" in css
     assert "max-height: 800px" in css
     assert "max-height: calc(100svh" in css
+
+
+def test_battle_surface_and_renderer_fit_both_dimensions():
+    css = read_static("style.css")
+    renderer = read_static("showdown-renderer.js")
+    assert "grid-template-rows: auto minmax(0, 1fr) auto auto" in css
+    assert "#showdown-log" in css
+    assert "Math.min(width / BASE_WIDTH, height / BASE_HEIGHT)" in renderer
+    assert "closest(\"#showdown-arena\")" in renderer
+
+
+def test_evidence_columns_follow_the_responsive_battle_row():
+    css = read_static("style.css")
+    assert ".primary-grid > #decision-rail > #jev-panel,\n  .primary-grid > #decision-rail > #system-harness" in css
+    assert ".primary-grid > #battle-panel {\n    align-self: stretch;\n    height: auto;" in css
+    assert "align-self: stretch;\n    height: auto;" in css
+    assert ".evidence-panel > .panel-scroll" in css
+    assert "max-height: none;" in css
+    assert "max-height: calc(100dvh - 390px);" not in css
+    assert "max-height: calc(100svh - 390px);" not in css
+
+
+def test_battle_history_gets_responsive_vertical_space():
+    css = read_static("style.css")
+    assert "min-height: clamp(84px, 10vh, 108px);" in css
+    assert "max-height: clamp(128px, 17vh, 184px);" in css
+    assert "calc(100svh - 485px)" in css
+    assert "height: clamp(535px, calc(100svh - 235px), 640px);" in css
+    assert "height: clamp(554px, calc(100svh - 220px), 900px);" in css
 
 
 def test_dashboard_css_contains_reduced_motion_equivalent():

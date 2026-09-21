@@ -111,14 +111,21 @@
   function resizeStage() {
     if (!frameElement) return;
     const canvas = frameElement.parentElement;
-    if (!canvas) return;
-    const width = canvas.clientWidth || BASE_WIDTH;
-    const scale = width / BASE_WIDTH;
+    const stage = canvas && canvas.closest ? canvas.closest("#showdown-arena") : null;
+    if (!canvas || !stage) return;
+    const width = stage.clientWidth || BASE_WIDTH;
+    const height = stage.clientHeight || BASE_HEIGHT;
+    const scale = Math.min(width / BASE_WIDTH, height / BASE_HEIGHT);
+    const scaledWidth = BASE_WIDTH * scale;
+    const scaledHeight = BASE_HEIGHT * scale;
     frameElement.style.width = BASE_WIDTH + "px";
     frameElement.style.height = BASE_HEIGHT + "px";
+    frameElement.style.left = Math.max(0, (width - scaledWidth) / 2) + "px";
+    frameElement.style.top = Math.max(0, (height - scaledHeight) / 2) + "px";
     frameElement.style.transformOrigin = "top left";
     frameElement.style.transform = "scale(" + scale + ")";
-    canvas.style.height = Math.ceil(BASE_HEIGHT * scale) + "px";
+    canvas.style.width = Math.ceil(scaledWidth) + "px";
+    canvas.style.height = Math.ceil(scaledHeight) + "px";
   }
 
   function destroyBattle() {
@@ -178,7 +185,7 @@
         },
       });
       resizeObserver = new ResizeObserver(resizeStage);
-      resizeObserver.observe(frameElement.parentElement || frameElement);
+      resizeObserver.observe(frameElement.closest("#showdown-arena") || frameElement.parentElement || frameElement);
       resizeStage();
       const arena = frameElement.closest ? frameElement.closest("#showdown-arena") : null;
       if (arena) arena.hidden = false;

@@ -30,11 +30,14 @@
         </div>
         <div class="turn-marker"><span class="muted-label">TURN</span><strong id="current-turn-number">--</strong></div>
         <button class="button button-primary" id="start-battle" type="button">START JEV BATTLE</button>
-        <button class="button button-quiet" id="open-inspector" type="button" aria-controls="inspection-drawer" aria-expanded="false">INSPECT</button>
+        <div class="view-switcher" role="tablist" aria-label="Dashboard view">
+          <button class="view-tab is-active" id="live-view-tab" type="button" role="tab" aria-selected="true" aria-controls="live-view">LIVE</button>
+          <button class="view-tab" id="open-inspector" type="button" role="tab" aria-selected="false" aria-controls="inspection-drawer">INSPECT</button>
+        </div>
       </div>
     </header>
 
-    <main class="dashboard-main">
+    <main class="dashboard-main" id="live-view" role="tabpanel" aria-labelledby="live-view-tab">
       <section class="primary-grid" aria-label="Live battle and decision observability">
         <section class="panel battle-panel" id="battle-panel" aria-labelledby="battle-title">
           <div class="panel-heading battle-heading">
@@ -67,6 +70,7 @@
           </div>
         </section>
 
+        <div class="decision-rail" id="decision-rail">
         <aside class="panel evidence-panel harness-panel" id="system-harness" aria-labelledby="harness-title">
           <div class="panel-heading origin-heading harness-heading">
             <div class="heading-left">
@@ -80,14 +84,14 @@
               <div class="section-heading"><h3 id="observed-title">PUBLIC STATE OBSERVED</h3><span class="source-chip source-showdown">SHOWDOWN</span></div>
               <div class="fact-grid" id="harness-observed-facts"><div class="empty-row">Waiting for public battle state</div></div>
             </section>
-            <section class="evidence-section" id="harness-calculated-section" aria-labelledby="calculated-title">
-              <div class="section-heading"><h3 id="calculated-title">CALCULATED FACTS</h3><span class="source-chip source-harness">HARNESS</span></div>
+            <details class="evidence-disclosure" id="harness-calculated-disclosure">
+              <summary><span>CALCULATED FACTS</span><span class="source-chip source-harness">HARNESS</span></summary>
               <div id="harness-calculated-facts" class="calculation-stack"><div class="empty-row">No calculations yet</div></div>
-            </section>
-            <section class="evidence-section legal-section" id="harness-legal-section" aria-labelledby="legal-title">
-              <div class="section-heading"><h3 id="legal-title">LEGAL ACTION SET</h3><span class="count-badge" id="legal-count">--</span></div>
+            </details>
+            <details class="evidence-disclosure" id="harness-legal-disclosure">
+              <summary><span>LEGAL ACTION SET</span><span class="count-badge" id="legal-count">--</span></summary>
               <div id="legal-actions" class="legal-actions"><div class="empty-row">No legal candidates yet</div></div>
-            </section>
+            </details>
             <section class="handoff-card" id="jev-handoff" aria-labelledby="handoff-title">
               <div class="handoff-title"><span class="origin-mark origin-harness" aria-hidden="true">H</span><h3 id="handoff-title">JEV INPUT READY</h3><span class="handoff-led" aria-hidden="true"></span></div>
               <div id="handoff-summary" class="handoff-summary"><span>Awaiting a validated request</span></div>
@@ -120,16 +124,17 @@
               <div class="section-heading"><h3 id="probability-title">RETURNED PROBABILITIES</h3><span class="source-chip source-jev">JEV</span></div>
               <div id="probability-chart" class="probability-chart"><div class="empty-row">No probability map returned</div></div>
             </section>
-            <section class="evidence-section metadata-section" aria-labelledby="metadata-title">
-              <div class="section-heading"><h3 id="metadata-title">RESPONSE METADATA</h3><span class="source-chip source-jev">RECORDED</span></div>
+            <details class="evidence-disclosure" id="jev-metadata-disclosure">
+              <summary><span>RESPONSE METADATA</span><span class="source-chip source-jev">RECORDED</span></summary>
               <div id="jev-metadata" class="fact-grid"><div class="empty-row">No response metadata yet</div></div>
-            </section>
+            </details>
             <section class="reliability-card" aria-labelledby="reliability-title">
               <div class="section-heading"><h3 id="reliability-title">RUN RELIABILITY</h3><button class="text-button" type="button" data-inspect-tab="run-metrics">DETAILS</button></div>
               <div id="reliability-tiles" class="reliability-tiles"><div class="metric-tile"><strong>--</strong><span>JEV CALLS</span></div><div class="metric-tile"><strong>--</strong><span>FALLBACKS</span></div><div class="metric-tile"><strong>--</strong><span>ILLEGAL</span></div></div>
             </section>
           </div>
         </aside>
+        </div>
       </section>
 
       <section class="turn-strip panel" id="current-turn-strip" aria-labelledby="turn-strip-title">

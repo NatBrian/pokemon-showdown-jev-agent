@@ -33,6 +33,7 @@ def test_http_index(test_app):
     assert 'id="showdown-arena"' in response.text
     assert 'id="system-harness"' in response.text
     assert 'id="jev-panel"' in response.text
+    assert 'data-inspect-tab="raw-event"' in response.text
     assert "dashboard-ui-ux-mockup.png" not in response.text
 
 

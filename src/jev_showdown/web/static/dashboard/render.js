@@ -3,6 +3,7 @@ import { renderProbabilityChart as renderProbabilityChartMarkup } from "./charts
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+let lastAnimationSignature = null;
 
 function setText(selector, value) {
   const element = $(selector);
@@ -194,6 +195,29 @@ function renderBattleChrome(state) {
   $("#showdown-canvas").hidden = !active;
 }
 
+function animateEvent(clientState, state) {
+  const eventType = clientState.lastEventType;
+  if (!eventType) return;
+  const turn = state.current_turn;
+  const signature = `${eventType}:${turn?.battle_tag || state.battle?.battle_tag || ""}:${turn?.turn || ""}`;
+  if (signature === lastAnimationSignature) return;
+  lastAnimationSignature = signature;
+  const selectors = eventType === "BATTLE_START"
+    ? ["#battle-panel", "#current-turn-strip"]
+    : eventType === "BATTLE_END"
+      ? ["#battle-panel", "#decision-history"]
+      : eventType === "TURN_DECISION"
+        ? ["#system-harness", "#jev-panel", "#decision-hero", "#current-turn-strip", "#decision-history"]
+        : [];
+  const fallback = eventType === "TURN_DECISION" && turn?.adapter?.fallback?.is_fallback;
+  selectors.map((selector) => $(selector)).filter(Boolean).forEach((element) => {
+    element.classList.remove("event-pulse", "event-fallback");
+    void element.offsetWidth;
+    element.classList.add(fallback ? "event-fallback" : "event-pulse");
+    window.setTimeout(() => element.classList.remove("event-pulse", "event-fallback"), 850);
+  });
+}
+
 export function renderDashboard(clientState, selected = null) {
   const state = clientState.dashboard;
   if (!state) return;
@@ -203,6 +227,7 @@ export function renderDashboard(clientState, selected = null) {
   renderReliability(state.metrics);
   renderStages(state.current_turn, state.battle);
   renderHistory(state.history, selected);
+  animateEvent(clientState, state);
   const button = $("#start-battle");
   const running = state.battle.state === "active" || state.run.status === "JEV PLAYING";
   button.disabled = running;

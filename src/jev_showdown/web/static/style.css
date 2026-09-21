@@ -242,7 +242,11 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--orchid
 .drawer-scrim.is-visible { opacity: 1; pointer-events: auto; }
 .live-announcer { position: fixed; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .renderer-unavailable { opacity: .45; filter: grayscale(.4); }
+.event-pulse { animation: evidence-flash .85s steps(3, jump-none); }
+.event-fallback { animation: fallback-flash .85s steps(3, jump-none); }
 @keyframes stage-pulse { 50% { transform: scale(1.08); } }
+@keyframes evidence-flash { 0% { box-shadow: var(--shadow); } 35% { box-shadow: 0 0 0 3px rgba(166,106,172,.28), var(--shadow); } 100% { box-shadow: var(--shadow); } }
+@keyframes fallback-flash { 0% { box-shadow: var(--shadow); } 35% { box-shadow: 0 0 0 3px rgba(198,126,45,.34), var(--shadow); } 100% { box-shadow: var(--shadow); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; } }
 @media (max-width: 1250px) { .topbar { grid-template-columns: 1fr auto; } .format-lockup { display: none; } .topbar-status { grid-column: 2; grid-row: 1; } .primary-grid { grid-template-columns: minmax(0, 52fr) minmax(270px, 24fr) minmax(280px, 24fr); } .turn-strip { grid-template-columns: 145px 1fr; } .turn-summary { grid-column: 2; justify-content: flex-start; text-align: left; } }
 @media (max-width: 1024px) { .app-shell { padding: 8px; } .topbar { gap: 10px; padding: 9px 10px; } .topbar-status { gap: 8px; } .topbar-status .button-quiet { display: none; } .primary-grid { grid-template-columns: minmax(0, 1.45fr) minmax(260px, .9fr); min-height: 0; } .battle-panel { grid-row: span 1; min-height: 535px; } .jev-panel { grid-column: 2; } .harness-panel { grid-column: 2; max-height: 570px; } .turn-strip { grid-template-columns: 1fr; gap: 10px; } .turn-summary { grid-column: auto; } .lifecycle-track { justify-content: flex-start; overflow-x: auto; padding-bottom: 3px; } .history-card { flex-basis: 270px; } }

@@ -123,6 +123,7 @@ function tabMarkup(tab, decision, state) {
       ].join("")),
       '<div class="drawer-empty">Raw protocol frame not captured for this decision. The official renderer remains the live battle surface.</div>',
     ].join("");
+    case "raw-event": return jsonBlock("Redacted raw telemetry event", decision?.raw_event, "raw-event");
     case "run-metrics": return '<div id="drawer-run-metrics"></div><div id="drawer-run-latency"></div>';
     case "overview": return overview(decision);
     default: return overview(decision);

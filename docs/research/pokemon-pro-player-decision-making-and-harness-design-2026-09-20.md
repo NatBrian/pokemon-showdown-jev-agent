@@ -389,15 +389,15 @@ This approach can make Jev more capable of expert-like decisions, but it does no
 
 ## Research sources
 
-- [Smogon: Getting Started with Competitive Battling](https://www.smogon.com/articles/getting-started) — prediction, switching, progress, risk/reward, and short-term versus long-term planning.
-- [Smogon: An Introduction to Prediction](https://www.smogon.com/smog/issue1/introduction_to_prediction) — information gathering, prediction risk, and when risky play is necessary.
-- [Smogon: Prediction and Planning: The Art of Decision Making in Ubers](https://www.smogon.com/smog/issue20/prediction_ubers) — planning, backup plans, momentum, and risk/reward.
-- [Smogon forum: Pokémon Battling Crash Course](https://www.smogon.com/forums/threads/pok%C3%A9mon-battling-crash-course.3656181/) — scouting, win conditions, lose conditions, pacing, resources, and information management.
-- [Smogon: Where’s the Speedometer? A Beginner’s Guide to Speed Control in VGC](https://www.smogon.com/articles/guide-to-speed-control-in-vgc-p1) — speed control and its strategic value.
-- [Smogon: Random Formats on Pokémon Showdown](https://www.smogon.com/articles/random-formats-overview) — the role and characteristics of Random Battle formats.
-- [Smogon forum: Questions About How Random Battles Formats Work](https://www.smogon.com/forums/threads/questions-about-random-battles-formats-work-read-here.3712694/) — Gen 9 Random Battle generation, roles, and curated random sets.
-- [Pokémon: Experience a Pokémon VGC Event in Japan with Regional Champion Joe Ugarte](https://www.pokemon.com/us/features/experience-a-pokemon-vgc-event-in-japan-with-regional-champion-joe-ugarte) — official tournament-level examples of team roles, offensive synergy, defensive pivots, and strategic preparation.
-- [Pokémon: Best-of-Three Swiss Rounds Shake Up the Pokémon Video Game Championships](https://www.pokemon.com/us/features/best-of-three-swiss-rounds-shake-up-the-pokemon-video-game-championships) — consistency, surprise, and adaptation in official competitive play.
+- [Smogon: Getting Started with Competitive Battling](https://www.smogon.com/articles/getting-started), prediction, switching, progress, risk/reward, and short-term versus long-term planning.
+- [Smogon: An Introduction to Prediction](https://www.smogon.com/smog/issue1/introduction_to_prediction), information gathering, prediction risk, and when risky play is necessary.
+- [Smogon: Prediction and Planning: The Art of Decision Making in Ubers](https://www.smogon.com/smog/issue20/prediction_ubers), planning, backup plans, momentum, and risk/reward.
+- [Smogon forum: Pokémon Battling Crash Course](https://www.smogon.com/forums/threads/pok%C3%A9mon-battling-crash-course.3656181/), scouting, win conditions, lose conditions, pacing, resources, and information management.
+- [Smogon: Where’s the Speedometer? A Beginner’s Guide to Speed Control in VGC](https://www.smogon.com/articles/guide-to-speed-control-in-vgc-p1), speed control and its strategic value.
+- [Smogon: Random Formats on Pokémon Showdown](https://www.smogon.com/articles/random-formats-overview), the role and characteristics of Random Battle formats.
+- [Smogon forum: Questions About How Random Battles Formats Work](https://www.smogon.com/forums/threads/questions-about-random-battles-formats-work-read-here.3712694/), Gen 9 Random Battle generation, roles, and curated random sets.
+- [Pokémon: Experience a Pokémon VGC Event in Japan with Regional Champion Joe Ugarte](https://www.pokemon.com/us/features/experience-a-pokemon-vgc-event-in-japan-with-regional-champion-joe-ugarte), official tournament-level examples of team roles, offensive synergy, defensive pivots, and strategic preparation.
+- [Pokémon: Best-of-Three Swiss Rounds Shake Up the Pokémon Video Game Championships](https://www.pokemon.com/us/features/best-of-three-swiss-rounds-shake-up-the-pokemon-video-game-championships), consistency, surprise, and adaptation in official competitive play.
 
 ## Relationship to other project research
 

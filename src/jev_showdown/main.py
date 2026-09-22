@@ -97,7 +97,7 @@ class BattleOrchestrator:
     def _on_battle_event(self, event: dict[str, Any]) -> None:
         if event.get("type") == "BATTLE_START":
             self._signal_match_found()
-            self._publish_status("MATCH FOUND — INITIALIZING BATTLE")
+            self._publish_status("MATCH FOUND: INITIALIZING BATTLE")
             self._publish_event(event)
         elif event.get("type") == "BATTLE_END":
             self._publish_event(event)
@@ -133,7 +133,7 @@ class BattleOrchestrator:
         settings = self.settings
         if not settings.showdown_username or not settings.showdown_password:
             self._publish_status(
-                "ERROR: SHOWDOWN ACCOUNT NOT CONFIGURED — SET SHOWDOWN_USERNAME / "
+                "ERROR: SHOWDOWN ACCOUNT NOT CONFIGURED: SET SHOWDOWN_USERNAME / "
                 "SHOWDOWN_PASSWORD IN .env",
                 busy=False,
                 error=True,
@@ -181,7 +181,7 @@ class BattleOrchestrator:
                 lambda: player.ps_client.logged_in.is_set(), AUTH_TIMEOUT_SECONDS
             ):
                 self._publish_status(
-                    "ERROR: SHOWDOWN AUTHENTICATION FAILED — CHECK .env CREDENTIALS",
+                "ERROR: SHOWDOWN AUTHENTICATION FAILED: CHECK .env CREDENTIALS",
                     busy=False,
                     error=True,
                 )
@@ -202,7 +202,7 @@ class BattleOrchestrator:
                 with suppress(asyncio.CancelledError, Exception):
                     await ladder_task
                 self._publish_status(
-                    "ERROR: OPPONENT SEARCH TIMED OUT — NO OPPONENT FOUND",
+                "ERROR: OPPONENT SEARCH TIMED OUT: NO OPPONENT FOUND",
                     busy=False,
                     error=True,
                 )

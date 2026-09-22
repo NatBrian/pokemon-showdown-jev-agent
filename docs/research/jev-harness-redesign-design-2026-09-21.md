@@ -746,7 +746,7 @@ Latency rules:
 - Make fallback available before starting the external request.
 - Record p50, p95, p99, timeout, and fallback latency.
 
-If Jev is slow, the result must be a safe fallback—not a battle timeout.
+If Jev is slow, the result must be a safe fallback, not a battle timeout.
 
 ## Preventing incorrect logic
 

@@ -89,16 +89,16 @@ values.
 
 ## File map
 
-- Create `src/jev_showdown/web/dashboard_state.py` — projection, provenance, metrics, history isolation, and redaction.
-- Create `src/jev_showdown/web/dashboard_stream.py` — in-process snapshot/event fan-out.
-- Modify `src/jev_showdown/web/server.py` — shell, snapshot/stream/start routes, and telemetry connection.
-- Create `src/jev_showdown/web/static/index.html` — semantic shell and renderer host.
-- Create `src/jev_showdown/web/static/style.css` — visual system, layout, responsive behavior, and reduced motion.
-- Create `src/jev_showdown/web/static/dashboard/app.js` — browser entry point and transport.
-- Create `src/jev_showdown/web/static/dashboard/state.js` — envelope validation and client selection state.
-- Create `src/jev_showdown/web/static/dashboard/render.js` — semantic Harness/Jev/Adapter/history rendering.
-- Create `src/jev_showdown/web/static/dashboard/charts.js` — accessible SVG/CSS evidence charts.
-- Create `src/jev_showdown/web/static/dashboard/inspector.js` — technical drawer and raw/structured views.
+- Create `src/jev_showdown/web/dashboard_state.py`: projection, provenance, metrics, history isolation, and redaction.
+- Create `src/jev_showdown/web/dashboard_stream.py`: in-process snapshot/event fan-out.
+- Modify `src/jev_showdown/web/server.py`: shell, snapshot/stream/start routes, and telemetry connection.
+- Create `src/jev_showdown/web/static/index.html`: semantic shell and renderer host.
+- Create `src/jev_showdown/web/static/style.css`: visual system, layout, responsive behavior, and reduced motion.
+- Create `src/jev_showdown/web/static/dashboard/app.js`: browser entry point and transport.
+- Create `src/jev_showdown/web/static/dashboard/state.js`: envelope validation and client selection state.
+- Create `src/jev_showdown/web/static/dashboard/render.js`: semantic Harness/Jev/Adapter/history rendering.
+- Create `src/jev_showdown/web/static/dashboard/charts.js`: accessible SVG/CSS evidence charts.
+- Create `src/jev_showdown/web/static/dashboard/inspector.js`: technical drawer and raw/structured views.
 - Create `tests/fixtures/dashboard/{valid-turn,fallback-turn,invalid-probability,battle-reset}.json`.
 - Create `tests/unit/test_dashboard_state.py`.
 - Create `tests/unit/test_dashboard_stream.py`.

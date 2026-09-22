@@ -465,7 +465,7 @@ Relevant references:
 The project owner confirmed the following product decisions:
 
 - **Showdown account:** use a dedicated account configured through `.env`. The assistant may attempt account creation during setup; the owner will handle any human-only signup step.
-- **Jev failure:** use a legal fallback action when necessary, but make it unmistakable in the dashboard with wording such as `JEV FAILED — FALLBACK USED`. A fallback must never be presented as Jev's decision.
+- **Jev failure:** use a legal fallback action when necessary, but make it unmistakable in the dashboard with wording such as `JEV FAILED: FALLBACK USED`. A fallback must never be presented as Jev's decision.
 - **Viewer controls:** keep the showcase simple. Viewers should not manually choose moves, switches, or settings. The dashboard exists to observe Jev, not to provide a second human controller.
 - **MVP success:** Jev must complete real battles legally and show good winning performance over a meaningful set of battles. A single lucky win is not sufficient; the exact numerical target can be set after baseline measurements.
 - **Recording:** keep recording simple. The owner will record the local browser dashboard; no built-in video recording, elaborate replay workflow, or special production system is required for the MVP.

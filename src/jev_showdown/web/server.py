@@ -62,7 +62,7 @@ SHOWDOWN_CACHE_DIR = os.path.join(
 SHOWDOWN_UNAVAILABLE_HTML = (
     '<html><body style="background:#000;color:#888;font-family:monospace;'
     'display:flex;align-items:center;justify-content:center;height:100vh">'
-    "SHOWDOWN CLIENT UNAVAILABLE — CHECK NETWORK</body></html>"
+    "SHOWDOWN CLIENT UNAVAILABLE: CHECK NETWORK</body></html>"
 )
 
 _SHOWDOWN_FRAMEBUST_RE = re.compile(r"if \(self === top\) \{")
@@ -103,7 +103,7 @@ def strip_showdown_tracking(html: str) -> str:
 # The client only auto-configures (Config.server + loaded prefs trackers)
 # when it runs on its own origin. When embedded on another origin it takes
 # the "cross-origin" path, which waits for a postMessage from
-# play.pokemonshowdown.com/crossdomain.php — an endpoint that answers with
+# play.pokemonshowdown.com/crossdomain.php, an endpoint that answers with
 # an empty body for non-allow-listed origins, so the wait never resolves and
 # the client sits at "Loading..." forever (no socket, no room list). This
 # boot script reproduces the same-origin initialization: point Config.server

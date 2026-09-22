@@ -156,7 +156,7 @@
       try {
         battle.add(line);
       } catch (error) {
-        setStatus("SHOWDOWN RENDERER ERROR — TELEMETRY FALLBACK ACTIVE");
+        setStatus("SHOWDOWN RENDERER ERROR: TELEMETRY FALLBACK ACTIVE");
         console.error("[jev-dashboard] Showdown renderer rejected protocol line", error);
       }
     }
@@ -180,7 +180,7 @@
         $logFrame: window.jQuery(logElement),
         id: battleTag,
         subscription: function (event) {
-          if (event === "ended") setStatus("SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED");
+          if (event === "ended") setStatus("SHOWDOWN BATTLE ENDED: FINAL SCENE PRESERVED");
           else if (!battleEnded && (event === "playing" || event === "turn")) setStatus("LIVE SHOWDOWN SCENE");
         },
       });
@@ -189,13 +189,13 @@
       resizeStage();
       const arena = frameElement.closest ? frameElement.closest("#showdown-arena") : null;
       if (arena) arena.hidden = false;
-      setStatus(battleEnded ? "SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED" : "LIVE SHOWDOWN SCENE — RAW PROTOCOL CONNECTED");
+      setStatus(battleEnded ? "SHOWDOWN BATTLE ENDED: FINAL SCENE PRESERVED" : "LIVE SHOWDOWN SCENE: RAW PROTOCOL CONNECTED");
       const queued = pendingLines;
       pendingLines = [];
       addLines(queued);
       return battle;
     }).catch(function (error) {
-      setStatus("OFFICIAL SHOWDOWN RENDERER UNAVAILABLE — TELEMETRY FALLBACK ACTIVE");
+      setStatus("OFFICIAL SHOWDOWN RENDERER UNAVAILABLE: TELEMETRY FALLBACK ACTIVE");
       if (frameElement && frameElement.parentElement) frameElement.parentElement.classList.add("renderer-unavailable");
       console.error("[jev-dashboard] Showdown renderer unavailable", error);
       throw error;
@@ -220,14 +220,14 @@
   }
 
   function setUnavailable(message) {
-    setStatus(message || "OFFICIAL SHOWDOWN RENDERER UNAVAILABLE — TELEMETRY FALLBACK ACTIVE");
+    setStatus(message || "OFFICIAL SHOWDOWN RENDERER UNAVAILABLE: TELEMETRY FALLBACK ACTIVE");
     const arena = frameElement && frameElement.closest ? frameElement.closest("#showdown-arena") : null;
     if (arena) arena.hidden = true;
   }
 
   function end() {
     battleEnded = true;
-    setStatus("SHOWDOWN BATTLE ENDED — FINAL SCENE PRESERVED");
+    setStatus("SHOWDOWN BATTLE ENDED: FINAL SCENE PRESERVED");
   }
 
   window.JevShowdownRenderer = {

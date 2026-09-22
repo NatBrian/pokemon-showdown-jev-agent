@@ -19,7 +19,7 @@ This is much closer to the requested dashboard than recreating all effects with 
 
 ## Candidate projects
 
-### 1. Nidozo — closest match
+### 1. Nidozo: closest match
 
 Repository: [haggyroth/nidozo](https://github.com/haggyroth/nidozo)
 
@@ -27,7 +27,7 @@ Relevant files:
 
 - [ShowdownBattleScene.jsx](https://github.com/haggyroth/nidozo/blob/main/frontend/src/components/ShowdownBattleScene.jsx)
 - [useShowdownBundle.js](https://github.com/haggyroth/nidozo/blob/main/frontend/src/hooks/useShowdownBundle.js)
-- `frontend/public/showdown/` — the vendored renderer/data/CSS subset
+- `frontend/public/showdown/`, the vendored renderer/data/CSS subset
 - [Nidozo README battle cockpit](https://github.com/haggyroth/nidozo#the-battle-view--showdown-cockpit)
 
 The checked-out reference bundle contained 17 files and approximately 2.93 MB: the renderer JavaScript, jQuery/polyfills, battle data, tooltips, and Showdown battle styles. Pokémon sprites and some effects are still loaded from the official CDN.
@@ -46,7 +46,7 @@ Why it is not copy-pasteable as a whole:
 - It includes an LLM battle system, tournaments, database, replay, and other features that are outside our scope.
 - Its vendored files and license/attribution need to be audited before copying them into another repository.
 
-### 2. ps-local — real client plus helper panel
+### 2. ps-local: real client plus helper panel
 
 Repository: [AbhishekR3/ps-local](https://github.com/AbhishekR3/ps-local)
 
@@ -61,7 +61,7 @@ It is not the right implementation for this project because:
 
 Useful lesson: a battle helper should consume the same raw protocol stream as the renderer, rather than trying to infer animations from screenshots or from a partially updated state object.
 
-### 3. Official Pokémon Showdown client — source of truth
+### 3. Official Pokémon Showdown client: source of truth
 
 Repository: [smogon/pokemon-showdown-client](https://github.com/smogon/pokemon-showdown-client)
 

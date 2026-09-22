@@ -975,7 +975,7 @@ Icons should support semantic interpretation, not act as decoration. Every impor
 
 Before accepting a prototype, review it at a normal landscape viewport and ask:
 
-- Is the first color impression warm gray, cream, charcoal, and real battle color—not blue?
+- Is the first color impression warm gray, cream, charcoal, and real battle color, not blue?
 - Does the live battle remain the most visually important area?
 - Does the pixel treatment feel like an added Pokémon-game layer rather than a separate theme?
 - Do the Harness and Jev accents communicate provenance without turning the panels into unrelated color worlds?

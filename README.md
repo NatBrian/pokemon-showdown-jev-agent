@@ -1,8 +1,22 @@
 # Pokemon Showdown Jev Agent
 
-An autonomous Gen 9 Random Battles agent for [Pokemon Showdown](https://pokemonshowdown.com/), powered by the typed Jev decision endpoint.
+An autonomous Gen 9 Random Battles agent for [Pokemon Showdown](https://pokemonshowdown.com/), powered by the Jev AI (System One Model by TypeSafe AI) decision endpoint.
 
-The supported workflow is the live dashboard. A dedicated Showdown account connects to the public ladder, the agent observes a real battle, sends a structured decision request to Jev, validates the returned choice, and submits a legal order. The dashboard shows the complete observable path without inventing private model reasoning or hiding fallback decisions.
+The supported workflow is the live dashboard. A dedicated Showdown account connects to the public ladder, the agent observes a real battle, sends a structured decision request to Jev, validates the returned choice, and submits a legal order. The dashboard shows the complete observable path.
+
+<table>
+  <tr>
+    <td width="33.3%">
+      <video src="https://github.com/user-attachments/assets/9ad2418c-60ad-4433-a87d-c72c2cba9da2" controls width="100%"></video>
+    </td>
+    <td width="33.3%">
+      <video src="https://github.com/user-attachments/assets/ebf87f25-6a13-4b3e-bcd7-16f1603ef615" controls width="100%"></video>
+    </td>
+    <td width="33.3%">
+      <video src="https://github.com/user-attachments/assets/436f6ea9-8621-4a03-89e3-9605a757ba95" controls width="100%"></video>
+    </td>
+  </tr>
+</table>
 
 ## What the system does
 

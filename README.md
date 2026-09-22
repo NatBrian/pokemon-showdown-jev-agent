@@ -13,7 +13,7 @@ The supported workflow is the live dashboard. A dedicated Showdown account conne
       <video src="https://github.com/user-attachments/assets/ebf87f25-6a13-4b3e-bcd7-16f1603ef615" controls width="100%"></video>
     </td>
     <td width="33.3%">
-      <video src="https://github.com/user-attachments/assets/436f6ea9-8621-4a03-89e3-9605a757ba95" controls width="100%"></video>
+      <video src="https://github.com/user-attachments/assets/19af54fb-25cd-410b-8585-3338ea777b78" controls width="100%"></video>
     </td>
   </tr>
 </table>

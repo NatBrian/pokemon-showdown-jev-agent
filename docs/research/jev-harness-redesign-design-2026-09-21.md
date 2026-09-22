@@ -1,7 +1,7 @@
 # Jev Pokémon Harness and Decision-System Redesign
 
 **Date:** 2026-09-21  
-**Project:** `autonomous-pokemon-showdown-jev-agent`  
+**Project:** `pokemon-showdown-jev-agent`
 **Target format:** Gen 9 Random Battle singles (`gen9randombattle`)  
 **Status:** Updated design choice after source-level study of Foul Play and PokéChamp; no implementation included
 

@@ -1,7 +1,7 @@
 # Foul Play Benchmarking and Strength Levels
 
 **Date:** 2026-09-21  
-**Project:** `autonomous-pokemon-showdown-jev-agent`  
+**Project:** `pokemon-showdown-jev-agent`
 **Purpose:** Explain how to use Foul Play as an existing Pokémon Showdown bot benchmark without assuming it has official difficulty levels.
 
 ## Direct answer

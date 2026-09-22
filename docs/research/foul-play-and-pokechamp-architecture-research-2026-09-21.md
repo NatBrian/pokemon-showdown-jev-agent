@@ -7,7 +7,7 @@ This document records the source-level study of two advanced Pokémon Showdown b
 - Foul Play: https://github.com/pmariglia/foul-play
 - PokéChamp: https://github.com/sethkarten/pokechamp
 
-The purpose is to preserve the research so a future agent can understand both systems without cloning and studying them again. The research is also translated into concrete lessons for the autonomous-pokemon-showdown-jev-agent project, whose decision model is Jev by TypeSafe AI.
+The purpose is to preserve the research so a future agent can understand both systems without cloning and studying them again. The research is also translated into concrete lessons for the pokemon-showdown-jev-agent project, whose decision model is Jev by TypeSafe AI.
 
 ## Source snapshots inspected
 

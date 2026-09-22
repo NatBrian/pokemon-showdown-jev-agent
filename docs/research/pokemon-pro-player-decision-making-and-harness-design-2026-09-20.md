@@ -1,7 +1,7 @@
 # Pokémon Expert Decision-Making and Harness Design Research
 
 **Date:** 2026-09-20  
-**Project:** `autonomous-pokemon-showdown-jev-agent`  
+**Project:** `pokemon-showdown-jev-agent`
 **Purpose:** Explain how strong competitive Pokémon players make decisions and translate that thinking into the battle harness and the information supplied to Jev AI.
 
 ## Scope and important format distinction

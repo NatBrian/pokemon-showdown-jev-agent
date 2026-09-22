@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "jev-showdown"
 version = "0.1.0"
-description = "Autonomous Pokémon Showdown Agent Powered by Jev AI"
+description = "Pokemon Showdown Jev Agent for autonomous Gen 9 Random Battles"
 authors = [{ name = "Jev Showdown Team" }]
 readme = "README.md"
 requires-python = ">=3.10"

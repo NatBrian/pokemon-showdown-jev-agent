@@ -1,2 +1,2 @@
-"""Autonomous Pokémon Showdown Agent Powered by Jev AI."""
+"""Pokemon Showdown Jev Agent."""
 __version__ = "0.1.0"

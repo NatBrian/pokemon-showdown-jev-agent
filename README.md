@@ -1,4 +1,4 @@
-# Autonomous Pokemon Showdown Agent Powered by Jev AI
+# Pokemon Showdown Jev Agent
 
 An autonomous Gen 9 Random Battles agent for [Pokemon Showdown](https://pokemonshowdown.com/), powered by the typed Jev decision endpoint.
 

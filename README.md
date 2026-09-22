@@ -4,8 +4,6 @@ An autonomous Gen 9 Random Battles agent for [Pokemon Showdown](https://pokemons
 
 The supported workflow is the live dashboard. A dedicated Showdown account connects to the public ladder, the agent observes a real battle, sends a structured decision request to Jev, validates the returned choice, and submits a legal order. The dashboard shows the complete observable path without inventing private model reasoning or hiding fallback decisions.
 
-This README is the onboarding and maintenance guide for the repository. It is not a changelog. Historical design notes and research are kept under [`docs/`](docs/).
-
 ## What the system does
 
 For every battle turn, the agent:
@@ -257,15 +255,6 @@ When changing live behavior, preserve these invariants:
 5. A provider failure cannot silently appear as a successful Jev decision.
 
 Generated local directories such as `.venv`, `.pytest_cache`, browser profiles, worktrees, and local environment files are not application source. Keep them out of commits.
-
-## Design references
-
-- [Project alignment record](docs/project-alignment.md)
-- [Dashboard canonical specification](docs/design/dashboard-canonical-spec.md)
-- [Dashboard product contract](docs/design/dashboard-product-contract.md)
-- [Dashboard UI/UX design](docs/design/dashboard-ui-ux-design.md)
-- [Dashboard implementation handoff](docs/design/dashboard-codex-handoff.md)
-- [Research and architecture notes](docs/research/)
 
 ## Attribution
 

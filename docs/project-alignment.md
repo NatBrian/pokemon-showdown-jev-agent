@@ -43,12 +43,7 @@ The dashboard and recorded video will not display explicit comparative marketing
 
 ## 3. Audience
 
-The showcase has two audiences equally:
-
-1. General technology and LinkedIn audiences who need a simple visual explanation.
-2. AI/ML and software engineers who want to inspect the technical input, output, and decision flow.
-
-The visual experience should therefore have two layers:
+The visual experience should have two layers:
 
 - A simple, attractive default view that is immediately understandable.
 - Technical information rendered visually for deeper inspection.

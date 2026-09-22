@@ -242,7 +242,6 @@ tests/
 docs/
 |-- design/                        Product contracts and dashboard design
 |-- research/                      Research and architecture notes
-|-- superpowers/                   Historical implementation plans and specs
 
 artifacts/                         Stored evaluation and replay evidence
 benchmarks/                        Internal evaluation scripts, not part of supported workflow
